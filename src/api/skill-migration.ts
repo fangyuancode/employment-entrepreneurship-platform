@@ -1,0 +1,96 @@
+import axios from 'axios'
+
+export const SKILL_MIGRATION_BASE_URL = 'http://127.0.0.1:9091'
+
+const request = axios.create({
+  baseURL: SKILL_MIGRATION_BASE_URL,
+  timeout: 60000
+})
+
+export interface ApiResponse<T> {
+  code: string | number
+  msg: string
+  data: T
+}
+
+export interface SkillMigrationRequest {
+  sourceJob?: string
+  targetJob?: string
+  city?: string
+  degree?: string
+  experience?: string
+  ownSkills?: string
+}
+
+export interface SkillMigrationData {
+  sourceJob: string
+  targetJob: string
+  migrationScore: number
+  difficultyLevel: string
+  overlapRatio: number
+  overlapSkills: string[]
+  gapSkills: string[]
+  sourceTopSkills: string[]
+  targetTopSkills: string[]
+  learningPath: string[]
+  actionSuggestions: string[]
+  targetCities: string[]
+  targetCompanies: string[]
+  salaryCompare: {
+    sourceAvgSalaryK: number
+    targetAvgSalaryK: number
+    salaryIncreaseK: number
+    salaryIncreaseRatio: number
+    sourceSampleCount: number
+    targetSampleCount: number
+  }
+  demandCompare: {
+    sourceDemand: number
+    targetDemand: number
+    demandTrend: string
+  }
+  aiExplain: {
+    whyMigrate: string
+    migrationBenefits: string[]
+    futureTrends: string[]
+    riskWarnings: string[]
+    finalAdvice: string
+  }
+  summary: string
+}
+
+export interface MigrationPathItem {
+  targetJob: string
+  migrationScore: number
+  difficultyLevel: string
+  overlapRatio: number
+  overlapSkills: string[]
+  gapSkills: string[]
+  targetDemand: number
+  targetAvgSalaryK: number
+  salaryIncreaseK: number
+  salaryIncreaseRatio: number
+  analysis: string
+}
+
+export interface MigrationPathGraphData {
+  sourceJob: string
+  sourceCategory: string
+  graph: {
+    nodes: Array<Record<string, any>>
+    links: Array<Record<string, any>>
+    categories: Array<Record<string, any>>
+  }
+  paths: MigrationPathItem[]
+  relatedJobs: string[]
+  insights: string[]
+  summary: string
+}
+
+export function getSkillMigrationAnalyze (data: SkillMigrationRequest) {
+  return request.post<ApiResponse<SkillMigrationData>>('/api/common/skill-migration/analyze', data)
+}
+
+export function getSkillMigrationPathGraph (data: SkillMigrationRequest) {
+  return request.post<ApiResponse<MigrationPathGraphData>>('/api/common/skill-migration/path-graph', data)
+}

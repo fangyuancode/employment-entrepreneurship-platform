@@ -1,0 +1,500 @@
+{
+  "httpMsg": {
+    "unauthorized": "Unauthorized access, please login again",
+    "forbidden": "Access to this resource is forbidden",
+    "notFound": "The requested resource does not exist",
+    "methodNotAllowed": "Request method not allowed",
+    "requestTimeout": "Request timeout, please try again later",
+    "internalServerError": "Internal server error, please try again later",
+    "badGateway": "Bad gateway error, please try again later",
+    "serviceUnavailable": "Service temporarily unavailable, please try again later",
+    "gatewayTimeout": "Gateway timeout, please try again later",
+    "requestCancelled": "Request cancelled",
+    "networkError": "Network connection error, please check your connection",
+    "requestFailed": "Request failed",
+    "requestConfigError": "Request configuration error"
+  },
+  "topBar": {
+    "search": {
+      "title": "Search"
+    },
+    "user": {
+      "userCenter": "User center",
+      "docs": "Document",
+      "github": "Github",
+      "lockScreen": "Lock screen",
+      "logout": "Log out"
+    },
+    "guide": {
+      "title": "Click here to view",
+      "theme": "Theme style",
+      "menu": "Open top menu",
+      "description": "More configurations"
+    }
+  },
+  "common": {
+    "tips": "Prompt",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "logOutTips": "Do you want to log out?"
+  },
+  "search": {
+    "placeholder": "Search page",
+    "historyTitle": "Search history",
+    "switchKeydown": "Navigate",
+    "selectKeydown": "Select",
+    "exitKeydown": "Close"
+  },
+  "setting": {
+    "menuType": {
+      "title": "Menu Layout",
+      "list": [
+        "Vertical",
+        "Horizontal",
+        "Mixed",
+        "Dual"
+      ]
+    },
+    "theme": {
+      "title": "Theme Style",
+      "list": [
+        "Light",
+        "Dark",
+        "System"
+      ]
+    },
+    "menu": {
+      "title": "Menu Style"
+    },
+    "color": {
+      "title": "Theme Color"
+    },
+    "box": {
+      "title": "Box Style",
+      "list": [
+        "Border",
+        "Shadow"
+      ]
+    },
+    "container": {
+      "title": "Container Width",
+      "list": [
+        "Full",
+        "Boxed"
+      ]
+    },
+    "basics": {
+      "title": "Basic Config",
+      "list": {
+        "multiTab": "Show work tab",
+        "accordion": "Sidebar opens accordion",
+        "collapseSidebar": "Show sidebar button",
+        "reloadPage": "Show reload page button",
+        "fastEnter": "Show fast enter",
+        "breadcrumb": "Show crumb navigation",
+        "language": "Show multilingual selection",
+        "progressBar": "Show top progress bar",
+        "weakMode": "Color Weakness Mode",
+        "watermark": "Global watermark",
+        "menuWidth": "Menu width",
+        "tabStyle": "Tab style",
+        "pageTransition": "Page animation",
+        "borderRadius": "Custom radius"
+      }
+    },
+    "tabStyle": {
+      "default": "Default",
+      "card": "Card",
+      "google": "Chrome"
+    },
+    "transition": {
+      "list": {
+        "none": "None",
+        "fade": "Fade",
+        "slideLeft": "Slide Left",
+        "slideBottom": "Slide Bottom",
+        "slideTop": "Slide Top"
+      }
+    },
+    "actions": {
+      "resetConfig": "Reset Config",
+      "copyConfig": "Copy Config",
+      "copySuccess": "Configuration copied to clipboard, paste it into src/config/setting.ts file",
+      "copyFailed": "Copy failed, please try again",
+      "resetFailed": "Reset failed, please refresh the page and try again"
+    }
+  },
+  "notice": {
+    "title": "Notice",
+    "btnRead": "Mark as read",
+    "bar": [
+      "Notice",
+      "Message",
+      "Todo"
+    ],
+    "text": [
+      "No"
+    ],
+    "viewAll": "View all"
+  },
+  "worktab": {
+    "btn": {
+      "refresh": "Refresh",
+      "fixed": "Fixed",
+      "unfixed": "Unfixed",
+      "closeLeft": "Close left",
+      "closeRight": "Close right",
+      "closeOther": "Close other",
+      "closeAll": "Close all"
+    }
+  },
+  "login": {
+    "leftView": {
+      "title": "A backend system of beauty and efficiency",
+      "subTitle": "A sleek and practical interface for a great user experience"
+    },
+    "title": "Welcome back",
+    "subTitle": "Please enter your account and password to login",
+    "roles": {
+      "super": "Super Admin",
+      "admin": "Admin",
+      "user": "User"
+    },
+    "placeholder": {
+      "username": "Please enter your account",
+      "password": "Please enter your password",
+      "slider": "Please slide to verify"
+    },
+    "sliderText": "Please slide to verify",
+    "sliderSuccessText": "Verification successful",
+    "rememberPwd": "Remember password",
+    "forgetPwd": "Forgot password",
+    "btnText": "Login",
+    "noAccount": "No account yet?",
+    "register": "Register",
+    "success": {
+      "title": "Login successful",
+      "message": "Welcome back"
+    }
+  },
+  "forgetPassword": {
+    "title": "Forgot password?",
+    "subTitle": "Enter your email to reset your password",
+    "placeholder": "Please enter your email",
+    "submitBtnText": "Submit",
+    "backBtnText": "Back"
+  },
+  "register": {
+    "title": "Create account",
+    "subTitle": "Welcome to join us, please fill in the following information to complete the registration",
+    "placeholder": {
+      "username": "Please enter your account",
+      "password": "Please enter your password",
+      "confirmPassword": "Please enter your password again"
+    },
+    "rule": {
+      "confirmPasswordRequired": "Please enter your password again",
+      "passwordMismatch": "The two passwords are inconsistent!",
+      "usernameLength": "The length is 3 to 20 characters",
+      "passwordLength": "The password length cannot be less than 6 digits",
+      "agreementRequired": "Please agree to the privacy policy"
+    },
+    "agreeText": "I agree",
+    "privacyPolicy": "Privacy policy",
+    "submitBtnText": "Register",
+    "hasAccount": "Already have an account?",
+    "toLogin": "To login"
+  },
+  "lockScreen": {
+    "pwdError": "Password error",
+    "lock": {
+      "inputPlaceholder": "Please input lock screen password",
+      "btnText": "Lock"
+    },
+    "unlock": {
+      "inputPlaceholder": "Please input unlock password",
+      "btnText": "Unlock",
+      "backBtnText": "Back to login"
+    }
+  },
+  "greeting": {
+    "dawn": "Good morning!",
+    "morning": "Good morning!",
+    "afternoon": "Good afternoon!",
+    "evening": "Good evening!"
+  },
+  "exceptionPage": {
+    "403": "Sorry, you do not have permission to access this page",
+    "404": "Sorry, the page you are trying to access does not exist",
+    "500": "Sorry, there was an error on the server",
+    "gohome": "Go Home"
+  },
+  "menus": {
+    "login": {
+      "title": "Login"
+    },
+    "register": {
+      "title": "Register"
+    },
+    "forgetPassword": {
+      "title": "Forget Password"
+    },
+    "outside": {
+      "title": "Outside"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "console": "Console"
+    },
+    "result": {
+      "title": "Result Page",
+      "success": "Success",
+      "fail": "Fail"
+    },
+    "exception": {
+      "title": "Exception",
+      "forbidden": "403",
+      "notFound": "404",
+      "serverError": "500"
+    },
+    "system": {
+      "title": "System Settings",
+      "user": "User Manage",
+      "role": "Role Manage",
+      "userCenter": "User Center",
+      "menu": "Menu Manage"
+    },
+    "study": {
+      "title": "AI Assistant",
+      "business": "BusinessGenerator",
+      "copywriting": "AI  copywriting generation",
+      "assistance": "AI Product Design Assistant",
+      "pitchPpt": "PPT",
+      "meeting": "Meeting Assistant",
+      "relationship": "Knowledge Graph Analysis"
+    },
+    "toolbox": {
+      "title": "AI Employment",
+      "jobcollection": "Job Collection",
+      "joblist": "Job List",
+      "jobanalysis": "Job Analysis",
+      "jobskillgraph": "Graph Analysis"
+    },
+    "help": {
+      "title": "Visual aids",
+      "vehicle": "Vehicle recognition"
+    }
+  },
+  "table": {
+    "form": {
+      "reset": "Reset",
+      "submit": "Submit"
+    },
+    "searchBar": {
+      "reset": "Reset",
+      "search": "Search",
+      "expand": "Expand",
+      "collapse": "Collapse",
+      "searchInputPlaceholder": "Please enter",
+      "searchSelectPlaceholder": "Please select"
+    },
+    "selection": "Select",
+    "sizeOptions": {
+      "small": "Compact",
+      "default": "Default",
+      "large": "Loose"
+    },
+    "column": {
+      "selection": "Select",
+      "expand": "Expand",
+      "index": "Index"
+    },
+    "zebra": "Zebra",
+    "border": "Border",
+    "headerBackground": "Header BG"
+  },
+  "console": {
+    "banner": {
+      "badge": "AI Startup Assistant Workspace",
+      "title": "Welcome back — a great day to keep building your AI project",
+      "desc": "This dashboard brings together project overview, tool usage, recent tasks, and feature shortcuts to help you move faster on business plans, product design, job analysis, meeting notes, and other core modules.",
+      "highlightLabel": "This Week Focus",
+      "highlightValue": "Workspace Experience Optimization",
+      "highlightDesc": "Unify the homepage style and highlight core AI startup scenarios"
+    },
+    "tags": {
+      "businessPlan": "Business Plan",
+      "productDesign": "Product Design",
+      "brandCopy": "Brand Copywriting",
+      "meeting": "Meeting Notes",
+      "jobAnalysis": "Job Analysis",
+      "vehicle": "Vehicle Recognition"
+    },
+    "overview": {
+      "totalContent": {
+        "title": "Generated Content",
+        "label": "vs Yesterday"
+      },
+      "activeTools": {
+        "title": "Active Tools This Week",
+        "label": "Core Modules"
+      },
+      "pendingPages": {
+        "title": "Pages to Improve",
+        "label": "Need Optimization"
+      },
+      "projectProgress": {
+        "title": "Project Progress",
+        "label": "Overall Progress"
+      }
+    },
+    "chart": {
+      "trendTitle": "Tool Usage Trend in Last 7 Days",
+      "compareLastWeek": "vs Last Week",
+      "usageTitle": "Feature Usage Distribution",
+      "usageDesc": "Content generation tools are currently used more often",
+      "centerText": "Tool Share"
+    },
+    "feature": {
+      "title": "Core Feature Shortcuts",
+      "desc": "Focus on the AI tools most frequently used in the current project",
+      "tags": {
+        "highFreq": "Popular",
+        "recommend": "Recommended",
+        "content": "Content",
+        "efficiency": "Efficiency",
+        "data": "Data"
+      },
+      "items": {
+        "businessPlan": {
+          "title": "Business Plan Generator",
+          "desc": "Generate more complete startup business plan content and visual illustrations"
+        },
+        "productDesign": {
+          "title": "AI Product Design Assistant",
+          "desc": "Output product positioning, feature breakdown, page structure, and solution suggestions"
+        },
+        "brand": {
+          "title": "AI Branding & Copywriting",
+          "desc": "Generate brand names, product selling points, promo copy, and visual content"
+        },
+        "meeting": {
+          "title": "Meeting Notes Assistant",
+          "desc": "Automatically summarize key decisions, action items, and risk reminders"
+        },
+        "job": {
+          "title": "Job Collection & Analysis",
+          "desc": "Aggregate recruitment data and analyze skill requirements and job trends"
+        }
+      }
+    },
+    "progress": {
+      "title": "Project Module Progress",
+      "desc": "Static demo data that can be adjusted later based on actual progress",
+      "items": {
+        "businessPlan": {
+          "name": "Business Plan Optimization",
+          "desc": "Long-form generation, image display, and export are completed"
+        },
+        "productDesign": {
+          "name": "AI Product Design Assistant",
+          "desc": "Page structure and interaction suggestion capabilities are relatively complete"
+        },
+        "job": {
+          "name": "Job Analysis & Skill Graph",
+          "desc": "Collection and analysis are connected; graph capability can still be enhanced"
+        },
+        "console": {
+          "name": "Workspace Homepage Revamp",
+          "desc": "Information restructuring is complete; real APIs can be connected later"
+        }
+      }
+    },
+    "task": {
+      "title": "Recent Tasks",
+      "pending": "Pending",
+      "unit": "",
+      "doneText": "Completed",
+      "status": {
+        "doing": "In Progress",
+        "pending": "Pending",
+        "done": "Completed"
+      },
+      "owner": {
+        "frontend": "Frontend",
+        "backend": "Backend",
+        "fullstack": "Frontend & Backend",
+        "designFrontend": "Design / Frontend"
+      },
+      "level": {
+        "high": "High Priority",
+        "medium": "Medium Priority",
+        "low": "Low Priority"
+      },
+      "items": {
+        "item1": {
+          "title": "Optimize the dashboard/console workspace page",
+          "time": "Today 09:30"
+        },
+        "item2": {
+          "title": "Improve interaction and filtering experience in the job analysis module",
+          "time": "Today 11:00"
+        },
+        "item3": {
+          "title": "Unify the visual style of toolbox pages",
+          "time": "Today 14:00"
+        },
+        "item4": {
+          "title": "Check naming and request paths of public API interfaces",
+          "time": "Today 16:30"
+        },
+        "item5": {
+          "title": "Supplement the email sending guide for meeting notes",
+          "time": "Today 18:00"
+        }
+      }
+    },
+    "noticePanel": {
+      "title": "Project Reminders",
+      "desc": "Keep the homepage focused on actionable information",
+      "tags": {
+        "suggestion": "Suggestion",
+        "extendable": "Scalable",
+        "structure": "Structure"
+      },
+      "items": {
+        "item1": {
+          "title": "Keep only high-value information on the homepage",
+          "desc": "Avoid stacking too many template-like modules on the workspace. Prioritize overview, trends, tasks, and project progress."
+        },
+        "item2": {
+          "title": "Static data can later be smoothly replaced by APIs",
+          "desc": "The current field structure is already close to real business scenarios, so the layout will not need major changes when connecting the backend."
+        },
+        "item3": {
+          "title": "Feature shortcuts should align with the left navigation",
+          "desc": "The homepage should focus on overview and guidance, while complex operations remain on dedicated feature pages."
+        }
+      }
+    },
+    "summary": {
+      "title": "Today's Data Summary",
+      "desc": "Lightweight information suitable for the right side of the workspace",
+      "items": {
+        "generateCount": "Generated Today",
+        "pendingPages": "Pages to Improve",
+        "doneTasks": "Tasks Completed",
+        "activeModules": "Active Modules"
+      }
+    },
+    "week": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    }
+  }
+}
