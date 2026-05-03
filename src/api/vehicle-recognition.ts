@@ -1,15 +1,12 @@
-import axios from 'axios'
+import request from '@/utils/http'
+import { PYTHON_API_BASE_URL, buildPythonApiUrl, normalizePythonMediaUrl } from './_base'
+
 
 /**
  * =========================
  * 基础响应结构
  * =========================
  */
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
 /**
  * =========================
@@ -82,17 +79,13 @@ export interface RealtimeStatusResponse {
  * Python 后端服务地址
  * =========================
  */
-export const VEHICLE_BASE_URL = 'http://127.0.0.1:5001'
-
 /**
  * =========================
- * axios 实例
+ * 图片识别
  * =========================
  */
-const request = axios.create({
-  baseURL: VEHICLE_BASE_URL,
-  timeout: 600000
-})
+
+export const VEHICLE_BASE_URL = PYTHON_API_BASE_URL
 
 /**
  * =========================
@@ -103,16 +96,12 @@ export function detectVehicleImage (file: File) {
   const formData = new FormData()
   formData.append('file', file)
 
-  return request.post<ApiResponse<VehicleImageDetectResponse>>(
-    '/detect/image',
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      },
-      timeout: 120000
-    }
-  )
+  return request.post<VehicleImageDetectResponse>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/detect/image',
+    data: formData,
+    timeout: 120000
+  })
 }
 
 /**
@@ -124,16 +113,12 @@ export function detectVehicleVideo (file: File) {
   const formData = new FormData()
   formData.append('file', file)
 
-  return request.post<ApiResponse<VehicleVideoDetectResponse>>(
-    '/detect/video',
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      },
-      timeout: 600000
-    }
-  )
+  return request.post<VehicleVideoDetectResponse>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/detect/video',
+    data: formData,
+    timeout: 600000
+  })
 }
 
 /**
@@ -142,16 +127,12 @@ export function detectVehicleVideo (file: File) {
  * =========================
  */
 export function startRealtimeDetect (cameraIndex = 0) {
-  return request.post<ApiResponse<RealtimeStartResponse>>(
-    '/realtime/start',
-    { cameraIndex },
-    {
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      timeout: 15000
-    }
-  )
+  return request.post<RealtimeStartResponse>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/realtime/start',
+    data: { cameraIndex },
+    timeout: 15000
+  })
 }
 
 /**
@@ -160,16 +141,12 @@ export function startRealtimeDetect (cameraIndex = 0) {
  * =========================
  */
 export function stopRealtimeDetect () {
-  return request.post<ApiResponse<RealtimeStopResponse>>(
-    '/realtime/stop',
-    {},
-    {
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      timeout: 15000
-    }
-  )
+  return request.post<RealtimeStopResponse>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/realtime/stop',
+    data: {},
+    timeout: 15000
+  })
 }
 
 /**
@@ -178,12 +155,11 @@ export function stopRealtimeDetect () {
  * =========================
  */
 export function getRealtimeStatus () {
-  return request.get<ApiResponse<RealtimeStatusResponse>>(
-    '/realtime/status',
-    {
-      timeout: 15000
-    }
-  )
+  return request.get<RealtimeStatusResponse>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/realtime/status',
+    timeout: 15000
+  })
 }
 
 /**
@@ -193,7 +169,7 @@ export function getRealtimeStatus () {
  * =========================
  */
 export function buildRealtimeStreamUrl () {
-  return `${VEHICLE_BASE_URL}/realtime/stream?t=${Date.now()}`
+  return buildPythonApiUrl(`/realtime/stream?t=${Date.now()}`)
 }
 
 /**
@@ -202,9 +178,5 @@ export function buildRealtimeStreamUrl () {
  * =========================
  */
 export function buildMediaUrl (path: string) {
-  if (!path) return ''
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:')) {
-    return path
-  }
-  return `${VEHICLE_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
+  return normalizePythonMediaUrl(path)
 }

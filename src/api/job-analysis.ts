@@ -1,17 +1,6 @@
-import axios from 'axios'
+import request from '@/utils/http'
 
-export const JOB_ANALYSIS_BASE_URL = 'http://127.0.0.1:9091'
 
-const request = axios.create({
-  baseURL: JOB_ANALYSIS_BASE_URL,
-  timeout: 60000
-})
-
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
 export interface NameValueItem {
   name: string
@@ -57,11 +46,17 @@ export interface AiRecommendData {
 }
 
 export function getJobDashboard (params: DashboardQuery) {
-  return request.get<ApiResponse<DashboardData>>('/api/common/job-analysis/dashboard', {
-    params
+  return request.get<DashboardData>({
+    url: '/api/common/job-analysis/dashboard',
+    params,
+    timeout: 60000
   })
 }
 
 export function getJobAiRecommend (data: AiRecommendRequest) {
-  return request.post<ApiResponse<AiRecommendData>>('/api/common/job-analysis/ai-recommend', data)
+  return request.post<AiRecommendData>({
+    url: '/api/common/job-analysis/ai-recommend',
+    data,
+    timeout: 120000
+  })
 }

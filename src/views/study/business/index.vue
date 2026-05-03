@@ -290,6 +290,7 @@
     generateBusinessPlan,
     generateBusinessPlanImages,
     exportBusinessPlanPdf,
+    previewBusinessPlanImage,
     type BusinessPlanForm,
     type BusinessPlanResult
   } from '@/api/business-plan'
@@ -348,9 +349,7 @@
     businessModel: [{ required: true, message: '请输入商业模式', trigger: 'blur' }]
   }
 
-  const getPreviewImage = (url: string) => {
-    return `http://localhost:9091/api/common/business-plan/preview-image?url=${encodeURIComponent(url)}`
-  }
+  const getPreviewImage = (url: string) => previewBusinessPlanImage(url)
 
   const handleGenerateImages = async (fromGenerate = false) => {
     if (!result.projectName || !result.imagePrompts?.length) {
@@ -368,17 +367,12 @@
         loadingText.value = '正在生成项目配图，请稍候...'
       }
 
-      const { data } = await generateBusinessPlanImages({
+      const data = await generateBusinessPlanImages({
         projectName: result.projectName,
         imagePrompts: result.imagePrompts
       })
 
-      if (String(data.code) !== '200') {
-        ElMessage.error(data.msg || '图片生成失败')
-        return
-      }
-
-      result.imageUrls = data.data?.imageUrls || []
+      result.imageUrls = data?.imageUrls || []
 
       if (!fromGenerate) {
         if (result.imageUrls.length > 0) {
@@ -416,14 +410,9 @@
 
       loadingText.value = '正在生成商业计划书，请稍候...'
 
-      const { data } = await generateBusinessPlan({ ...form })
+      const data = await generateBusinessPlan({ ...form })
 
-      if (String(data.code) !== '200') {
-        ElMessage.error(data.msg || '生成失败')
-        return
-      }
-
-      Object.assign(result, createEmptyResult(), data.data || {})
+      Object.assign(result, createEmptyResult(), data || {})
 
       loadingText.value = '计划书生成完成，正在整理展示内容...'
       await new Promise((resolve) => setTimeout(resolve, 300))
@@ -453,7 +442,7 @@
     try {
       exportingPdf.value = true
 
-      const { data } = await exportBusinessPlanPdf({
+      const data = await exportBusinessPlanPdf({
         projectName: result.projectName,
         summary: result.summary,
         marketAnalysis: result.marketAnalysis,

@@ -1,17 +1,6 @@
-import axios from 'axios'
+import request from '@/utils/http'
 
-export const JOB_SKILL_GRAPH_BASE_URL = 'http://127.0.0.1:9091'
 
-const request = axios.create({
-  baseURL: JOB_SKILL_GRAPH_BASE_URL,
-  timeout: 60000
-})
-
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
 export interface NameValueItem {
   name: string
@@ -100,25 +89,40 @@ export interface NodeRelationQuery {
 }
 
 export function getJobSkillGraphOptions () {
-  return request.get<ApiResponse<GraphOptionsData>>('/api/common/job-skill-graph/options')
+  return request.get<GraphOptionsData>({
+    url: '/api/common/job-skill-graph/options',
+    timeout: 60000
+  })
 }
 
 export function getJobSkillGraphData (params: GraphQueryParams) {
-  return request.get<ApiResponse<GraphData>>('/api/common/job-skill-graph/graph', {
-    params
+  return request.get<GraphData>({
+    url: '/api/common/job-skill-graph/graph',
+    params,
+    timeout: 60000
   })
 }
 
 export function getJobSkillRecommend (data: RecommendRequest) {
-  return request.post<ApiResponse<RecommendData>>('/api/common/job-skill-graph/recommend', data)
+  return request.post<RecommendData>({
+    url: '/api/common/job-skill-graph/recommend',
+    data,
+    timeout: 120000
+  })
 }
 
 export function enhanceJobSkillRelations (data: RelationEnhanceRequest) {
-  return request.post<ApiResponse<GraphLinkItem[]>>('/api/common/job-skill-graph/relation-enhance', data)
+  return request.post<GraphLinkItem[]>({
+    url: '/api/common/job-skill-graph/relation-enhance',
+    data,
+    timeout: 120000
+  })
 }
 
 export function getJobSkillNodeRelations (params: NodeRelationQuery) {
-  return request.get<ApiResponse<NodeRelationData>>('/api/common/job-skill-graph/node-relations', {
-    params
+  return request.get<NodeRelationData>({
+    url: '/api/common/job-skill-graph/node-relations',
+    params,
+    timeout: 60000
   })
 }

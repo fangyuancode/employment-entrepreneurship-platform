@@ -390,12 +390,8 @@
     }
     analyzeLoading.value = true
     try {
-      const { data } = await analyzeVisionImage(analyzeFile.value)
-      if (Number(data.code) !== 200 || !data.data) {
-        ElMessage.error(data.msg || '图像分析失败')
-        return
-      }
-      Object.assign(analyzeResult, data.data)
+      const data = await analyzeVisionImage(analyzeFile.value)
+      Object.assign(analyzeResult, data)
       ElMessage.success('图像视觉分析完成')
     } catch (error: any) {
       ElMessage.error(error?.response?.data?.msg || error?.message || '图像视觉分析失败')
@@ -411,12 +407,8 @@
     }
     galleryLoading.value = true
     try {
-      const { data } = await createDetectionGallery(galleryFile.value)
-      if (Number(data.code) !== 200 || !data.data) {
-        ElMessage.error(data.msg || '目标裁剪画廊生成失败')
-        return
-      }
-      Object.assign(galleryResult, data.data)
+      const data = await createDetectionGallery(galleryFile.value)
+      Object.assign(galleryResult, data)
       ElMessage.success('目标裁剪画廊生成完成')
     } catch (error: any) {
       ElMessage.error(error?.response?.data?.msg || error?.message || '目标裁剪画廊生成失败')

@@ -1,4 +1,6 @@
-import axios from 'axios'
+import request from '@/utils/http'
+import { buildJavaApiUrl } from './_base'
+
 
 export interface ProductDesignForm {
   projectName: string
@@ -39,11 +41,6 @@ export interface ProductDesignResult {
   sceneImageMap: Record<string, string>
 }
 
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
 export interface GenerateImagesRequest {
   projectName: string
@@ -55,24 +52,24 @@ export interface GenerateImagesResponse {
   sceneImageMap: Record<string, string>
 }
 
-const BASE_URL = 'http://localhost:9091/api/common/product-design'
+const API_PREFIX = '/api/common/product-design'
 
 export function generateProductDesign (data: ProductDesignForm) {
-  return axios.post<ApiResponse<ProductDesignResult>>(`${BASE_URL}/generate`, data, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.post<ProductDesignResult>({
+    url: `${API_PREFIX}/generate`,
+    data,
+    timeout: 180000
   })
 }
 
 export function generateProductDesignImages (data: GenerateImagesRequest) {
-  return axios.post<ApiResponse<GenerateImagesResponse>>(`${BASE_URL}/generate-images`, data, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.post<GenerateImagesResponse>({
+    url: `${API_PREFIX}/generate-images`,
+    data,
+    timeout: 180000
   })
 }
 
 export function previewProductDesignImage (url: string) {
-  return `${BASE_URL}/preview-image?url=${encodeURIComponent(url)}`
+  return buildJavaApiUrl(`${API_PREFIX}/preview-image?url=${encodeURIComponent(url)}`)
 }

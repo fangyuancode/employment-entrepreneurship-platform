@@ -1,26 +1,9 @@
-import axios from 'axios'
+import request from '@/utils/http'
 
-/**
- * Java 后端地址（岗位查询）
- */
-export const JOB_BASE_URL = 'http://127.0.0.1:9091'
-
-/**
- * axios 实例
- */
-const request = axios.create({
-  baseURL: JOB_BASE_URL,
-  timeout: 60000
-})
 
 /**
  * 通用返回结构
  */
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
 /**
  * 岗位实体
@@ -90,9 +73,12 @@ export interface JobOptions {
 /**
  * 分页查询岗位
  */
+
 export function getJobPage (params: JobPageParams) {
-  return request.get<ApiResponse<JobPageData>>('/api/common/job/page', {
-    params
+  return request.get<JobPageData>({
+    url: '/api/common/job/page',
+    params,
+    timeout: 60000
   })
 }
 
@@ -100,8 +86,10 @@ export function getJobPage (params: JobPageParams) {
  * 获取岗位详情
  */
 export function getJobDetail (id: number | string) {
-  return request.get<ApiResponse<JobItem>>('/api/common/job/detail', {
-    params: { id }
+  return request.get<JobItem>({
+    url: '/api/common/job/detail',
+    params: { id },
+    timeout: 60000
   })
 }
 
@@ -109,5 +97,8 @@ export function getJobDetail (id: number | string) {
  * 获取筛选项
  */
 export function getJobOptions () {
-  return request.get<ApiResponse<JobOptions>>('/api/common/job/options')
+  return request.get<JobOptions>({
+    url: '/api/common/job/options',
+    timeout: 60000
+  })
 }

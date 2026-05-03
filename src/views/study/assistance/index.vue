@@ -491,11 +491,10 @@
         loadingText.value = loadingSteps[index]
       }, 1800)
 
-      const res = await generateProductDesign({ ...form })
-      const data = res.data?.data
+      const data = await generateProductDesign({ ...form })
 
       if (!data) {
-        ElMessage.error(res.data?.msg || '生成失败')
+        ElMessage.error('生成失败')
         return
       }
 

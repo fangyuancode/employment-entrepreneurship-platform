@@ -1,4 +1,5 @@
-import axios from 'axios'
+import request from '@/utils/http'
+
 
 export interface MeetingMinutesForm {
   projectName: string
@@ -36,34 +37,32 @@ export interface MeetingEmailRequest {
   meetingData: MeetingMinutesResult
 }
 
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
-const BASE_URL = 'http://localhost:9091/api/common/meeting-minutes'
+const API_PREFIX = '/api/common/meeting-minutes'
 
 export function analyzeMeetingMinutes (data: MeetingMinutesForm) {
-  return axios.post<ApiResponse<MeetingMinutesResult>>(`${BASE_URL}/analyze`, data, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.post<MeetingMinutesResult>({
+    url: `${API_PREFIX}/analyze`,
+    data,
+    timeout: 120000
   })
 }
 
 export function sendMeetingMinutesEmail (data: MeetingEmailRequest) {
-  return axios.post<ApiResponse<string>>(`${BASE_URL}/send-email`, data, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.post<string>({
+    url: `${API_PREFIX}/send-email`,
+    data,
+    timeout: 60000,
+    showSuccessMessage: true
   })
 }
 
 export function getMeetingDemo () {
-  return axios.get<ApiResponse<{
+  return request.get<{
     meetingTitle: string
     meetingType: string
     meetingContent: string
-  }>>(`${BASE_URL}/demo`)
+  }>({
+    url: `${API_PREFIX}/demo`
+  })
 }

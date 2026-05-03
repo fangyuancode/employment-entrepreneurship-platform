@@ -1,17 +1,6 @@
-import axios from 'axios'
+import request from '@/utils/http'
 
-export const SKILL_MIGRATION_BASE_URL = 'http://127.0.0.1:9091'
 
-const request = axios.create({
-  baseURL: SKILL_MIGRATION_BASE_URL,
-  timeout: 60000
-})
-
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
 export interface SkillMigrationRequest {
   sourceJob?: string
@@ -88,9 +77,17 @@ export interface MigrationPathGraphData {
 }
 
 export function getSkillMigrationAnalyze (data: SkillMigrationRequest) {
-  return request.post<ApiResponse<SkillMigrationData>>('/api/common/skill-migration/analyze', data)
+  return request.post<SkillMigrationData>({
+    url: '/api/common/skill-migration/analyze',
+    data,
+    timeout: 120000
+  })
 }
 
 export function getSkillMigrationPathGraph (data: SkillMigrationRequest) {
-  return request.post<ApiResponse<MigrationPathGraphData>>('/api/common/skill-migration/path-graph', data)
+  return request.post<MigrationPathGraphData>({
+    url: '/api/common/skill-migration/path-graph',
+    data,
+    timeout: 120000
+  })
 }

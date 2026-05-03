@@ -411,14 +411,9 @@
       await new Promise((resolve) => setTimeout(resolve, 400))
 
       loadingText.value = '正在生成品牌名称与核心文案...'
-      const { data } = await generateBrandCopywriting({ ...form })
+      const data = await generateBrandCopywriting({ ...form })
 
-      if (String(data.code) !== '200') {
-        ElMessage.error(data.msg || '生成失败')
-        return
-      }
-
-      Object.assign(result, createEmptyResult(), data.data || {})
+      Object.assign(result, createEmptyResult(), data || {})
 
       if (!result.sceneImageMap || Object.keys(result.sceneImageMap).length === 0) {
         result.sceneImageMap = buildSceneImageMap(result.imageUrls || [])
@@ -449,18 +444,13 @@
     try {
       generatingImages.value = true
 
-      const { data } = await generateBrandImages({
+      const data = await generateBrandImages({
         projectName: result.projectName,
         imagePrompts: result.imagePrompts
       })
 
-      if (String(data.code) !== '200') {
-        ElMessage.error(data.msg || '配图生成失败')
-        return
-      }
-
-      const imageUrls = data.data?.imageUrls || []
-      const sceneImageMap = data.data?.sceneImageMap || buildSceneImageMap(imageUrls)
+      const imageUrls = data?.imageUrls || []
+      const sceneImageMap = data?.sceneImageMap || buildSceneImageMap(imageUrls)
 
       result.imageUrls = imageUrls
       result.sceneImageMap = sceneImageMap

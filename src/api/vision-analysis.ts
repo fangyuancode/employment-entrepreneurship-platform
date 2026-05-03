@@ -1,11 +1,7 @@
-import axios from 'axios'
-import { VEHICLE_BASE_URL } from './vehicle-recognition'
+import request from '@/utils/http'
+import { PYTHON_API_BASE_URL } from './_base'
 
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
+
 
 export interface DerivedImageItem {
   fileName: string
@@ -85,33 +81,26 @@ export interface VisionGalleryResponse {
   summary: string
 }
 
-const request = axios.create({
-  baseURL: VEHICLE_BASE_URL,
-  timeout: 300000
-})
-
 export function analyzeVisionImage (file: File) {
   const formData = new FormData()
   formData.append('file', file)
 
-  return request.post<ApiResponse<VisionAnalyzeResponse>>(
-    '/vision/analyze/image',
-    formData,
-    {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    }
-  )
+  return request.post<VisionAnalyzeResponse>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/vision/analyze/image',
+    data: formData,
+    timeout: 300000
+  })
 }
 
 export function createDetectionGallery (file: File) {
   const formData = new FormData()
   formData.append('file', file)
 
-  return request.post<ApiResponse<VisionGalleryResponse>>(
-    '/vision/detect/gallery',
-    formData,
-    {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    }
-  )
+  return request.post<VisionGalleryResponse>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/vision/detect/gallery',
+    data: formData,
+    timeout: 300000
+  })
 }

@@ -1,17 +1,7 @@
-import axios from 'axios'
+import request from '@/utils/http'
+import { PYTHON_API_BASE_URL, buildPythonApiUrl } from './_base'
 
-export const JOB_COLLECT_BASE_URL = 'http://127.0.0.1:5001'
 
-const request = axios.create({
-  baseURL: JOB_COLLECT_BASE_URL,
-  timeout: 600000
-})
-
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
 export interface JobCategoryItem {
   'menu-article': string
@@ -31,13 +21,22 @@ export interface FlatJobItem {
   searchCode: string
 }
 
+export const JOB_COLLECT_BASE_URL = PYTHON_API_BASE_URL
+
 export function getJobCategories () {
-  return request.get<ApiResponse<JobCategoryItem[]>>('/job-collect/categories')
+  return request.get<JobCategoryItem[]>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/job-collect/categories',
+    timeout: 600000
+  })
 }
 
 export function getFlatJobList (keyword = '') {
-  return request.get<ApiResponse<{ total: number; list: FlatJobItem[] }>>('/job-collect/flat-list', {
-    params: { keyword }
+  return request.get<{ total: number; list: FlatJobItem[] }>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/job-collect/flat-list',
+    params: { keyword },
+    timeout: 600000
   })
 }
 
@@ -49,19 +48,31 @@ export function crawlOneJob (data: {
   subCategory: string
   maxPages?: number
 }) {
-  return request.post('/job-collect/crawl', data)
+  return request.post<any>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/job-collect/crawl',
+    data,
+    timeout: 600000
+  })
 }
 
 export function getJobCollectResults () {
-  return request.get('/job-collect/results')
+  return request.get<{ list: any[] }>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/job-collect/results',
+    timeout: 600000
+  })
 }
 
 export function previewCollectedCsv (fileName: string) {
-  return request.get('/job-collect/preview', {
-    params: { fileName }
+  return request.get<{ list: any[] }>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/job-collect/preview',
+    params: { fileName },
+    timeout: 600000
   })
 }
 
 export function buildDownloadUrl (fileName: string) {
-  return `${JOB_COLLECT_BASE_URL}/job-collect/download/${encodeURIComponent(fileName)}`
+  return buildPythonApiUrl(`/job-collect/download/${encodeURIComponent(fileName)}`)
 }

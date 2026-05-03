@@ -348,10 +348,10 @@
 
   async function fillDemo() {
     try {
-      const res = await getMeetingDemo()
-      form.meetingTitle = res.data.data.meetingTitle
-      form.meetingType = res.data.data.meetingType
-      form.meetingContent = res.data.data.meetingContent
+      const data = await getMeetingDemo()
+      form.meetingTitle = data.meetingTitle
+      form.meetingType = data.meetingType
+      form.meetingContent = data.meetingContent
     } catch (error) {
       console.error(error)
     }
@@ -377,8 +377,7 @@
     }, 900)
 
     try {
-      const res = await analyzeMeetingMinutes({ ...form })
-      const data = res.data.data
+      const data = await analyzeMeetingMinutes({ ...form })
 
       result.projectName = data.projectName || ''
       result.meetingTitle = data.meetingTitle || ''

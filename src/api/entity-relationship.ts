@@ -1,4 +1,5 @@
-import axios from 'axios'
+import request from '@/utils/http'
+
 
 export interface EntityRelationForm {
   projectName: string
@@ -82,30 +83,29 @@ export interface EntityRelationResult {
   qaSuggestions: string[]
 }
 
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
-const BASE_URL = 'http://localhost:9091/api/common/entity-relation'
+const API_PREFIX = '/api/common/entity-relationship'
 
 export function extractEntityRelation (data: EntityRelationForm) {
-  return axios.post<ApiResponse<EntityRelationResult>>(`${BASE_URL}/extract`, data, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.post<EntityRelationResult>({
+    url: `${API_PREFIX}/extract`,
+    data,
+    timeout: 120000
   })
 }
 
 export function getEntityRelationTypes () {
-  return axios.get<ApiResponse<{
+  return request.get<{
     entityTypes: string[]
     relationTypes: string[]
     domains: string[]
-  }>>(`${BASE_URL}/types`)
+  }>({
+    url: `${API_PREFIX}/types`
+  })
 }
 
 export function getEntityRelationDemo () {
-  return axios.get<ApiResponse<{ text: string }>>(`${BASE_URL}/demo`)
+  return request.get<{ text: string }>({
+    url: `${API_PREFIX}/demo`
+  })
 }

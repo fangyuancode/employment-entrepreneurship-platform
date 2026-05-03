@@ -1,17 +1,6 @@
-import axios from 'axios'
+import request from '@/utils/http'
 
-export const JOB_SCREEN_BASE_URL = 'http://127.0.0.1:9091'
 
-const request = axios.create({
-  baseURL: JOB_SCREEN_BASE_URL,
-  timeout: 600000
-})
-
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
 export interface ScreenQuery {
   keyword?: string
@@ -116,32 +105,42 @@ export interface HighSalaryData {
 }
 
 export function getJobScreenNational (params?: ScreenQuery) {
-  return request.get<ApiResponse<NationalScreenData>>('/api/common/job-screen/national', {
-    params
+  return request.get<NationalScreenData>({
+    url: '/api/common/job-screen/national',
+    params,
+    timeout: 600000
   })
 }
 
 export function getJobScreenProvince (params?: ScreenQuery) {
-  return request.get<ApiResponse<ProvinceScreenData>>('/api/common/job-screen/province', {
-    params
+  return request.get<ProvinceScreenData>({
+    url: '/api/common/job-screen/province',
+    params,
+    timeout: 600000
   })
 }
 
 export function getJobScreenOptions (params?: ScreenQuery) {
-  return request.get<ApiResponse<ScreenOptionsData>>('/api/common/job-screen/options', {
-    params
+  return request.get<ScreenOptionsData>({
+    url: '/api/common/job-screen/options',
+    params,
+    timeout: 60000
   })
 }
 
 export function getJobScreenInsight (params?: ScreenQuery) {
-  return request.get<ApiResponse<InsightData>>('/api/common/job-screen/insight', {
-    params
+  return request.get<InsightData>({
+    url: '/api/common/job-screen/insight',
+    params,
+    timeout: 60000
   })
 }
 
 export function getJobScreenHighSalary (params?: ScreenQuery) {
-  return request.get<ApiResponse<HighSalaryData>>('/api/common/job-screen/high-salary', {
-    params
+  return request.get<HighSalaryData>({
+    url: '/api/common/job-screen/high-salary',
+    params,
+    timeout: 60000
   })
 }
 

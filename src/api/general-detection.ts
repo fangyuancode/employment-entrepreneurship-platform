@@ -1,10 +1,7 @@
-import axios from 'axios'
+import request from '@/utils/http'
+import { PYTHON_API_BASE_URL, normalizePythonMediaUrl } from './_base'
 
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
+
 
 export interface GeneralDetectionItem {
   classId: number
@@ -34,15 +31,12 @@ export interface GeneralModelCheckResponse {
   downloadUrl: string
 }
 
-export const PYTHON_BASE_URL = 'http://127.0.0.1:5001'
-
-const request = axios.create({
-  baseURL: PYTHON_BASE_URL,
-  timeout: 600000
-})
+export const PYTHON_BASE_URL = PYTHON_API_BASE_URL
 
 export function checkGeneralModel () {
-  return request.get<ApiResponse<GeneralModelCheckResponse>>('/general-detect/model/check', {
+  return request.get<GeneralModelCheckResponse>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/general-detect/model/check',
     timeout: 30000
   })
 }
@@ -52,18 +46,14 @@ export function detectGeneralImage (file: File, confidence = 0.25) {
   formData.append('file', file)
   formData.append('confidence', String(confidence))
 
-  return request.post<ApiResponse<GeneralImageDetectResponse>>('/general-detect/image', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    },
+  return request.post<GeneralImageDetectResponse>({
+    baseURL: PYTHON_API_BASE_URL,
+    url: '/general-detect/image',
+    data: formData,
     timeout: 180000
   })
 }
 
 export function buildMediaUrl (path: string) {
-  if (!path) return ''
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:')) {
-    return path
-  }
-  return `${PYTHON_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
+  return normalizePythonMediaUrl(path)
 }

@@ -212,17 +212,13 @@
   })
 
   async function loadJobList() {
-    const { data } = await getFlatJobList('')
-    if (String(data.code) === '200') {
-      jobOptions.value = data.data.list || []
-    }
+    const data = await getFlatJobList('')
+    jobOptions.value = data.list || []
   }
 
   async function loadResults() {
-    const { data } = await getJobCollectResults()
-    if (String(data.code) === '200') {
-      resultFiles.value = data.data.list || []
-    }
+    const data = await getJobCollectResults()
+    resultFiles.value = data.list || []
   }
 
   function handleJobSearch() {
@@ -291,7 +287,7 @@
 
     try {
       crawlLoading.value = true
-      const { data }: any = await crawlOneJob({
+      const data: any = await crawlOneJob({
         cityCode: form.cityCode,
         searchCode: form.searchCode,
         jobName: form.jobName,
@@ -300,14 +296,9 @@
         maxPages: form.maxPages
       })
 
-      if (String(data.code) !== '200') {
-        ElMessage.error(data.msg || '岗位采集失败')
-        return
-      }
-
-      previewRows.value = data.data.preview || []
-      latestFileName.value = data.data.csvFileName || ''
-      ElMessage.success(`采集完成，共 ${data.data.total || 0} 条`)
+      previewRows.value = data.preview || []
+      latestFileName.value = data.csvFileName || ''
+      ElMessage.success(`采集完成，共 ${data.total || 0} 条`)
       loadResults()
     } catch (e: any) {
       ElMessage.error(e?.response?.data?.msg || e?.message || '岗位采集失败')
@@ -317,11 +308,9 @@
   }
 
   async function handlePreview(fileName: string) {
-    const { data }: any = await previewCollectedCsv(fileName)
-    if (String(data.code) === '200') {
-      previewRows.value = data.data.list || []
-      latestFileName.value = fileName
-    }
+    const data: any = await previewCollectedCsv(fileName)
+    previewRows.value = data.list || []
+    latestFileName.value = fileName
   }
 
   function handleDownload(fileName: string) {

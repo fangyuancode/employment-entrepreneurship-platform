@@ -16,9 +16,15 @@ let isUnauthorizedErrorShown = false
 let unauthorizedTimer: NodeJS.Timeout | null = null
 
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
+  /** 是否显示错误提示，默认显示 */
   showErrorMessage?: boolean
+  /** 是否显示成功提示，默认不显示 */
   showSuccessMessage?: boolean
+  /** 是否返回 Axios 原始响应。文件下载、需要响应头时使用 */
+  rawResponse?: boolean
 }
+
+type MaybeBaseResponse<T> = BaseResponse<T> | T
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
 
@@ -65,10 +71,20 @@ axiosInstance.interceptors.request.use(
 )
 
 axiosInstance.interceptors.response.use(
-  (response: AxiosResponse<BaseResponse>) => {
-    const rawCode = response.data?.code
+  (response: AxiosResponse<MaybeBaseResponse<any>>) => {
+    const config = response.config as ExtendedAxiosRequestConfig
+
+    // 文件流、二进制流或调用方主动要求原始响应时，不做业务 code 判断。
+    if (config.rawResponse || isBinaryResponse(config)) return response
+
+    const payload = response.data
+
+    // 兼容没有 { code, msg, data } 包装的接口。
+    if (!isBaseResponse(payload)) return response
+
+    const rawCode = payload.code
     const code = Number(rawCode)
-    const msg = response.data?.msg
+    const msg = payload.msg
 
     if (code === ApiStatus.success) return response
     if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg)
@@ -80,6 +96,14 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(handleError(error))
   }
 )
+
+function isBinaryResponse (config: ExtendedAxiosRequestConfig) {
+  return ['blob', 'arraybuffer'].includes(String(config.responseType || ''))
+}
+
+function isBaseResponse<T = unknown> (payload: unknown): payload is BaseResponse<T> {
+  return !!payload && typeof payload === 'object' && 'code' in payload && 'data' in payload
+}
 
 function createHttpError (message: string, code: number) {
   return new HttpError(message, code)
@@ -142,7 +166,7 @@ function delay (ms: number) {
 
 async function request<T = any> (config: ExtendedAxiosRequestConfig): Promise<T> {
   if (
-    ['POST', 'PUT'].includes(config.method?.toUpperCase() || '') &&
+    ['POST', 'PUT', 'PATCH'].includes(config.method?.toUpperCase() || '') &&
     config.params &&
     !config.data
   ) {
@@ -151,13 +175,21 @@ async function request<T = any> (config: ExtendedAxiosRequestConfig): Promise<T>
   }
 
   try {
-    const res = await axiosInstance.request<BaseResponse<T>>(config)
+    const res = await axiosInstance.request<MaybeBaseResponse<T>>(config)
 
-    if (config.showSuccessMessage && res.data.msg) {
-      showSuccess(res.data.msg)
+    if (config.rawResponse) return res as unknown as T
+    if (isBinaryResponse(config)) return res.data as T
+
+    const payload = res.data
+
+    if (isBaseResponse<T>(payload)) {
+      if (config.showSuccessMessage && payload.msg) {
+        showSuccess(payload.msg)
+      }
+      return payload.data as T
     }
 
-    return res.data.data as T
+    return payload as T
   } catch (error) {
     if (error instanceof HttpError && error.code !== ApiStatus.unauthorized) {
       const showMsg = config.showErrorMessage !== false
@@ -182,6 +214,9 @@ const api = {
   },
   request<T> (config: ExtendedAxiosRequestConfig) {
     return retryRequest<T>(config)
+  },
+  blob (config: ExtendedAxiosRequestConfig) {
+    return retryRequest<Blob>({ ...config, method: config.method || 'GET', responseType: 'blob' })
   }
 }
 

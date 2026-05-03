@@ -543,14 +543,9 @@
 
     try {
       imageLoading.value = true
-      const { data } = await detectVehicleImage(imageFile.value)
+      const data = await detectVehicleImage(imageFile.value)
 
-      if (String(data.code) !== '200') {
-        ElMessage.error(data.msg || '图片识别失败')
-        return
-      }
-
-      Object.assign(imageResult, data.data)
+      Object.assign(imageResult, data)
       ElMessage.success('图片识别完成')
     } catch (error: any) {
       ElMessage.error(error?.response?.data?.msg || error?.message || '图片识别失败')
@@ -567,14 +562,9 @@
 
     try {
       videoLoading.value = true
-      const { data } = await detectVehicleVideo(videoFile.value)
+      const data = await detectVehicleVideo(videoFile.value)
 
-      if (String(data.code) !== '200') {
-        ElMessage.error(data.msg || '视频识别失败')
-        return
-      }
-
-      Object.assign(videoResult, data.data)
+      Object.assign(videoResult, data)
       ElMessage.success('视频识别完成')
     } catch (error: any) {
       ElMessage.error(error?.response?.data?.msg || error?.message || '视频识别失败')
@@ -585,13 +575,12 @@
 
   async function fetchRealtimeStatus() {
     try {
-      const { data } = await getRealtimeStatus()
-      if (String(data.code) !== '200') return
+      const data = await getRealtimeStatus()
 
-      Object.assign(realtimeStatus, data.data)
-      realtimeRunning.value = !!data.data.running
+      Object.assign(realtimeStatus, data)
+      realtimeRunning.value = !!data.running
 
-      if (data.data.running) {
+      if (data.running) {
         realtimeStreamUrl.value = buildRealtimeStreamUrl()
       }
     } catch (error) {
@@ -616,12 +605,7 @@
   async function handleStartRealtime() {
     try {
       realtimeLoading.value = true
-      const { data } = await startRealtimeDetect(cameraIndex.value)
-
-      if (String(data.code) !== '200') {
-        ElMessage.error(data.msg || '启动实时识别失败')
-        return
-      }
+      await startRealtimeDetect(cameraIndex.value)
 
       realtimeRunning.value = true
       realtimeStreamUrl.value = buildRealtimeStreamUrl()
@@ -638,12 +622,7 @@
   async function handleStopRealtime() {
     try {
       realtimeLoading.value = true
-      const { data } = await stopRealtimeDetect()
-
-      if (String(data.code) !== '200') {
-        ElMessage.error(data.msg || '停止实时识别失败')
-        return
-      }
+      await stopRealtimeDetect()
 
       realtimeRunning.value = false
       realtimeStreamUrl.value = ''

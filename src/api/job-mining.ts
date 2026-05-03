@@ -1,17 +1,6 @@
-import axios from 'axios'
+import request from '@/utils/http'
 
-export const JOB_MINING_BASE_URL = 'http://127.0.0.1:9091'
 
-const request = axios.create({
-  baseURL: JOB_MINING_BASE_URL,
-  timeout: 60000
-})
-
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
 export interface NameValueItem {
   name: string
@@ -94,15 +83,24 @@ export interface CareerPlanData {
 }
 
 export function getJobMiningOverview (params: MiningQuery) {
-  return request.get<ApiResponse<MiningOverviewData>>('/api/common/job-mining/overview', {
-    params
+  return request.get<MiningOverviewData>({
+    url: '/api/common/job-mining/overview',
+    params,
+    timeout: 60000
   })
 }
 
 export function getJobMiningOptions () {
-  return request.get<ApiResponse<MiningOptions>>('/api/common/job-mining/options')
+  return request.get<MiningOptions>({
+    url: '/api/common/job-mining/options',
+    timeout: 60000
+  })
 }
 
 export function getCareerPlan (data: CareerPlanRequest) {
-  return request.post<ApiResponse<CareerPlanData>>('/api/common/job-mining/career-plan', data)
+  return request.post<CareerPlanData>({
+    url: '/api/common/job-mining/career-plan',
+    data,
+    timeout: 120000
+  })
 }

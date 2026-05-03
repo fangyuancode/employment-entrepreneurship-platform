@@ -609,8 +609,7 @@
 
   const loadOptions = async () => {
     try {
-      const res = await getJobMiningOptions()
-      const data = res?.data?.data || {}
+      const data = await getJobMiningOptions() || {}
       options.cities = data.cities || []
       options.categories = data.categories || []
       options.degrees = data.degrees || []
@@ -623,8 +622,7 @@
   const loadOverview = async () => {
     loading.value = true
     try {
-      const res = await getJobMiningOverview({ ...queryForm })
-      const data = res?.data?.data || {}
+      const data = await getJobMiningOverview({ ...queryForm }) || {}
 
       overview.metrics = data.metrics || {
         jobCount: 0,
@@ -658,8 +656,7 @@
   const loadCareerPlan = async () => {
     careerLoading.value = true
     try {
-      const res = await getCareerPlan({ ...careerForm })
-      const data = res?.data?.data || {}
+      const data = await getCareerPlan({ ...careerForm }) || {}
 
       careerResult.targetJob = data.targetJob || ''
       careerResult.matchScore = data.matchScore || 0

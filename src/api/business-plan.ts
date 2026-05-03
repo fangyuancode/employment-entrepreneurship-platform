@@ -1,4 +1,6 @@
-import axios from 'axios'
+import request from '@/utils/http'
+import { buildJavaApiUrl } from './_base'
+
 
 export interface BusinessPlanForm {
   projectName: string
@@ -34,11 +36,6 @@ export interface BusinessPlanResult {
   imageUrls: string[]
 }
 
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
 export interface GenerateImagesRequest {
   projectName: string
@@ -49,23 +46,24 @@ export interface GenerateImagesResponse {
   imageUrls: string[]
 }
 
-const BASE_URL = 'http://localhost:9091/api/common/business-plan'
+const API_PREFIX = '/api/common/business-plan'
 
 export function generateBusinessPlan (data: BusinessPlanForm) {
-  return axios.post<ApiResponse<BusinessPlanResult>>(`${BASE_URL}/generate`, data, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.post<BusinessPlanResult>({
+    url: `${API_PREFIX}/generate`,
+    data,
+    timeout: 180000
   })
 }
 
 export function generateBusinessPlanImages (data: GenerateImagesRequest) {
-  return axios.post<ApiResponse<GenerateImagesResponse>>(`${BASE_URL}/generate-images`, data, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.post<GenerateImagesResponse>({
+    url: `${API_PREFIX}/generate-images`,
+    data,
+    timeout: 180000
   })
 }
+
 export interface BusinessPlanPdfRequest {
   projectName: string
   summary: string
@@ -82,11 +80,16 @@ export interface BusinessPlanPdfRequest {
   imageUrls: string[]
 }
 
+
+export function previewBusinessPlanImage (url: string) {
+  return buildJavaApiUrl(`${API_PREFIX}/preview-image?url=${encodeURIComponent(url)}`)
+}
+
 export function exportBusinessPlanPdf (data: BusinessPlanPdfRequest) {
-  return axios.post(`${BASE_URL}/export-pdf`, data, {
-    responseType: 'blob',
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.blob({
+    url: `${API_PREFIX}/export-pdf`,
+    method: 'POST',
+    data,
+    timeout: 180000
   })
 }

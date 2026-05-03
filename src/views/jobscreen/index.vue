@@ -375,7 +375,7 @@
         degree: queryForm.degree,
         experience: queryForm.experience
       })
-      provinceOptions.value = res.data?.data?.provinces || []
+      provinceOptions.value = res?.provinces || []
     } catch (error) {
       provinceOptions.value = []
     }
@@ -395,8 +395,8 @@
       getJobScreenHighSalary(params)
     ])
 
-    insightData.value = insightRes.data.data
-    highSalaryData.value = highSalaryRes.data.data
+    insightData.value = insightRes
+    highSalaryData.value = highSalaryRes
   }
 
   async function loadNational() {
@@ -415,7 +415,7 @@
         experience: queryForm.experience
       })
 
-      nationalData.value = res.data.data
+      nationalData.value = res
       provinceData.value = null
 
       await loadInsightAndHighSalary()
@@ -453,7 +453,7 @@
         province: targetProvince
       })
 
-      provinceData.value = res.data.data
+      provinceData.value = res
 
       await loadInsightAndHighSalary()
 

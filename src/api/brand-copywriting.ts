@@ -1,4 +1,6 @@
-import axios from 'axios'
+import request from '@/utils/http'
+import { buildJavaApiUrl } from './_base'
+
 
 export interface BrandCopywritingForm {
   projectName: string
@@ -37,11 +39,6 @@ export interface BrandCopywritingResult {
   sceneImageMap: Record<string, string>
 }
 
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
 export interface GenerateImagesRequest {
   projectName: string
@@ -53,24 +50,24 @@ export interface GenerateImagesResponse {
   sceneImageMap: Record<string, string>
 }
 
-const BASE_URL = 'http://localhost:9091/api/common/brand-copywriting'
+const API_PREFIX = '/api/common/brand-copywriting'
 
 export function generateBrandCopywriting (data: BrandCopywritingForm) {
-  return axios.post<ApiResponse<BrandCopywritingResult>>(`${BASE_URL}/generate`, data, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.post<BrandCopywritingResult>({
+    url: `${API_PREFIX}/generate`,
+    data,
+    timeout: 120000
   })
 }
 
 export function generateBrandImages (data: GenerateImagesRequest) {
-  return axios.post<ApiResponse<GenerateImagesResponse>>(`${BASE_URL}/generate-images`, data, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.post<GenerateImagesResponse>({
+    url: `${API_PREFIX}/generate-images`,
+    data,
+    timeout: 180000
   })
 }
 
 export function previewBrandImage (url: string) {
-  return `${BASE_URL}/preview-image?url=${encodeURIComponent(url)}`
+  return buildJavaApiUrl(`${API_PREFIX}/preview-image?url=${encodeURIComponent(url)}`)
 }

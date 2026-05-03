@@ -496,8 +496,8 @@
 
   async function fillDemo() {
     try {
-      const res = await getEntityRelationDemo()
-      form.text = res.data.data.text
+      const data = await getEntityRelationDemo()
+      form.text = data.text
     } catch (error) {
       form.text = `2026年3月，星火智创团队在兰州发布了“AI创业助手”平台。该项目由张晨与李悦联合发起，依托B站大学创新实践团队进行研发，核心技术包括大语言模型、知识图谱与多智能体协作。4月，团队与启航科技有限公司达成合作，共同推进产品上线。`
     }
@@ -505,10 +505,10 @@
 
   async function initOptions() {
     try {
-      const res = await getEntityRelationTypes()
-      entityTypeOptions.value = res.data.data.entityTypes || []
-      relationTypeOptions.value = res.data.data.relationTypes || []
-      domainOptions.value = res.data.data.domains || domainOptions.value
+      const data = await getEntityRelationTypes()
+      entityTypeOptions.value = data.entityTypes || []
+      relationTypeOptions.value = data.relationTypes || []
+      domainOptions.value = data.domains || domainOptions.value
     } catch (error) {
       console.error(error)
     }
@@ -534,8 +534,7 @@
     }, 900)
 
     try {
-      const res = await extractEntityRelation({ ...form })
-      const data = res.data.data
+      const data = await extractEntityRelation({ ...form })
 
       result.projectName = data.projectName || ''
       result.summary = data.summary || ''

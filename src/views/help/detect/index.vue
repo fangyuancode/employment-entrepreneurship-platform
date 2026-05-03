@@ -237,13 +237,9 @@
   async function handleCheckModel() {
     modelLoading.value = true
     try {
-      const { data } = await checkGeneralModel()
-      if (Number(data.code) !== 200) {
-        ElMessage.error(data.msg || '模型检查失败')
-        return
-      }
-      Object.assign(modelInfo, data.data || {})
-      ElMessage.success(data.msg || '模型已就绪')
+      const data = await checkGeneralModel()
+      Object.assign(modelInfo, data || {})
+      ElMessage.success('模型已就绪')
     } catch (error: any) {
       ElMessage.error(error?.response?.data?.msg || error?.message || '模型检查失败')
     } finally {
@@ -259,13 +255,9 @@
 
     loading.value = true
     try {
-      const { data } = await detectGeneralImage(selectedImageFile.value, confidence.value)
-      if (Number(data.code) !== 200) {
-        ElMessage.error(data.msg || '通用目标检测失败')
-        return
-      }
-      Object.assign(result, data.data || {})
-      ElMessage.success(data.msg || '通用目标检测完成')
+      const data = await detectGeneralImage(selectedImageFile.value, confidence.value)
+      Object.assign(result, data || {})
+      ElMessage.success('通用目标检测完成')
     } catch (error: any) {
       ElMessage.error(error?.response?.data?.msg || error?.message || '通用目标检测失败')
     } finally {

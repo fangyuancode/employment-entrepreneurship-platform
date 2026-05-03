@@ -1,4 +1,6 @@
-import axios from 'axios'
+import request from '@/utils/http'
+import { buildJavaApiUrl } from './_base'
+
 
 export interface PitchPptForm {
   projectName: string
@@ -35,25 +37,25 @@ export interface PitchPptResult {
   sceneImageMap: Record<string, string>
 }
 
-export interface ApiResponse<T> {
-  code: string | number
-  msg: string
-  data: T
-}
 
-const BASE_URL = 'http://localhost:9091/api/common/pitch-ppt'
+const API_PREFIX = '/api/common/pitch-ppt'
 
 export function generatePitchPpt (data: PitchPptForm) {
-  return axios.post<ApiResponse<PitchPptResult>>(`${BASE_URL}/generate`, data, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.post<PitchPptResult>({
+    url: `${API_PREFIX}/generate`,
+    data,
+    timeout: 180000
   })
 }
 
 export function previewPitchPptImage (url: string) {
-  return `${BASE_URL}/preview-image?url=${encodeURIComponent(url)}`
+  return buildJavaApiUrl(`${API_PREFIX}/preview-image?url=${encodeURIComponent(url)}`)
 }
+
+export function buildPitchPptResourceUrl (url: string) {
+  return buildJavaApiUrl(url)
+}
+
 export interface PitchPptBuildRequest {
   projectName: string
   pptSummary: string
@@ -72,9 +74,9 @@ export interface PitchPptFileResponse {
 }
 
 export function buildPitchPptFile (data: PitchPptBuildRequest) {
-  return axios.post<ApiResponse<PitchPptFileResponse>>(`${BASE_URL}/build-file`, data, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
+  return request.post<PitchPptFileResponse>({
+    url: `${API_PREFIX}/build-file`,
+    data,
+    timeout: 180000
   })
 }

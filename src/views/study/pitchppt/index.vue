@@ -329,6 +329,7 @@
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import {
     buildPitchPptFile,
+    buildPitchPptResourceUrl,
     generatePitchPpt,
     previewPitchPptImage,
     type PitchPptBuildRequest,
@@ -444,12 +445,12 @@
 
   function getFullDownloadUrl(url?: string) {
     if (!url) return ''
-    return `http://localhost:9091${url}`
+    return buildPitchPptResourceUrl(url)
   }
 
   function getPreviewUrl(url?: string) {
     if (!url) return ''
-    return `http://localhost:9091${url}`
+    return buildPitchPptResourceUrl(url)
   }
 
   async function handleGenerate() {
@@ -479,11 +480,10 @@
         loadingText.value = loadingSteps[index]
       }, 1800)
 
-      const res = await generatePitchPpt({ ...form })
-      const data = res.data?.data
+      const data = await generatePitchPpt({ ...form })
 
       if (!data) {
-        ElMessage.error(res.data?.msg || '生成失败')
+        ElMessage.error('生成失败')
         return
       }
 
@@ -533,11 +533,10 @@
         slideList: result.slideList
       }
 
-      const res = await buildPitchPptFile(payload)
-      const data = res.data?.data
+      const data = await buildPitchPptFile(payload)
 
       if (!data) {
-        ElMessage.error(res.data?.msg || 'PPT 文件生成失败')
+        ElMessage.error('PPT 文件生成失败')
         return
       }
 

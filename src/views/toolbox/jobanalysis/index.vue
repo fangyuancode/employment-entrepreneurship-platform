@@ -383,8 +383,7 @@
   const loadDashboard = async () => {
     loading.value = true
     try {
-      const res = await getJobDashboard({ ...queryForm })
-      const data = res?.data?.data || {}
+      const data = await getJobDashboard({ ...queryForm }) || {}
 
       dashboard.jobCount = data.jobCount || 0
       dashboard.companyCount = data.companyCount || 0
@@ -432,8 +431,7 @@
   const handleAiRecommend = async () => {
     aiLoading.value = true
     try {
-      const res = await getJobAiRecommend({ ...aiForm })
-      const data = res?.data?.data || {}
+      const data = await getJobAiRecommend({ ...aiForm }) || {}
 
       aiResult.targetJob = data.targetJob || ''
       aiResult.recommendedSkills = data.recommendedSkills || []

@@ -534,9 +534,8 @@
     startLoadingSteps()
 
     try {
-      const res = await getSkillMigrationAnalyze({ ...form })
+      const data = await getSkillMigrationAnalyze({ ...form })
       loadingText.value = '分析结果已返回，正在整理展示内容...'
-      const data = res?.data?.data
 
       if (!data) {
         ElMessage.error('分析结果为空')
@@ -560,8 +559,7 @@
     try {
       disposePathGraph()
 
-      const res = await getSkillMigrationPathGraph({ ...form })
-      const data = res?.data?.data
+      const data = await getSkillMigrationPathGraph({ ...form })
 
       if (!data) {
         ElMessage.error('迁移路径图谱结果为空')

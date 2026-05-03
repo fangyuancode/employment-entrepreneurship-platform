@@ -250,11 +250,11 @@
         relationDrawerVisible.value = true
 
         try {
-          const res = await getJobSkillNodeRelations({
+          const data = await getJobSkillNodeRelations({
             nodeId: node?.id,
             keyword: queryForm.keyword
           })
-          nodeRelations.value = res?.data?.data?.relations || []
+          nodeRelations.value = data?.relations || []
         } catch (error) {
           console.error('节点关系加载失败：', error)
           ElMessage.error('节点关系加载失败')
@@ -266,8 +266,7 @@
 
   const loadOptions = async () => {
     try {
-      const res = await getJobSkillGraphOptions()
-      const data = res?.data?.data || {}
+      const data = await getJobSkillGraphOptions() || {}
       options.cities = data.cities || []
       options.categoryMains = data.categoryMains || []
     } catch (error) {
@@ -279,8 +278,7 @@
   const loadGraphData = async () => {
     loading.value = true
     try {
-      const res = await getJobSkillGraphData({ ...queryForm })
-      const data = res?.data?.data || {}
+      const data = await getJobSkillGraphData({ ...queryForm }) || {}
 
       graphData.nodes = data.nodes || []
       graphData.links = data.links || []
@@ -292,11 +290,11 @@
 
       if (graphData.links.length) {
         try {
-          const enhanceRes = await enhanceJobSkillRelations({
+          const enhanceData = await enhanceJobSkillRelations({
             links: graphData.links as GraphLinkItem[],
             enableAi: true
           })
-          graphData.links = enhanceRes?.data?.data || graphData.links
+          graphData.links = enhanceData || graphData.links
         } catch (e) {
           console.warn('AI关系增强失败，已回退基础关系数据', e)
         }

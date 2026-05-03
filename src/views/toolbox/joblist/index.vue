@@ -320,8 +320,7 @@
   const getPageData = async () => {
     loading.value = true
     try {
-      const res = await getJobPage({ ...queryForm })
-      const data = res?.data?.data || {}
+      const data = await getJobPage({ ...queryForm }) || {}
 
       tableData.value = data.list || []
       total.value = data.total || 0
@@ -337,8 +336,7 @@
 
   const getOptionData = async () => {
     try {
-      const res = await getJobOptions()
-      const data = res?.data?.data || {}
+      const data = await getJobOptions() || {}
 
       options.cities = data.cities || []
       options.degrees = data.degrees || []
@@ -389,8 +387,7 @@
     detailData.value = null
 
     try {
-      const res = await getJobDetail(row.id)
-      detailData.value = res?.data?.data || null
+      detailData.value = await getJobDetail(row.id)
     } catch (error) {
       console.error('岗位详情查询失败：', error)
       ElMessage.error('岗位详情加载失败')
