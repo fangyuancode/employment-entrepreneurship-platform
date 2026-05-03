@@ -3,7 +3,7 @@
     <div class="page-header art-card">
       <div class="page-header__left">
         <div class="page-title">用户管理</div>
-        <div class="page-desc">用于查看系统用户信息、状态、角色分配与基础维护操作</div>
+        <div class="page-desc">连接后端用户表，支持用户查询、新增、编辑、删除、启停、角色分配与密码重置。</div>
       </div>
       <div class="page-header__right">
         <ElButton v-auth="'user:add'" type="primary" @click="openDialog('add')">新增用户</ElButton>
@@ -11,7 +11,7 @@
     </div>
 
     <ElRow :gutter="20" class="mb-20">
-      <ElCol :xs="24" :sm="12" :lg="6" v-for="item in statisticsCards" :key="item.label">
+      <ElCol v-for="item in statisticsCards" :key="item.label" :xs="24" :sm="12" :lg="6">
         <div class="art-card stat-card">
           <div class="stat-card__label">{{ item.label }}</div>
           <div class="stat-card__value">{{ item.value }}</div>
@@ -46,6 +46,22 @@
           </ElSelect>
         </ElFormItem>
 
+        <ElFormItem label="角色">
+          <ElSelect
+            v-model="searchForm.roleId"
+            placeholder="请选择角色"
+            clearable
+            style="width: 150px"
+          >
+            <ElOption
+              v-for="role in roleOptions"
+              :key="role.roleId"
+              :label="role.roleName"
+              :value="role.roleId"
+            />
+          </ElSelect>
+        </ElFormItem>
+
         <ElFormItem label="状态">
           <ElSelect
             v-model="searchForm.status"
@@ -60,7 +76,7 @@
 
         <ElFormItem>
           <ElSpace wrap>
-            <ElButton type="primary" @click="handleSearch">查询</ElButton>
+            <ElButton type="primary" :loading="loading" @click="handleSearch">查询</ElButton>
             <ElButton @click="handleReset">重置</ElButton>
           </ElSpace>
         </ElFormItem>
@@ -86,32 +102,43 @@
         </div>
 
         <div class="table-toolbar__right">
-          <div class="toolbar-tip">当前共 {{ filteredData.length }} 条数据</div>
+          <ElButton plain :loading="loading" @click="loadData">刷新</ElButton>
+          <div class="toolbar-tip">当前共 {{ pagination.total }} 条数据</div>
         </div>
       </div>
 
-      <ElTable :data="pagedTableData" style="width: 100%" @selection-change="handleSelectionChange">
+      <ElTable
+        v-loading="loading"
+        :data="tableData"
+        style="width: 100%"
+        row-key="id"
+        @selection-change="handleSelectionChange"
+      >
         <ElTableColumn type="selection" width="55" />
 
         <ElTableColumn label="用户信息" min-width="240">
           <template #default="{ row }">
             <div class="user-info">
               <ElAvatar :size="42" :src="row.avatar">
-                {{ row.userName?.slice(0, 1) || 'U' }}
+                {{ row.userName?.slice(0, 1)?.toUpperCase() || 'U' }}
               </ElAvatar>
               <div class="user-info__content">
                 <div class="user-info__name">{{ row.userName }}</div>
-                <div class="user-info__sub">{{ row.userEmail }}</div>
+                <div class="user-info__sub">{{ row.userEmail || '未填写邮箱' }}</div>
               </div>
             </div>
           </template>
         </ElTableColumn>
 
-        <ElTableColumn prop="nickName" label="昵称" min-width="120" />
-        <ElTableColumn prop="userGender" label="性别" width="90" />
-        <ElTableColumn prop="userPhone" label="手机号" min-width="140" />
+        <ElTableColumn prop="nickName" label="昵称" min-width="120" show-overflow-tooltip />
+        <ElTableColumn prop="userGender" label="性别" width="90">
+          <template #default="{ row }">{{ row.userGender || '-' }}</template>
+        </ElTableColumn>
+        <ElTableColumn prop="userPhone" label="手机号" min-width="140">
+          <template #default="{ row }">{{ row.userPhone || '-' }}</template>
+        </ElTableColumn>
 
-        <ElTableColumn label="角色" min-width="180">
+        <ElTableColumn label="角色" min-width="150">
           <template #default="{ row }">
             <ElSpace wrap>
               <ElTag v-for="role in row.userRoles" :key="role" effect="light" round type="info">
@@ -129,14 +156,20 @@
           </template>
         </ElTableColumn>
 
+        <ElTableColumn prop="ip" label="最近登录IP" min-width="140">
+          <template #default="{ row }">{{ row.ip || '-' }}</template>
+        </ElTableColumn>
         <ElTableColumn prop="createTime" label="创建时间" min-width="170" />
 
-        <ElTableColumn label="操作" width="220" fixed="right">
+        <ElTableColumn label="操作" width="300" fixed="right">
           <template #default="{ row }">
             <ElSpace wrap>
               <ElButton v-auth="'user:edit'" link type="primary" @click="openDialog('edit', row)">编辑</ElButton>
               <ElButton v-auth="'user:status'" link type="warning" @click="toggleUserStatus(row)">
                 {{ row.status === '1' ? '禁用' : '启用' }}
+              </ElButton>
+              <ElButton v-auth="'user:resetPassword'" link type="info" @click="handleResetPassword(row)">
+                重置密码
               </ElButton>
               <ElButton v-auth="'user:delete'" link type="danger" @click="handleDelete(row)">删除</ElButton>
             </ElSpace>
@@ -148,10 +181,12 @@
         <ElPagination
           v-model:current-page="pagination.current"
           v-model:page-size="pagination.size"
-          :page-sizes="[5, 10, 20, 50]"
+          :page-sizes="[10, 20, 50, 100]"
           background
           layout="total, sizes, prev, pager, next, jumper"
-          :total="filteredData.length"
+          :total="pagination.total"
+          @size-change="handlePageSizeChange"
+          @current-change="handleCurrentChange"
         />
       </div>
     </div>
@@ -159,10 +194,11 @@
     <ElDialog
       v-model="dialogVisible"
       :title="dialogType === 'add' ? '新增用户' : '编辑用户'"
-      width="620px"
+      width="660px"
       destroy-on-close
+      class="user-dialog"
     >
-      <ElForm ref="dialogFormRef" :model="dialogForm" :rules="dialogRules" label-width="90px">
+      <ElForm ref="dialogFormRef" :model="dialogForm" :rules="dialogRules" label-width="92px">
         <ElRow :gutter="16">
           <ElCol :span="12">
             <ElFormItem label="用户名" prop="userName">
@@ -176,7 +212,18 @@
             </ElFormItem>
           </ElCol>
 
-          <ElCol :span="12">
+          <ElCol v-if="dialogType === 'add'" :span="12">
+            <ElFormItem label="初始密码" prop="password">
+              <ElInput
+                v-model="dialogForm.password"
+                type="password"
+                show-password
+                placeholder="默认 123456"
+              />
+            </ElFormItem>
+          </ElCol>
+
+          <ElCol :span="dialogType === 'add' ? 12 : 12">
             <ElFormItem label="手机号" prop="userPhone">
               <ElInput v-model="dialogForm.userPhone" placeholder="请输入手机号" />
             </ElFormItem>
@@ -193,6 +240,7 @@
               <ElSelect
                 v-model="dialogForm.userGender"
                 placeholder="请选择性别"
+                clearable
                 style="width: 100%"
               >
                 <ElOption label="男" value="男" />
@@ -202,28 +250,23 @@
           </ElCol>
 
           <ElCol :span="12">
-            <ElFormItem label="状态" prop="status">
-              <ElSelect v-model="dialogForm.status" placeholder="请选择状态" style="width: 100%">
-                <ElOption label="启用" value="1" />
-                <ElOption label="禁用" value="0" />
+            <ElFormItem label="角色" prop="roleId">
+              <ElSelect v-model="dialogForm.roleId" placeholder="请选择角色" style="width: 100%">
+                <ElOption
+                  v-for="role in roleOptions"
+                  :key="role.roleId"
+                  :label="role.roleName"
+                  :value="role.roleId"
+                />
               </ElSelect>
             </ElFormItem>
           </ElCol>
 
-          <ElCol :span="24">
-            <ElFormItem label="角色" prop="userRoles">
-              <ElSelect
-                v-model="dialogForm.userRoles"
-                multiple
-                collapse-tags
-                collapse-tags-tooltip
-                placeholder="请选择角色"
-                style="width: 100%"
-              >
-                <ElOption label="超级管理员" value="超级管理员" />
-                <ElOption label="系统管理员" value="系统管理员" />
-                <ElOption label="产品运营" value="产品运营" />
-                <ElOption label="普通用户" value="普通用户" />
+          <ElCol :span="12">
+            <ElFormItem label="状态" prop="status">
+              <ElSelect v-model="dialogForm.status" placeholder="请选择状态" style="width: 100%">
+                <ElOption label="启用" value="1" />
+                <ElOption label="禁用" value="0" />
               </ElSelect>
             </ElFormItem>
           </ElCol>
@@ -239,7 +282,7 @@
       <template #footer>
         <ElSpace>
           <ElButton @click="dialogVisible = false">取消</ElButton>
-          <ElButton type="primary" @click="handleDialogSubmit">确定</ElButton>
+          <ElButton type="primary" :loading="submitLoading" @click="handleDialogSubmit">确定</ElButton>
         </ElSpace>
       </template>
     </ElDialog>
@@ -247,203 +290,131 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref } from 'vue'
+  import { computed, onMounted, reactive, ref } from 'vue'
   import type { FormInstance, FormRules } from 'element-plus'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import {
+    fetchAddUser,
+    fetchBatchDeleteUsers,
+    fetchDeleteUser,
+    fetchGetRoleOptions,
+    fetchGetUserList,
+    fetchGetUserStatistics,
+    fetchResetUserPassword,
+    fetchUpdateUser,
+    fetchUpdateUserStatus
+  } from '@/api/system-manage'
 
   defineOptions({ name: 'User' })
 
   type UserItem = Api.SystemManage.UserListItem
   type DialogType = 'add' | 'edit'
 
-  const createMockUsers = (): UserItem[] => [
-    {
-      id: 1,
-      avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=ZhangSan',
-      status: '1',
-      userName: 'zhangsan',
-      userGender: '男',
-      nickName: '张三',
-      userPhone: '13812340001',
-      userEmail: 'zhangsan@example.com',
-      userRoles: ['超级管理员', '系统管理员'],
-      createBy: 'system',
-      createTime: '2026-04-10 09:20:12',
-      updateBy: 'system',
-      updateTime: '2026-04-14 10:00:00'
-    },
-    {
-      id: 2,
-      avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=LiSi',
-      status: '1',
-      userName: 'lisi',
-      userGender: '女',
-      nickName: '李四',
-      userPhone: '13812340002',
-      userEmail: 'lisi@example.com',
-      userRoles: ['产品运营'],
-      createBy: 'admin',
-      createTime: '2026-04-09 14:10:33',
-      updateBy: 'admin',
-      updateTime: '2026-04-13 15:20:00'
-    },
-    {
-      id: 3,
-      avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=WangWu',
-      status: '0',
-      userName: 'wangwu',
-      userGender: '男',
-      nickName: '王五',
-      userPhone: '13812340003',
-      userEmail: 'wangwu@example.com',
-      userRoles: ['普通用户'],
-      createBy: 'admin',
-      createTime: '2026-04-08 11:05:22',
-      updateBy: 'admin',
-      updateTime: '2026-04-12 12:30:00'
-    },
-    {
-      id: 4,
-      avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=ZhaoLiu',
-      status: '1',
-      userName: 'zhaoliu',
-      userGender: '女',
-      nickName: '赵六',
-      userPhone: '13812340004',
-      userEmail: 'zhaoliu@example.com',
-      userRoles: ['系统管理员', '产品运营'],
-      createBy: 'system',
-      createTime: '2026-04-07 16:15:48',
-      updateBy: 'system',
-      updateTime: '2026-04-11 09:16:00'
-    },
-    {
-      id: 5,
-      avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=SunQi',
-      status: '1',
-      userName: 'sunqi',
-      userGender: '男',
-      nickName: '孙七',
-      userPhone: '13812340005',
-      userEmail: 'sunqi@example.com',
-      userRoles: ['普通用户'],
-      createBy: 'admin',
-      createTime: '2026-04-06 08:42:19',
-      updateBy: 'admin',
-      updateTime: '2026-04-10 18:22:00'
-    },
-    {
-      id: 6,
-      avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=QianBa',
-      status: '0',
-      userName: 'qianba',
-      userGender: '女',
-      nickName: '钱八',
-      userPhone: '13812340006',
-      userEmail: 'qianba@example.com',
-      userRoles: ['产品运营', '普通用户'],
-      createBy: 'system',
-      createTime: '2026-04-05 13:08:06',
-      updateBy: 'system',
-      updateTime: '2026-04-09 11:18:00'
-    }
-  ]
-
-  const tableData = ref<UserItem[]>(createMockUsers())
+  const tableData = ref<UserItem[]>([])
+  const roleOptions = ref<Api.SystemManage.RoleListItem[]>([])
   const selectedRows = ref<UserItem[]>([])
+  const loading = ref(false)
+  const submitLoading = ref(false)
 
-  const searchForm = reactive({
+  const searchForm = reactive<Api.SystemManage.UserSearchParams>({
     userName: '',
     userPhone: '',
     userEmail: '',
     userGender: '',
+    roleId: undefined,
     status: ''
   })
 
   const pagination = reactive({
     current: 1,
-    size: 10
+    size: 10,
+    total: 0
   })
 
-  const filteredData = computed(() => {
-    return tableData.value.filter((item) => {
-      const matchUserName = !searchForm.userName || item.userName.includes(searchForm.userName)
-      const matchPhone = !searchForm.userPhone || item.userPhone.includes(searchForm.userPhone)
-      const matchEmail = !searchForm.userEmail || item.userEmail.includes(searchForm.userEmail)
-      const matchGender = !searchForm.userGender || item.userGender === searchForm.userGender
-      const matchStatus = !searchForm.status || item.status === searchForm.status
-
-      return matchUserName && matchPhone && matchEmail && matchGender && matchStatus
-    })
+  const statistics = ref<Api.SystemManage.UserStatistics>({
+    total: 0,
+    enabled: 0,
+    disabled: 0,
+    admin: 0
   })
 
-  const pagedTableData = computed(() => {
-    const start = (pagination.current - 1) * pagination.size
-    const end = start + pagination.size
-    return filteredData.value.slice(start, end)
-  })
-
-  const statisticsCards = computed(() => {
-    const total = tableData.value.length
-    const enabled = tableData.value.filter((item) => item.status === '1').length
-    const disabled = tableData.value.filter((item) => item.status === '0').length
-    const admins = tableData.value.filter((item) => item.userRoles.includes('系统管理员')).length
-
-    return [
-      { label: '用户总数', value: total, extra: '系统当前已录入用户' },
-      { label: '启用用户', value: enabled, extra: '当前可正常登录使用' },
-      { label: '禁用用户', value: disabled, extra: '已被手动停用' },
-      { label: '管理员用户', value: admins, extra: '包含系统管理权限角色' }
-    ]
-  })
+  const statisticsCards = computed(() => [
+    { label: '用户总数', value: statistics.value.total, extra: '系统当前已录入用户' },
+    { label: '启用用户', value: statistics.value.enabled, extra: '当前可正常登录使用' },
+    { label: '禁用用户', value: statistics.value.disabled, extra: '已被手动停用' },
+    { label: '管理员用户', value: statistics.value.admin, extra: '超级管理员 / 系统管理员' }
+  ])
 
   const dialogVisible = ref(false)
   const dialogType = ref<DialogType>('add')
   const dialogFormRef = ref<FormInstance>()
 
-  const getDefaultDialogForm = () => ({
-    id: 0,
+  const getDefaultDialogForm = (): Api.SystemManage.UserSaveParams => ({
+    id: undefined,
     avatar: '',
     status: '1',
     userName: '',
-    userGender: '男',
+    userGender: '',
     nickName: '',
     userPhone: '',
     userEmail: '',
-    userRoles: [] as string[],
-    createBy: 'admin',
-    createTime: '',
-    updateBy: 'admin',
-    updateTime: ''
+    roleId: 3,
+    password: ''
   })
 
-  const dialogForm = reactive<UserItem>(getDefaultDialogForm())
+  const dialogForm = reactive<Api.SystemManage.UserSaveParams>(getDefaultDialogForm())
+
+  const validateOptionalPhone = (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+    if (!value || /^1[3-9]\d{9}$/.test(value)) {
+      callback()
+      return
+    }
+    callback(new Error('手机号格式不正确'))
+  }
 
   const dialogRules: FormRules = {
     userName: [
       { required: true, message: '请输入用户名', trigger: 'blur' },
-      { min: 2, max: 20, message: '用户名长度为 2-20 位', trigger: 'blur' }
+      { min: 2, max: 30, message: '用户名长度为 2-30 位', trigger: 'blur' }
     ],
     nickName: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
-    userPhone: [
-      { required: true, message: '请输入手机号', trigger: 'blur' },
-      { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
-    ],
-    userEmail: [
-      { required: true, message: '请输入邮箱', trigger: 'blur' },
-      { type: 'email', message: '邮箱格式不正确', trigger: ['blur', 'change'] }
-    ],
-    userGender: [{ required: true, message: '请选择性别', trigger: 'change' }],
-    status: [{ required: true, message: '请选择状态', trigger: 'change' }],
-    userRoles: [{ required: true, message: '请选择角色', trigger: 'change' }]
+    userPhone: [{ validator: validateOptionalPhone, trigger: 'blur' }],
+    userEmail: [{ type: 'email', message: '邮箱格式不正确', trigger: ['blur', 'change'] }],
+    roleId: [{ required: true, message: '请选择角色', trigger: 'change' }],
+    status: [{ required: true, message: '请选择状态', trigger: 'change' }]
   }
 
   const resetDialogForm = () => {
     Object.assign(dialogForm, getDefaultDialogForm())
   }
 
+  const loadRoleOptions = async () => {
+    roleOptions.value = await fetchGetRoleOptions()
+  }
+
+  const loadStatistics = async () => {
+    statistics.value = await fetchGetUserStatistics()
+  }
+
+  const loadData = async () => {
+    loading.value = true
+    try {
+      const res = await fetchGetUserList({
+        ...searchForm,
+        current: pagination.current,
+        size: pagination.size
+      })
+      tableData.value = res.records || []
+      pagination.total = Number(res.total || 0)
+      await loadStatistics()
+    } finally {
+      loading.value = false
+    }
+  }
+
   const handleSearch = () => {
     pagination.current = 1
+    loadData()
   }
 
   const handleReset = () => {
@@ -451,8 +422,21 @@
     searchForm.userPhone = ''
     searchForm.userEmail = ''
     searchForm.userGender = ''
+    searchForm.roleId = undefined
     searchForm.status = ''
     pagination.current = 1
+    loadData()
+  }
+
+  const handlePageSizeChange = (size: number) => {
+    pagination.size = size
+    pagination.current = 1
+    loadData()
+  }
+
+  const handleCurrentChange = (current: number) => {
+    pagination.current = current
+    loadData()
   }
 
   const handleSelectionChange = (rows: UserItem[]) => {
@@ -464,7 +448,18 @@
     resetDialogForm()
 
     if (type === 'edit' && row) {
-      Object.assign(dialogForm, JSON.parse(JSON.stringify(row)))
+      Object.assign(dialogForm, {
+        id: row.id,
+        avatar: row.avatar || '',
+        status: row.status || '1',
+        userName: row.userName || '',
+        userGender: row.userGender || '',
+        nickName: row.nickName || '',
+        userPhone: row.userPhone || '',
+        userEmail: row.userEmail || '',
+        roleId: row.roleId || 3,
+        password: ''
+      })
     }
 
     dialogVisible.value = true
@@ -473,68 +468,65 @@
   const handleDialogSubmit = async () => {
     if (!dialogFormRef.value) return
 
-    await dialogFormRef.value.validate((valid) => {
-      if (!valid) return
+    const valid = await dialogFormRef.value.validate().catch(() => false)
+    if (!valid) return
 
-      const now = '2026-04-15 15:30:00'
-
+    submitLoading.value = true
+    try {
       if (dialogType.value === 'add') {
-        const newItem: UserItem = {
-          ...JSON.parse(JSON.stringify(dialogForm)),
-          id: Date.now(),
-          avatar:
-            dialogForm.avatar ||
-            `https://api.dicebear.com/7.x/initials/svg?seed=${dialogForm.userName || 'User'}`,
-          createBy: 'admin',
-          createTime: now,
-          updateBy: 'admin',
-          updateTime: now
-        }
-        tableData.value.unshift(newItem)
-        ElMessage.success('新增用户成功')
+        await fetchAddUser({ ...dialogForm })
       } else {
-        const index = tableData.value.findIndex((item) => item.id === dialogForm.id)
-        if (index > -1) {
-          tableData.value[index] = {
-            ...tableData.value[index],
-            ...JSON.parse(JSON.stringify(dialogForm)),
-            avatar:
-              dialogForm.avatar ||
-              `https://api.dicebear.com/7.x/initials/svg?seed=${dialogForm.userName || 'User'}`,
-            updateBy: 'admin',
-            updateTime: now
-          }
-        }
-        ElMessage.success('编辑用户成功')
+        await fetchUpdateUser({ ...dialogForm })
       }
-
       dialogVisible.value = false
-    })
+      await loadData()
+    } finally {
+      submitLoading.value = false
+    }
   }
 
-  const toggleUserStatus = (row: UserItem) => {
-    row.status = row.status === '1' ? '0' : '1'
-    row.updateTime = '2026-04-15 15:30:00'
-    ElMessage.success(row.status === '1' ? '用户已启用' : '用户已禁用')
-  }
-
-  const handleDelete = async (row: UserItem) => {
-    await ElMessageBox.confirm(`确定删除用户 “${row.userName}” 吗？`, '删除确认', {
+  const toggleUserStatus = async (row: UserItem) => {
+    const nextStatus = row.status === '1' ? '0' : '1'
+    const actionText = nextStatus === '1' ? '启用' : '禁用'
+    await ElMessageBox.confirm(`确定${actionText}用户 “${row.userName}” 吗？`, `${actionText}确认`, {
       type: 'warning',
       confirmButtonText: '确定',
       cancelButtonText: '取消'
     })
+    await fetchUpdateUserStatus(row.id, nextStatus)
+    await loadData()
+  }
 
-    tableData.value = tableData.value.filter((item) => item.id !== row.id)
-    selectedRows.value = selectedRows.value.filter((item) => item.id !== row.id)
-    ElMessage.success('删除成功')
+  const handleResetPassword = async (row: UserItem) => {
+    await ElMessageBox.confirm(
+      `确定将用户 “${row.userName}” 的密码重置为 123456 吗？`,
+      '重置密码确认',
+      {
+        type: 'warning',
+        confirmButtonText: '确定重置',
+        cancelButtonText: '取消'
+      }
+    )
+    await fetchResetUserPassword(row.id)
+    ElMessage.success('已重置为默认密码：123456')
+  }
+
+  const handleDelete = async (row: UserItem) => {
+    await ElMessageBox.confirm(`确定删除用户 “${row.userName}” 吗？此操作不可恢复。`, '删除确认', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
+    await fetchDeleteUser(row.id)
+    selectedRows.value = []
+    await loadData()
   }
 
   const handleBatchDelete = async () => {
     if (!selectedRows.value.length) return
 
     await ElMessageBox.confirm(
-      `确定删除已选中的 ${selectedRows.value.length} 个用户吗？`,
+      `确定删除已选中的 ${selectedRows.value.length} 个用户吗？此操作不可恢复。`,
       '批量删除',
       {
         type: 'warning',
@@ -543,10 +535,9 @@
       }
     )
 
-    const ids = new Set(selectedRows.value.map((item) => item.id))
-    tableData.value = tableData.value.filter((item) => !ids.has(item.id))
+    await fetchBatchDeleteUsers(selectedRows.value.map((item) => item.id))
     selectedRows.value = []
-    ElMessage.success('批量删除成功')
+    await loadData()
   }
 
   const handleBatchEdit = () => {
@@ -554,6 +545,11 @@
       openDialog('edit', selectedRows.value[0])
     }
   }
+
+  onMounted(async () => {
+    await loadRoleOptions()
+    await loadData()
+  })
 </script>
 
 <style scoped lang="scss">
@@ -592,7 +588,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 0;
   }
 
   .stat-card__label {
@@ -619,29 +615,32 @@
   }
 
   .search-form {
-    :deep(.el-form-item) {
-      margin-bottom: 16px;
-    }
+    display: flex;
+    flex-wrap: wrap;
   }
 
   .table-card {
-    padding: 0;
-    overflow: hidden;
+    padding: 18px 20px 20px;
   }
 
   .table-toolbar {
-    padding: 18px 20px;
-    border-bottom: 1px solid var(--art-border-color);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .table-toolbar__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
 
   .toolbar-tip {
     font-size: 13px;
     color: var(--art-text-gray-500);
+    white-space: nowrap;
   }
 
   .user-info {
@@ -658,47 +657,28 @@
     font-size: 14px;
     font-weight: 600;
     color: var(--art-text-gray-900);
-    line-height: 1.5;
+    line-height: 1.4;
   }
 
   .user-info__sub {
-    font-size: 12px;
+    margin-top: 4px;
+    font-size: 13px;
     color: var(--art-text-gray-500);
-    line-height: 1.5;
-    word-break: break-all;
+    line-height: 1.4;
   }
 
   .table-pagination {
     display: flex;
     justify-content: flex-end;
-    padding: 18px 20px 20px;
-    border-top: 1px solid var(--art-border-color);
-    background: #fff;
+    margin-top: 18px;
   }
 
-  :deep(.el-table) {
-    --el-table-header-bg-color: #fafafa;
-  }
-
-  :deep(.el-table th.el-table__cell) {
-    font-weight: 600;
-    color: var(--art-text-gray-700);
-  }
-
-  :deep(.el-dialog__body) {
-    padding-top: 20px;
-    padding-bottom: 10px;
-  }
-
-  @media (max-width: 992px) {
-    .page-header {
-      flex-direction: column;
+  @media (max-width: 768px) {
+    .page-header,
+    .table-toolbar,
+    .table-toolbar__right {
       align-items: flex-start;
-    }
-
-    .table-pagination {
-      overflow-x: auto;
-      justify-content: flex-start;
+      flex-direction: column;
     }
   }
 </style>

@@ -61,6 +61,7 @@ declare namespace Api {
     }
   }
 
+
   /** 系统管理类型 */
   namespace SystemManage {
     /** 用户列表 */
@@ -76,18 +77,50 @@ declare namespace Api {
       nickName: string
       userPhone: string
       userEmail: string
+      roleId: number
+      roleName: string
       userRoles: string[]
       createBy: string
       createTime: string
       updateBy: string
       updateTime: string
+      ip?: string
+      address?: string
+      age?: number
     }
 
     /** 用户搜索参数 */
     type UserSearchParams = Partial<
-      Pick<UserListItem, 'id' | 'userName' | 'userGender' | 'userPhone' | 'userEmail' | 'status'> &
-      Api.Common.CommonSearchParams
+      Pick<
+        UserListItem,
+        'id' | 'userName' | 'userGender' | 'userPhone' | 'userEmail' | 'status' | 'roleId'
+      > &
+        Api.Common.CommonSearchParams
     >
+
+    /** 新增/编辑用户参数 */
+    interface UserSaveParams {
+      id?: number
+      userName: string
+      nickName?: string
+      userPhone?: string
+      userEmail?: string
+      userGender?: string
+      genderId?: number
+      status?: string
+      roleId?: number
+      avatar?: string
+      password?: string
+      age?: number
+    }
+
+    /** 用户统计 */
+    interface UserStatistics {
+      total: number
+      enabled: number
+      disabled: number
+      admin: number
+    }
 
     /** 角色列表 */
     type RoleList = Api.Common.PaginatedResponse<RoleListItem>
@@ -105,10 +138,85 @@ declare namespace Api {
     /** 角色搜索参数 */
     type RoleSearchParams = Partial<
       Pick<RoleListItem, 'roleId' | 'roleName' | 'roleCode' | 'description' | 'enabled'> &
-      Api.Common.CommonSearchParams & {
-        startTime: string | null
-        endTime: string | null
-      }
+        Api.Common.CommonSearchParams & {
+          startTime: string | null
+          endTime: string | null
+        }
     >
+
+
+    /** 菜单类型 */
+    type MenuType = 'directory' | 'menu' | 'button'
+
+    /** 菜单列表项 */
+    interface MenuListItem {
+      id: number
+      parentId: number | null
+      title: string
+      name: string
+      menuType: MenuType
+      path: string
+      component: string
+      permission: string
+      icon: string
+      sort: number
+      status: string
+      visible: boolean
+      keepAlive: boolean
+      isHide: boolean
+      isHideTab: boolean
+      fixedTab: boolean
+      isIframe: boolean
+      externalLink: string
+      createTime?: string
+      updateTime?: string
+      children?: MenuListItem[]
+    }
+
+    /** 菜单搜索参数 */
+    interface MenuSearchParams {
+      title?: string
+      path?: string
+      menuType?: MenuType | ''
+      status?: string
+    }
+
+    /** 新增/编辑菜单参数 */
+    interface MenuSaveParams {
+      id?: number
+      parentId?: number | null
+      title: string
+      name: string
+      menuType: MenuType
+      path?: string
+      component?: string
+      permission?: string
+      icon?: string
+      sort?: number
+      status?: string
+      visible?: boolean
+      keepAlive?: boolean
+      isHide?: boolean
+      isHideTab?: boolean
+      fixedTab?: boolean
+      isIframe?: boolean
+      externalLink?: string
+    }
+
+    /** 菜单统计 */
+    interface MenuStatistics {
+      total: number
+      directory: number
+      menu: number
+      button: number
+      enabled: number
+      disabled: number
+    }
+
+    /** 角色菜单授权参数 */
+    interface RoleMenuPermissionParams {
+      roleId: number
+      menuIds: number[]
+    }
   }
 }

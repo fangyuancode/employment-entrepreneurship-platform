@@ -2,7 +2,7 @@
   <ElDialog
     :model-value="visible"
     :title="dialogTitle"
-    width="700px"
+    width="760px"
     destroy-on-close
     @update:model-value="handleClose"
   >
@@ -14,7 +14,7 @@
       class="mb-16"
     />
 
-    <ElForm ref="formRef" :model="form" :rules="rules" label-width="92px">
+    <ElForm ref="formRef" :model="form" :rules="rules" label-width="104px">
       <ElRow :gutter="16">
         <ElCol :span="24">
           <ElFormItem label="菜单类型" prop="menuType">
@@ -28,7 +28,16 @@
 
         <ElCol :span="12">
           <ElFormItem label="名称" prop="title">
-            <ElInput v-model="form.title" placeholder="请输入菜单名称" />
+            <ElInput v-model="form.title" placeholder="如：用户管理" />
+          </ElFormItem>
+        </ElCol>
+
+        <ElCol :span="12">
+          <ElFormItem label="路由名称" prop="name">
+            <ElInput
+              v-model="form.name"
+              :placeholder="form.menuType === 'button' ? '按钮可留空' : '如：User / SystemUser'"
+            />
           </ElFormItem>
         </ElCol>
 
@@ -37,8 +46,19 @@
             <ElInputNumber
               v-model="form.sort"
               :min="1"
+              :max="9999"
               controls-position="right"
               style="width: 100%"
+            />
+          </ElFormItem>
+        </ElCol>
+
+        <ElCol :span="12">
+          <ElFormItem label="图标">
+            <ElInput
+              v-model="form.icon"
+              :disabled="form.menuType === 'button'"
+              placeholder="如：ri:user-line"
             />
           </ElFormItem>
         </ElCol>
@@ -47,20 +67,19 @@
           <ElFormItem label="路由地址" prop="path">
             <ElInput
               v-model="form.path"
-              :placeholder="form.menuType === 'button' ? '按钮类型可留空' : '如：/system 或 user'"
+              :disabled="form.menuType === 'button'"
+              :placeholder="form.parentId ? '如：user' : '如：/system'"
             />
           </ElFormItem>
         </ElCol>
 
         <ElCol :span="12">
-          <ElFormItem label="图标">
-            <ElInput v-model="form.icon" placeholder="如：ri:user-line" />
-          </ElFormItem>
-        </ElCol>
-
-        <ElCol :span="24" v-if="form.menuType !== 'button'">
           <ElFormItem label="组件路径" prop="component">
-            <ElInput v-model="form.component" placeholder="如：/system/user，目录可留空" />
+            <ElInput
+              v-model="form.component"
+              :disabled="form.menuType === 'button'"
+              :placeholder="form.menuType === 'directory' ? '目录默认 /index/index' : '如：/system/user'"
+            />
           </ElFormItem>
         </ElCol>
 
@@ -68,7 +87,17 @@
           <ElFormItem label="权限标识" prop="permission">
             <ElInput
               v-model="form.permission"
-              :placeholder="form.menuType === 'button' ? '如：user:add' : '如：SystemUser'"
+              :placeholder="form.menuType === 'button' ? '如：user:add' : '页面菜单可选，如：SystemUser'"
+            />
+          </ElFormItem>
+        </ElCol>
+
+        <ElCol :span="12">
+          <ElFormItem label="外链地址">
+            <ElInput
+              v-model="form.externalLink"
+              :disabled="form.menuType === 'button'"
+              placeholder="外链菜单可填写 https://..."
             />
           </ElFormItem>
         </ElCol>
@@ -82,16 +111,24 @@
           </ElFormItem>
         </ElCol>
 
-        <ElCol :span="12">
-          <ElFormItem label="菜单显示">
-            <ElSwitch v-model="form.visible" />
-          </ElFormItem>
-        </ElCol>
-
-        <ElCol :span="12" v-if="form.menuType !== 'button'">
-          <ElFormItem label="页面缓存">
-            <ElSwitch v-model="form.keepAlive" />
-          </ElFormItem>
+        <ElCol :span="24">
+          <div class="switch-grid">
+            <ElFormItem label="菜单显示">
+              <ElSwitch v-model="form.visible" />
+            </ElFormItem>
+            <ElFormItem v-if="form.menuType !== 'button'" label="页面缓存">
+              <ElSwitch v-model="form.keepAlive" />
+            </ElFormItem>
+            <ElFormItem v-if="form.menuType !== 'button'" label="隐藏标签">
+              <ElSwitch v-model="form.isHideTab" />
+            </ElFormItem>
+            <ElFormItem v-if="form.menuType !== 'button'" label="固定标签">
+              <ElSwitch v-model="form.fixedTab" />
+            </ElFormItem>
+            <ElFormItem v-if="form.menuType !== 'button'" label="Iframe">
+              <ElSwitch v-model="form.isIframe" />
+            </ElFormItem>
+          </div>
         </ElCol>
       </ElRow>
     </ElForm>
@@ -110,22 +147,8 @@
   import type { FormInstance, FormRules } from 'element-plus'
   import { ElMessage } from 'element-plus'
 
-  type MenuType = 'directory' | 'menu' | 'button'
-
-  interface MenuDialogForm {
-    id?: number
-    parentId: number | null
-    title: string
-    menuType: MenuType
-    path: string
-    component: string
-    permission: string
-    icon: string
-    sort: number
-    status: '1' | '0'
-    visible: boolean
-    keepAlive: boolean
-  }
+  type MenuType = Api.SystemManage.MenuType
+  type MenuDialogForm = Api.SystemManage.MenuSaveParams
 
   interface Props {
     visible: boolean
@@ -153,6 +176,7 @@
     id: undefined,
     parentId: null,
     title: '',
+    name: '',
     menuType: 'menu',
     path: '',
     component: '',
@@ -161,7 +185,12 @@
     sort: 1,
     status: '1',
     visible: true,
-    keepAlive: true
+    keepAlive: true,
+    isHide: false,
+    isHideTab: false,
+    fixedTab: false,
+    isIframe: false,
+    externalLink: ''
   })
 
   const form = reactive<MenuDialogForm>(getDefaultForm())
@@ -176,6 +205,7 @@
     }
 
     if (form.menuType !== 'button') {
+      currentRules.name = [{ required: true, message: '请输入路由名称', trigger: 'blur' }]
       currentRules.path = [{ required: true, message: '请输入路由地址', trigger: 'blur' }]
     }
 
@@ -198,20 +228,64 @@
     () => props.visible,
     (val) => {
       if (!val) return
-
       resetForm()
-
-      if (props.editData) {
-        Object.assign(form, props.editData)
-      } else if (props.parentTitle) {
-        form.menuType = props.editData?.menuType || 'menu'
-      }
+      if (props.editData) Object.assign(form, props.editData)
     },
     { immediate: true }
   )
 
+  watch(
+    () => form.menuType,
+    (type: MenuType) => {
+      if (type === 'directory' && !form.component) form.component = '/index/index'
+      if (type === 'button') {
+        form.path = ''
+        form.component = ''
+        form.icon = ''
+        form.keepAlive = false
+        form.isHideTab = false
+        form.fixedTab = false
+        form.isIframe = false
+        form.externalLink = ''
+      }
+    }
+  )
+
   const handleClose = () => {
     emit('update:visible', false)
+  }
+
+  const normalizeForm = (): MenuDialogForm => {
+    const result: MenuDialogForm = { ...form }
+
+    result.title = result.title.trim()
+    result.name = (result.name || '').trim()
+    result.path = (result.path || '').trim()
+    result.component = (result.component || '').trim()
+    result.permission = (result.permission || '').trim()
+    result.icon = (result.icon || '').trim()
+    result.externalLink = (result.externalLink || '').trim()
+    result.isHide = result.visible === false
+
+    if (result.menuType === 'directory') {
+      result.component = result.component || '/index/index'
+    }
+
+    if (result.menuType === 'button') {
+      result.name = result.name || result.permission || result.title
+      result.path = ''
+      result.component = ''
+      result.icon = ''
+      result.keepAlive = false
+      result.isHide = false
+      result.visible = true
+      result.isHideTab = false
+      result.fixedTab = false
+      result.isIframe = false
+      result.externalLink = ''
+    }
+
+    return result
   }
 
   const handleSubmit = async () => {
@@ -219,19 +293,7 @@
 
     try {
       await formRef.value.validate()
-
-      if (form.menuType === 'directory') {
-        form.component = ''
-      }
-
-      if (form.menuType === 'button') {
-        form.path = ''
-        form.component = ''
-        form.icon = ''
-        form.keepAlive = false
-      }
-
-      emit('submit', { ...form })
+      emit('submit', normalizeForm())
     } catch {
       ElMessage.error('请完善表单信息')
     }
@@ -243,8 +305,20 @@
     margin-bottom: 16px;
   }
 
+  .switch-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 12px;
+  }
+
   :deep(.el-dialog__body) {
     padding-top: 18px;
     padding-bottom: 10px;
+  }
+
+  @media (max-width: 768px) {
+    .switch-grid {
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
   }
 </style>
