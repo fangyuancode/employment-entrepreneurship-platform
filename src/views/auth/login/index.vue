@@ -29,7 +29,7 @@
                 </div>
                 <div>
                   <h3>高效进入</h3>
-                  <p>保留快捷账号选择与记住密码逻辑，降低重复输入成本。</p>
+                  <p>支持真实账号登录与权限初始化，登录后自动进入对应角色可访问页面。</p>
                 </div>
               </div>
 
@@ -39,7 +39,7 @@
                 </div>
                 <div>
                   <h3>安全验证</h3>
-                  <p>滑块验证保留，保证交互完整性与基础安全体验。</p>
+                  <p>JWT 登录态与接口拦截统一处理，避免未登录访问业务页面。</p>
                 </div>
               </div>
 
@@ -49,7 +49,7 @@
                 </div>
                 <div>
                   <h3>主流布局</h3>
-                  <p>采用当前更常见的品牌展示 + 表单卡片式布局，更舒适自然。</p>
+                  <p>角色菜单与按钮权限自动生效，新增、编辑、删除操作按权限展示。</p>
                 </div>
               </div>
             </div>
@@ -86,14 +86,7 @@
               <p class="auth-card__subtitle">{{ $t('login.subTitle') }}</p>
             </div>
 
-            <ElForm
-              ref="formRef"
-              :model="formData"
-              :rules="rules"
-              :key="formKey"
-              class="auth-form"
-              @keyup.enter="handleSubmit"
-            >
+            <ElForm ref="formRef" :model="formData" :rules="rules" :key="formKey" class="auth-form" @keyup.enter="handleSubmit">
               <!-- <ElFormItem prop="account">
                 <ElSelect v-model="formData.account" @change="setupAccount">
                   <ElOption
@@ -108,11 +101,7 @@
               </ElFormItem> -->
 
               <ElFormItem prop="username">
-                <ElInput
-                  class="auth-input"
-                  :placeholder="$t('login.placeholder.username')"
-                  v-model.trim="formData.username"
-                >
+                <ElInput class="auth-input" :placeholder="$t('login.placeholder.username')" v-model.trim="formData.username">
                   <template #prefix>
                     <ArtSvgIcon icon="ri:user-3-line" />
                   </template>
@@ -120,14 +109,7 @@
               </ElFormItem>
 
               <ElFormItem prop="password">
-                <ElInput
-                  class="auth-input"
-                  :placeholder="$t('login.placeholder.password')"
-                  v-model.trim="formData.password"
-                  type="password"
-                  autocomplete="off"
-                  show-password
-                >
+                <ElInput class="auth-input" :placeholder="$t('login.placeholder.password')" v-model.trim="formData.password" type="password" autocomplete="off" show-password>
                   <template #prefix>
                     <ArtSvgIcon icon="ri:lock-2-line" />
                   </template>
@@ -136,16 +118,7 @@
 
               <div class="auth-verify">
                 <div class="auth-verify__box" :class="{ 'is-error': !isPassing && isClickPass }">
-                  <ArtDragVerify
-                    ref="dragVerify"
-                    v-model:value="isPassing"
-                    :text="$t('login.sliderText')"
-                    textColor="var(--art-gray-700)"
-                    :successText="$t('login.sliderSuccessText')"
-                    progressBarBg="var(--main-color)"
-                    :background="isDark ? '#26272F' : '#F5F7FA'"
-                    handlerBg="var(--default-box-color)"
-                  />
+                  <ArtDragVerify ref="dragVerify" v-model:value="isPassing" :text="$t('login.sliderText')" textColor="var(--art-gray-700)" :successText="$t('login.sliderSuccessText')" progressBarBg="var(--main-color)" :background="isDark ? '#26272F' : '#F5F7FA'" handlerBg="var(--default-box-color)" />
                 </div>
                 <p class="auth-verify__error" :class="{ visible: !isPassing && isClickPass }">
                   {{ $t('login.placeholder.slider') }}
@@ -161,13 +134,7 @@
                 </RouterLink>
               </div>
 
-              <ElButton
-                class="auth-submit"
-                type="primary"
-                @click="handleSubmit"
-                :loading="loading"
-                v-ripple
-              >
+              <ElButton class="auth-submit" type="primary" @click="handleSubmit" :loading="loading" v-ripple>
                 {{ $t('login.btnText') }}
               </ElButton>
 
@@ -186,173 +153,175 @@
 </template>
 
 <script setup lang="ts">
-  import AppConfig from '@/config'
-  import { useUserStore } from '@/store/modules/user'
-  import { useI18n } from 'vue-i18n'
-  import { HttpError } from '@/utils/http/error'
-  import { fetchLogin } from '@/api/auth'
-  import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
-  import { useSettingStore } from '@/store/modules/setting'
+import AppConfig from '@/config'
+import { useUserStore } from '@/store/modules/user'
+import { useI18n } from 'vue-i18n'
+import { HttpError } from '@/utils/http/error'
+import { fetchLogin } from '@/api/auth'
+import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
+import { useSettingStore } from '@/store/modules/setting'
 
-  defineOptions({ name: 'Login' })
+defineOptions({ name: 'Login' })
 
-  const settingStore = useSettingStore()
-  const { isDark } = storeToRefs(settingStore)
-  const { t, locale } = useI18n()
-  const formKey = ref(0)
+const settingStore = useSettingStore()
+const { isDark } = storeToRefs(settingStore)
+const { t, locale } = useI18n()
+const formKey = ref(0)
 
-  watch(locale, () => {
-    formKey.value++
-  })
+watch(locale, () => {
+  formKey.value++
+})
 
-  type AccountKey = 'super' | 'admin' | 'user'
+type AccountKey = 'super' | 'admin' | 'user'
 
-  export interface Account {
-    key: AccountKey
-    label: string
-    userName: string
-    password: string
-    roles: string[]
+export interface Account {
+  key: AccountKey
+  label: string
+  userName: string
+  password: string
+  roles: string[]
+}
+
+const accounts = computed<Account[]>(() => [
+  // {
+  //   key: 'super',
+  //   label: t('login.roles.super'),
+  //   userName: 'Super',
+  //   password: '123456',
+  //   roles: ['R_SUPER']
+  // },
+  {
+    key: 'super',
+    label: t('login.roles.super'),
+    userName: 'admin',
+    password: '123456',
+    roles: ['R_SUPER']
+  },
+  {
+    key: 'admin',
+    label: t('login.roles.admin'),
+    userName: 'Admin',
+    password: '123456',
+    roles: ['R_ADMIN']
+  },
+  {
+    key: 'user',
+    label: t('login.roles.user'),
+    userName: 'User',
+    password: '123456',
+    roles: ['R_USER']
   }
+])
 
-  const accounts = computed<Account[]>(() => [
-    // {
-    //   key: 'super',
-    //   label: t('login.roles.super'),
-    //   userName: 'Super',
-    //   password: '123456',
-    //   roles: ['R_SUPER']
-    // },
-    {
-      key: 'super',
-      label: t('login.roles.super'),
-      userName: 'admin',
-      password: '123456',
-      roles: ['R_SUPER']
-    },
-    {
-      key: 'admin',
-      label: t('login.roles.admin'),
-      userName: 'Admin',
-      password: '123456',
-      roles: ['R_ADMIN']
-    },
-    {
-      key: 'user',
-      label: t('login.roles.user'),
-      userName: 'User',
-      password: '123456',
-      roles: ['R_USER']
+const dragVerify = ref()
+const userStore = useUserStore()
+const router = useRouter()
+const isPassing = ref(false)
+const isClickPass = ref(false)
+
+const systemName = AppConfig.systemInfo.name
+const formRef = ref<FormInstance>()
+
+const formData = reactive({
+  account: '',
+  username: 'admin',
+  password: '123456',
+  rememberPassword: true
+})
+
+const rules = computed<FormRules>(() => ({
+  username: [{ required: true, message: t('login.placeholder.username'), trigger: 'blur' }],
+  password: [{ required: true, message: t('login.placeholder.password'), trigger: 'blur' }]
+}))
+
+const loading = ref(false)
+
+const setupAccount = (key: AccountKey) => {
+  const selectedAccount = accounts.value.find((account: Account) => account.key === key)
+  formData.account = key
+  formData.username = selectedAccount?.userName ?? ''
+  formData.password = selectedAccount?.password ?? ''
+}
+
+const handleSubmit = async () => {
+  if (!formRef.value) return
+
+  try {
+    const valid = await formRef.value.validate()
+    if (!valid) return
+
+    if (!isPassing.value) {
+      isClickPass.value = true
+      return
     }
-  ])
 
-  const dragVerify = ref()
-  const userStore = useUserStore()
-  const router = useRouter()
-  const isPassing = ref(false)
-  const isClickPass = ref(false)
+    loading.value = true
 
-  const systemName = AppConfig.systemInfo.name
-  const formRef = ref<FormInstance>()
+    const { username, password } = formData
+    const { token, refreshToken } = await fetchLogin({
+      username,
+      password
+    })
 
-  const formData = reactive({
-    account: '',
-    username: '',
-    password: '',
-    rememberPassword: true
-  })
-
-  const rules = computed<FormRules>(() => ({
-    username: [{ required: true, message: t('login.placeholder.username'), trigger: 'blur' }],
-    password: [{ required: true, message: t('login.placeholder.password'), trigger: 'blur' }]
-  }))
-
-  const loading = ref(false)
-
-  onMounted(() => {
-    setupAccount('super')
-  })
-
-  const setupAccount = (key: AccountKey) => {
-    const selectedAccount = accounts.value.find((account: Account) => account.key === key)
-    formData.account = key
-    formData.username = selectedAccount?.userName ?? ''
-    formData.password = selectedAccount?.password ?? ''
-  }
-
-  const handleSubmit = async () => {
-    if (!formRef.value) return
-
-    try {
-      const valid = await formRef.value.validate()
-      if (!valid) return
-
-      if (!isPassing.value) {
-        isClickPass.value = true
-        return
-      }
-
-      loading.value = true
-
-      let { username, password } = formData
-      username = 'Super'
-      console.log('username', username, 'password', password)
-      const { token, refreshToken } = await fetchLogin({
-        userName: username,
-        password
-      })
-
-      if (!token) {
-        throw new Error('Login failed - no token received')
-      }
-
-      userStore.setToken(token, refreshToken)
-      userStore.setLoginStatus(true)
-
-      showLoginSuccessNotice()
-      router.push('/dashboard/console')
-    } catch (error) {
-      if (error instanceof HttpError) {
-      } else {
-        console.error('[Login] Unexpected error:', error)
-      }
-    } finally {
-      loading.value = false
-      resetDragVerify()
+    if (!token) {
+      throw new Error('Login failed - no token received')
     }
-  }
-  const backHome = () => {
-    router.push('/home')
-  }
-  const resetDragVerify = () => {
-    dragVerify.value?.reset?.()
-  }
 
-  const showLoginSuccessNotice = () => {
-    setTimeout(() => {
-      ElNotification({
-        title: t('login.success.title'),
-        type: 'success',
-        duration: 2500,
-        zIndex: 10000,
-        message: `${t('login.success.message')}, ${systemName}!`
-      })
-    }, 1000)
+    userStore.setToken(token, refreshToken)
+    userStore.setLoginStatus(true)
+
+    showLoginSuccessNotice()
+
+    const redirect = router.currentRoute.value.query.redirect
+
+    const targetPath =
+      typeof redirect === 'string' && redirect && redirect !== '/' && redirect !== '/home'
+        ? redirect
+        : '/dashboard/console'
+
+    router.replace(targetPath)
+  } catch (error) {
+    if (error instanceof HttpError) {
+    } else {
+      console.error('[Login] Unexpected error:', error)
+    }
+  } finally {
+    loading.value = false
+    resetDragVerify()
   }
+}
+const backHome = () => {
+  router.push('/home')
+}
+const resetDragVerify = () => {
+  dragVerify.value?.reset?.()
+}
+
+const showLoginSuccessNotice = () => {
+  setTimeout(() => {
+    ElNotification({
+      title: t('login.success.title'),
+      type: 'success',
+      duration: 2500,
+      zIndex: 10000,
+      message: `${t('login.success.message')}, ${systemName}!`
+    })
+  }, 1000)
+}
 </script>
 
 <style scoped>
-  @import './style.css';
+@import './style.css';
 </style>
 
 <style lang="scss" scoped>
-  :deep(.el-select__wrapper) {
-    min-height: 46px !important;
-    border-radius: 14px !important;
-  }
+:deep(.el-select__wrapper) {
+  min-height: 46px !important;
+  border-radius: 14px !important;
+}
 
-  :deep(.el-input__wrapper) {
-    min-height: 46px !important;
-    border-radius: 14px !important;
-  }
+:deep(.el-input__wrapper) {
+  min-height: 46px !important;
+  border-radius: 14px !important;
+}
 </style>

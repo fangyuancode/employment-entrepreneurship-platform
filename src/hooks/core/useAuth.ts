@@ -1,40 +1,30 @@
-
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/store/modules/user'
-import { useAppMode } from '@/hooks/core/useAppMode'
 import type { AppRouteRecord } from '@/types/router'
 
 type AuthItem = NonNullable<AppRouteRecord['meta']['authList']>[number]
 
-const userStore = useUserStore()
-
 export const useAuth = () => {
   const route = useRoute()
-  const { isFrontendMode } = useAppMode()
+  const userStore = useUserStore()
   const { info } = storeToRefs(userStore)
 
-  // 前端按钮权限（例如：['add', 'edit']）
-  const frontendAuthList = info.value?.buttons ?? []
-
-  // 后端路由 meta 配置的权限列表（例如：[{ authMark: 'add' }]）
-  const backendAuthList: AuthItem[] = Array.isArray(route.meta.authList)
-    ? (route.meta.authList as AuthItem[])
-    : []
-
   /**
-   * 检查是否拥有某权限标识（前后端模式通用）
-   * @param auth 权限标识
-   * @returns 是否有权限
+   * 检查是否拥有某权限标识。
+   * 优先使用后端 /api/user/info 返回的 buttons；如果没有 buttons，兼容当前路由 meta.authList。
    */
   const hasAuth = (auth: string): boolean => {
-    // 前端模式
-    if (isFrontendMode.value) {
-      return frontendAuthList.includes(auth)
+    const userButtons = info.value?.buttons ?? []
+    if (userButtons.length > 0) {
+      return userButtons.includes(auth)
     }
 
-    // 后端模式
-    return backendAuthList.some((item) => item?.authMark === auth)
+    const routeAuthList: AuthItem[] = Array.isArray(route.meta.authList)
+      ? (route.meta.authList as AuthItem[])
+      : []
+
+    return routeAuthList.some((item) => item?.authMark === auth)
   }
 
   return {

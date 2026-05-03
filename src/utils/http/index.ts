@@ -12,19 +12,16 @@ const MAX_RETRIES = 0
 const RETRY_DELAY = 1000
 const UNAUTHORIZED_DEBOUNCE_TIME = 3000
 
-/** 401防抖状态 */
 let isUnauthorizedErrorShown = false
 let unauthorizedTimer: NodeJS.Timeout | null = null
 
-/** 扩展 AxiosRequestConfig */
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   showErrorMessage?: boolean
   showSuccessMessage?: boolean
 }
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
-console.log("VITE_API_URL==>", VITE_API_URL);
-/** Axios实例 */
+
 const axiosInstance = axios.create({
   timeout: REQUEST_TIMEOUT,
   baseURL: VITE_API_URL,
@@ -45,11 +42,14 @@ const axiosInstance = axios.create({
   ]
 })
 
-/** 请求拦截器 */
 axiosInstance.interceptors.request.use(
   (request: InternalAxiosRequestConfig) => {
     const { accessToken } = useUserStore()
-    if (accessToken) request.headers.set('Authorization', accessToken)
+    if (accessToken) {
+      // 后端 JWTInterceptor 原先读取 token，新版同时兼容 Authorization。
+      request.headers.set('Authorization', accessToken)
+      request.headers.set('token', accessToken)
+    }
 
     if (request.data && !(request.data instanceof FormData) && !request.headers['Content-Type']) {
       request.headers.set('Content-Type', 'application/json')
@@ -64,13 +64,16 @@ axiosInstance.interceptors.request.use(
   }
 )
 
-/** 响应拦截器 */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<BaseResponse>) => {
-    const { code, msg } = response.data
+    const rawCode = response.data?.code
+    const code = Number(rawCode)
+    const msg = response.data?.msg
+
     if (code === ApiStatus.success) return response
     if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg)
-    throw createHttpError(msg || $t('httpMsg.requestFailed'), code)
+
+    throw createHttpError(msg || $t('httpMsg.requestFailed'), code || ApiStatus.error)
   },
   (error) => {
     if (error.response?.status === ApiStatus.unauthorized) handleUnauthorizedError()
@@ -78,21 +81,17 @@ axiosInstance.interceptors.response.use(
   }
 )
 
-/** 统一创建HttpError */
 function createHttpError (message: string, code: number) {
   return new HttpError(message, code)
 }
 
-/** 处理401错误（带防抖） */
 function handleUnauthorizedError (message?: string): never {
   const error = createHttpError(message || $t('httpMsg.unauthorized'), ApiStatus.unauthorized)
 
   if (!isUnauthorizedErrorShown) {
     isUnauthorizedErrorShown = true
     logOut()
-
     unauthorizedTimer = setTimeout(resetUnauthorizedError, UNAUTHORIZED_DEBOUNCE_TIME)
-
     showError(error, true)
     throw error
   }
@@ -100,21 +99,18 @@ function handleUnauthorizedError (message?: string): never {
   throw error
 }
 
-/** 重置401防抖状态 */
 function resetUnauthorizedError () {
   isUnauthorizedErrorShown = false
   if (unauthorizedTimer) clearTimeout(unauthorizedTimer)
   unauthorizedTimer = null
 }
 
-/** 退出登录函数 */
 function logOut () {
   setTimeout(() => {
     useUserStore().logOut()
   }, LOGOUT_DELAY)
 }
 
-/** 是否需要重试 */
 function shouldRetry (statusCode: number) {
   return [
     ApiStatus.requestTimeout,
@@ -125,7 +121,6 @@ function shouldRetry (statusCode: number) {
   ].includes(statusCode)
 }
 
-/** 请求重试逻辑 */
 async function retryRequest<T> (
   config: ExtendedAxiosRequestConfig,
   retries: number = MAX_RETRIES
@@ -141,14 +136,11 @@ async function retryRequest<T> (
   }
 }
 
-/** 延迟函数 */
 function delay (ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-/** 请求函数 */
 async function request<T = any> (config: ExtendedAxiosRequestConfig): Promise<T> {
-  // POST | PUT 参数自动填充
   if (
     ['POST', 'PUT'].includes(config.method?.toUpperCase() || '') &&
     config.params &&
@@ -161,7 +153,6 @@ async function request<T = any> (config: ExtendedAxiosRequestConfig): Promise<T>
   try {
     const res = await axiosInstance.request<BaseResponse<T>>(config)
 
-    // 显示成功消息
     if (config.showSuccessMessage && res.data.msg) {
       showSuccess(res.data.msg)
     }
@@ -176,7 +167,6 @@ async function request<T = any> (config: ExtendedAxiosRequestConfig): Promise<T>
   }
 }
 
-/** API方法集合 */
 const api = {
   get<T> (config: ExtendedAxiosRequestConfig) {
     return retryRequest<T>({ ...config, method: 'GET' })

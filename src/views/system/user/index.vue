@@ -6,7 +6,7 @@
         <div class="page-desc">用于查看系统用户信息、状态、角色分配与基础维护操作</div>
       </div>
       <div class="page-header__right">
-        <ElButton type="primary" @click="openDialog('add')">新增用户</ElButton>
+        <ElButton v-auth="'user:add'" type="primary" @click="openDialog('add')">新增用户</ElButton>
       </div>
     </div>
 
@@ -71,9 +71,10 @@
       <div class="table-toolbar">
         <div class="table-toolbar__left">
           <ElSpace wrap>
-            <ElButton type="primary" plain @click="openDialog('add')">新增</ElButton>
-            <ElButton :disabled="selectedRows.length !== 1" @click="handleBatchEdit">编辑</ElButton>
+            <ElButton v-auth="'user:add'" type="primary" plain @click="openDialog('add')">新增</ElButton>
+            <ElButton v-auth="'user:edit'" :disabled="selectedRows.length !== 1" @click="handleBatchEdit">编辑</ElButton>
             <ElButton
+              v-auth="'user:delete'"
               type="danger"
               plain
               :disabled="selectedRows.length === 0"
@@ -133,11 +134,11 @@
         <ElTableColumn label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <ElSpace wrap>
-              <ElButton link type="primary" @click="openDialog('edit', row)">编辑</ElButton>
-              <ElButton link type="warning" @click="toggleUserStatus(row)">
+              <ElButton v-auth="'user:edit'" link type="primary" @click="openDialog('edit', row)">编辑</ElButton>
+              <ElButton v-auth="'user:status'" link type="warning" @click="toggleUserStatus(row)">
                 {{ row.status === '1' ? '禁用' : '启用' }}
               </ElButton>
-              <ElButton link type="danger" @click="handleDelete(row)">删除</ElButton>
+              <ElButton v-auth="'user:delete'" link type="danger" @click="handleDelete(row)">删除</ElButton>
             </ElSpace>
           </template>
         </ElTableColumn>

@@ -6,7 +6,7 @@
         <div class="page-desc">维护系统菜单、页面路由、权限按钮与显示状态</div>
       </div>
       <div class="page-header__right">
-        <ElButton type="primary" @click="handleAddMenu">新增菜单</ElButton>
+        <ElButton v-auth="'menu:add'" type="primary" @click="handleAddMenu">新增菜单</ElButton>
       </div>
     </div>
 
@@ -68,7 +68,7 @@
       <div class="table-toolbar">
         <div class="table-toolbar__left">
           <ElSpace wrap>
-            <ElButton type="primary" plain @click="handleAddMenu">新增菜单</ElButton>
+            <ElButton v-auth="'menu:add'" type="primary" plain @click="handleAddMenu">新增菜单</ElButton>
             <ElButton @click="toggleExpandAll">
               {{ isExpandAll ? '收起全部' : '展开全部' }}
             </ElButton>
@@ -151,17 +151,18 @@
             <ElSpace wrap>
               <ElButton
                 v-if="row.menuType !== 'button'"
+                v-auth="'menu:add'"
                 link
                 type="primary"
                 @click="handleAddChild(row)"
               >
                 新增子项
               </ElButton>
-              <ElButton link type="primary" @click="handleEdit(row)">编辑</ElButton>
-              <ElButton link type="warning" @click="toggleStatus(row)">
+              <ElButton v-auth="'menu:edit'" link type="primary" @click="handleEdit(row)">编辑</ElButton>
+              <ElButton v-auth="'menu:status'" link type="warning" @click="toggleStatus(row)">
                 {{ row.status === '1' ? '禁用' : '启用' }}
               </ElButton>
-              <ElButton link type="danger" @click="handleDelete(row)">删除</ElButton>
+              <ElButton v-auth="'menu:delete'" link type="danger" @click="handleDelete(row)">删除</ElButton>
             </ElSpace>
           </template>
         </ElTableColumn>

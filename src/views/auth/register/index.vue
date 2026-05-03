@@ -17,8 +17,7 @@
               开始你的高效协作流程
             </h2>
             <p class="auth-hero__text">
-              注册后即可进入平台，体验商业计划书生成、品牌文案创作、会议纪要总结、
-              岗位数据分析、可视化设计等一体化能力。
+              注册后默认为普通用户角色，可体验 AI 应用与数据分析相关功能；管理员可在后台进一步分配角色与操作权限。
             </p>
 
             <div class="auth-feature-list">
@@ -28,7 +27,7 @@
                 </div>
                 <div>
                   <h3>快速注册</h3>
-                  <p>简洁字段布局，突出主要操作路径，减少视觉干扰。</p>
+                  <p>用户名、邮箱、密码校验统一处理，注册成功后直接返回登录页。</p>
                 </div>
               </div>
 
@@ -38,7 +37,7 @@
                 </div>
                 <div>
                   <h3>统一入口</h3>
-                  <p>登录、注册、找回密码保持同一视觉体系，页面切换更自然。</p>
+                  <p>账号创建后进入统一认证体系，后续由角色控制可访问菜单。</p>
                 </div>
               </div>
 
@@ -48,7 +47,7 @@
                 </div>
                 <div>
                   <h3>校验清晰</h3>
-                  <p>保留原有表单校验逻辑与跳转流程，功能完全不变。</p>
+                  <p>登录后自动获取角色和按钮权限，控制新增、编辑、删除等操作。</p>
                 </div>
               </div>
             </div>
@@ -101,6 +100,18 @@
                 >
                   <template #prefix>
                     <ArtSvgIcon icon="ri:user-3-line" />
+                  </template>
+                </ElInput>
+              </ElFormItem>
+
+              <ElFormItem prop="email">
+                <ElInput
+                  class="auth-input"
+                  v-model.trim="formData.email"
+                  placeholder="请输入邮箱（可选）"
+                >
+                  <template #prefix>
+                    <ArtSvgIcon icon="ri:mail-line" />
                   </template>
                 </ElInput>
               </ElFormItem>
@@ -173,11 +184,13 @@
   import { useI18n } from 'vue-i18n'
   import type { FormInstance, FormRules } from 'element-plus'
   import AppConfig from '@/config'
+  import { fetchRegister } from '@/api/auth'
 
   defineOptions({ name: 'Register' })
 
   interface RegisterForm {
     username: string
+    email: string
     password: string
     confirmPassword: string
     agreement: boolean
@@ -256,6 +269,7 @@
         trigger: 'blur'
       }
     ],
+    email: [{ type: 'email', message: '邮箱格式不正确', trigger: ['blur', 'change'] }],
     password: [
       { required: true, validator: validatePassword, trigger: 'blur' },
       { min: PASSWORD_MIN_LENGTH, message: t('register.rule.passwordLength'), trigger: 'blur' }
@@ -271,13 +285,17 @@
       await formRef.value.validate()
       loading.value = true
 
-      setTimeout(() => {
-        loading.value = false
-        ElMessage.success('注册成功')
-        toLogin()
-      }, REDIRECT_DELAY)
+      await fetchRegister({
+        username: formData.username,
+        password: formData.password,
+        email: formData.email || undefined
+      })
+
+      ElMessage.success('注册成功，请登录')
+      toLogin()
     } catch (error) {
-      console.error('表单验证失败:', error)
+      console.error('注册失败:', error)
+    } finally {
       loading.value = false
     }
   }

@@ -7,7 +7,7 @@ export const dashboardRoutes: AppRouteRecord = {
   meta: {
     title: 'menus.dashboard.title',
     icon: 'ri:pie-chart-line',
-    roles: ['R_SUPER', 'R_ADMIN']
+    roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
   },
   children: [
     {
@@ -17,7 +17,8 @@ export const dashboardRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.dashboard.console',
         keepAlive: false,
-        fixedTab: true
+        fixedTab: true,
+        roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
     }
   ]

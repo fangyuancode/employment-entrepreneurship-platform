@@ -17,7 +17,7 @@
       >
         <template #left>
           <ElSpace wrap>
-            <ElButton @click="showDialog('add')" v-ripple>新增角色</ElButton>
+            <ElButton v-auth="'role:add'" @click="showDialog('add')" v-ripple>新增角色</ElButton>
           </ElSpace>
         </template>
       </ArtTableHeader>
@@ -60,6 +60,7 @@
   import RoleEditDialog from './modules/role-edit-dialog.vue'
   import RolePermissionDialog from './modules/role-permission-dialog.vue'
   import { ElTag, ElMessageBox } from 'element-plus'
+  import { useAuth } from '@/hooks/core/useAuth'
 
   defineOptions({ name: 'Role' })
 
@@ -78,6 +79,7 @@
   })
 
   const showSearchBar = ref(false)
+  const { hasAuth } = useAuth()
 
   const dialogVisible = ref(false)
   const permissionDialog = ref(false)
@@ -151,38 +153,55 @@
         {
           prop: 'operation',
           label: '操作',
-          width: 80,
+          width: 96,
           fixed: 'right',
-          formatter: (row) =>
-            h('div', [
+          formatter: (row) => {
+            const list = getRoleOperationList()
+            if (!list.length) return h('span', { class: 'text-gray-400' }, '无权限')
+            return h('div', [
               h(ArtButtonMore, {
-                list: [
-                  {
-                    key: 'permission',
-                    label: '菜单权限',
-                    icon: 'ri:user-3-line'
-                  },
-                  {
-                    key: 'edit',
-                    label: '编辑角色',
-                    icon: 'ri:edit-2-line'
-                  },
-                  {
-                    key: 'delete',
-                    label: '删除角色',
-                    icon: 'ri:delete-bin-4-line',
-                    color: '#f56c6c'
-                  }
-                ],
+                list,
                 onClick: (item: ButtonMoreItem) => buttonMoreClick(item, row)
               })
             ])
+          }
         }
       ]
     }
   })
 
   const dialogType = ref<'add' | 'edit'>('add')
+
+  const getRoleOperationList = (): ButtonMoreItem[] => {
+    const list: ButtonMoreItem[] = []
+
+    if (hasAuth('role:permission')) {
+      list.push({
+        key: 'permission',
+        label: '菜单权限',
+        icon: 'ri:user-3-line'
+      })
+    }
+
+    if (hasAuth('role:edit')) {
+      list.push({
+        key: 'edit',
+        label: '编辑角色',
+        icon: 'ri:edit-2-line'
+      })
+    }
+
+    if (hasAuth('role:delete')) {
+      list.push({
+        key: 'delete',
+        label: '删除角色',
+        icon: 'ri:delete-bin-4-line',
+        color: '#f56c6c'
+      })
+    }
+
+    return list
+  }
 
   const showDialog = (type: 'add' | 'edit', row?: RoleListItem) => {
     dialogVisible.value = true

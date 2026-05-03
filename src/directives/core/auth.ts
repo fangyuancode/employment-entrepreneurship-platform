@@ -1,24 +1,29 @@
-
-
 import { router } from '@/router'
+import { useUserStore } from '@/store/modules/user'
 import { App, Directive, DirectiveBinding } from 'vue'
 
 export type AuthDirective = Directive<HTMLElement, string>
 
-function checkAuthPermission (el: HTMLElement, binding: DirectiveBinding<string>): void {
-  // 获取当前路由的权限列表
-  const authList = (router.currentRoute.value.meta.authList as Array<{ authMark: string }>) || []
+function checkAuthPermission(el: HTMLElement, binding: DirectiveBinding<string>): void {
+  const authMark = binding.value
+  if (!authMark) return
 
-  // 检查是否有对应的权限标识
-  const hasPermission = authList.some((item) => item.authMark === binding.value)
+  const userStore = useUserStore()
+  const userButtons = userStore.getUserInfo?.buttons ?? []
 
-  // 如果没有权限，移除元素
-  if (!hasPermission) {
-    removeElement(el)
+  // 后端/当前用户返回了按钮权限时，以用户按钮权限为准
+  if (userButtons.length > 0) {
+    if (!userButtons.includes(authMark)) removeElement(el)
+    return
   }
+
+  // 兼容后端菜单模式：当前路由 meta.authList 中只会包含已授权按钮
+  const authList = (router.currentRoute.value.meta.authList as Array<{ authMark: string }>) || []
+  const hasPermission = authList.some((item) => item.authMark === authMark)
+  if (!hasPermission) removeElement(el)
 }
 
-function removeElement (el: HTMLElement): void {
+function removeElement(el: HTMLElement): void {
   if (el.parentNode) {
     el.parentNode.removeChild(el)
   }
@@ -29,6 +34,6 @@ const authDirective: AuthDirective = {
   updated: checkAuthPermission
 }
 
-export function setupAuthDirective (app: App): void {
+export function setupAuthDirective(app: App): void {
   app.directive('auth', authDirective)
 }

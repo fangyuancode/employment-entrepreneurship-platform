@@ -31,14 +31,23 @@ declare namespace Api {
   namespace Auth {
     /** 登录参数 */
     interface LoginParams {
-      userName: string
+      /** 用户名 */
+      username: string
+      /** 密码 */
       password: string
+    }
+
+    /** 注册参数 */
+    interface RegisterParams {
+      username: string
+      password: string
+      email?: string
     }
 
     /** 登录响应 */
     interface LoginResponse {
       token: string
-      refreshToken: string
+      refreshToken?: string
     }
 
     /** 用户信息 */
@@ -47,7 +56,7 @@ declare namespace Api {
       roles: string[]
       userId: number
       userName: string
-      email: string
+      email?: string
       avatar?: string
     }
   }

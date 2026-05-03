@@ -3,17 +3,13 @@ import { AppRouteRecord } from '@/types/router'
 export const helpRoutes: AppRouteRecord = {
   path: '/help',
   name: 'help',
-
   component: '/index/index',
   meta: {
     title: 'menus.help.title',
-    // <i class="ri-inbox-archive-line"></i>
-    // <i class="ri-tools-line"></i>
     icon: 'ri-tools-line',
-    roles: ['R_SUPER', 'R_ADMIN']
+    roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
   },
   children: [
-
     {
       path: 'vehicle',
       name: 'vehicle',
@@ -21,7 +17,8 @@ export const helpRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.help.vehicle',
         keepAlive: false,
-        fixedTab: true
+        fixedTab: true,
+        roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
     },
     {
@@ -31,10 +28,10 @@ export const helpRoutes: AppRouteRecord = {
       meta: {
         title: '通用目标检测',
         keepAlive: false,
-        fixedTab: false
+        fixedTab: false,
+        roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
     },
-
     {
       path: 'vision',
       name: 'vision',
@@ -42,10 +39,9 @@ export const helpRoutes: AppRouteRecord = {
       meta: {
         title: '视觉分析助手',
         keepAlive: false,
-        fixedTab: true
+        fixedTab: true,
+        roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
     }
-
-
   ]
 }

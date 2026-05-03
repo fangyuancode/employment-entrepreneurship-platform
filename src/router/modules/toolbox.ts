@@ -7,7 +7,7 @@ export const toolboxRoutes: AppRouteRecord = {
   meta: {
     title: 'menus.toolbox.title',
     icon: 'ri-send-ins-line',
-    roles: ['R_SUPER', 'R_ADMIN']
+    roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
   },
   children: [
     {
@@ -17,7 +17,8 @@ export const toolboxRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.toolbox.jobcollection',
         keepAlive: false,
-        fixedTab: true
+        fixedTab: true,
+        roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
     },
     {
@@ -27,7 +28,8 @@ export const toolboxRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.toolbox.joblist',
         keepAlive: false,
-        fixedTab: true
+        fixedTab: true,
+        roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
     },
     {
@@ -37,7 +39,8 @@ export const toolboxRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.toolbox.jobanalysis',
         keepAlive: false,
-        fixedTab: true
+        fixedTab: true,
+        roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
     },
     {
@@ -47,10 +50,10 @@ export const toolboxRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.toolbox.quantity',
         keepAlive: false,
-        fixedTab: true
+        fixedTab: true,
+        roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
     },
-    // 技能迁移分析
     {
       path: 'migration',
       name: 'migration',
@@ -58,7 +61,8 @@ export const toolboxRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.toolbox.migration',
         keepAlive: false,
-        fixedTab: true
+        fixedTab: true,
+        roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
     },
     {
@@ -68,19 +72,9 @@ export const toolboxRoutes: AppRouteRecord = {
       meta: {
         title: 'menus.toolbox.jobskillgraph',
         keepAlive: false,
-        fixedTab: true
+        fixedTab: true,
+        roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
-    },
-    // {
-    //   path: 'jobskillgraphview',
-    //   name: 'jobskillgraphview',
-    //   component: '/toolbox/jobskillgraph/graph-view',
-    //   meta: {
-    //     title: 'menus.toolbox.jobskillgraphview',
-    //     keepAlive: false,
-    //     fixedTab: false,
-    //     hideInMenu: true
-    //   }
-    // }
+    }
   ]
 }
