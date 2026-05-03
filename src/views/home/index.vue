@@ -488,11 +488,10 @@ const currentCapability = computed(() => {
   return capabilityTabs.find((item) => item.key === activeCapability.value) || capabilityTabs[0]
 })
 const goBiganalysis = () => {
-  // router.push('/jobscreen')
   const url = router.resolve({
     path: '/jobscreen'
   })
-  //  console.log(url.href);  // 输出为#/test-url
+
   // 打开新窗口
   window.open(url.href)
 }
@@ -1388,7 +1387,7 @@ const goLogin = () => {
   padding: 32px 28px 28px;
   background: #0f172a;
   color: #fff;
-  border-radius: 32px 32px 0 0;
+  // border-radius: 32px 32px 0 0;
 }
 
 .footer-top {
