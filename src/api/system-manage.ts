@@ -84,6 +84,48 @@ export function fetchGetRoleOptions() {
   })
 }
 
+// 获取角色统计
+export function fetchGetRoleStatistics() {
+  return request.get<Api.SystemManage.RoleStatistics>({
+    url: '/api/role/statistics'
+  })
+}
+
+// 新增角色
+export function fetchAddRole(data: Api.SystemManage.RoleSaveParams) {
+  return request.post<string>({
+    url: '/api/role/add',
+    data,
+    showSuccessMessage: true
+  })
+}
+
+// 编辑角色
+export function fetchUpdateRole(data: Api.SystemManage.RoleSaveParams) {
+  return request.put<string>({
+    url: '/api/role/update',
+    data,
+    showSuccessMessage: true
+  })
+}
+
+// 删除角色
+export function fetchDeleteRole(roleId: number) {
+  return request.del<string>({
+    url: `/api/role/delete/${roleId}`,
+    showSuccessMessage: true
+  })
+}
+
+// 修改角色状态
+export function fetchUpdateRoleStatus(roleId: number, enabled: boolean) {
+  return request.put<string>({
+    url: `/api/role/status/${roleId}`,
+    data: { enabled },
+    showSuccessMessage: true
+  })
+}
+
 // 获取当前登录用户可访问的动态菜单路由
 export function fetchGetMenuList() {
   return request.get<AppRouteRecord[]>({

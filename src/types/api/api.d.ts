@@ -133,6 +133,24 @@ declare namespace Api {
       description: string
       enabled: boolean
       createTime: string
+      updateTime?: string
+    }
+
+    /** 新增/编辑角色参数 */
+    interface RoleSaveParams {
+      roleId?: number
+      roleName: string
+      roleCode: string
+      description?: string
+      enabled?: boolean
+    }
+
+    /** 角色统计 */
+    interface RoleStatistics {
+      total: number
+      enabled: number
+      disabled: number
+      boundUsers: number
     }
 
     /** 角色搜索参数 */

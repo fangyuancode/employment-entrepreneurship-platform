@@ -54,12 +54,12 @@
 <script setup lang="ts">
   import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchGetRoleList } from '@/api/system-manage'
+  import { fetchDeleteRole, fetchGetRoleList, fetchUpdateRoleStatus } from '@/api/system-manage'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import RoleSearch from './modules/role-search.vue'
   import RoleEditDialog from './modules/role-edit-dialog.vue'
   import RolePermissionDialog from './modules/role-permission-dialog.vue'
-  import { ElTag, ElMessageBox } from 'element-plus'
+  import { ElTag, ElMessageBox, ElMessage } from 'element-plus'
   import { useAuth } from '@/hooks/core/useAuth'
 
   defineOptions({ name: 'Role' })
@@ -191,6 +191,14 @@
       })
     }
 
+    if (hasAuth('role:status') || hasAuth('role:edit')) {
+      list.push({
+        key: 'status',
+        label: '启用/禁用',
+        icon: 'ri:switch-line'
+      })
+    }
+
     if (hasAuth('role:delete')) {
       list.push({
         key: 'delete',
@@ -233,6 +241,9 @@
       case 'delete':
         deleteRole(row)
         break
+      case 'status':
+        updateRoleStatus(row)
+        break
     }
   }
 
@@ -241,15 +252,32 @@
     currentRoleData.value = row
   }
 
-  const deleteRole = (row: RoleListItem) => {
-    ElMessageBox.confirm(`确定删除角色"${row.roleName}"吗？此操作不可恢复！`, '删除确认', {
+  const updateRoleStatus = (row: RoleListItem) => {
+    const nextEnabled = !row.enabled
+    const actionText = nextEnabled ? '启用' : '禁用'
+
+    ElMessageBox.confirm(`确定${actionText}角色“${row.roleName}”吗？`, '状态确认', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-      .then(() => {
-        // TODO: 调用删除接口
-        ElMessage.success('删除成功')
+      .then(async () => {
+        await fetchUpdateRoleStatus(row.roleId, nextEnabled)
+        refreshData()
+      })
+      .catch(() => {
+        ElMessage.info('已取消操作')
+      })
+  }
+
+  const deleteRole = (row: RoleListItem) => {
+    ElMessageBox.confirm(`确定删除角色“${row.roleName}”吗？删除前请确认没有用户正在使用该角色。`, '删除确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+      .then(async () => {
+        await fetchDeleteRole(row.roleId)
         refreshData()
       })
       .catch(() => {

@@ -40,7 +40,7 @@
             <ElTag size="small" :type="getTypeTagType(data.menuType)" effect="light">
               {{ getTypeText(data.menuType) }}
             </ElTag>
-            <span class="tree-node__title">{{ data.title }}</span>
+            <span class="tree-node__title">{{ getMenuTitle(data.title) }}</span>
             <span v-if="data.permission" class="tree-node__permission">{{ data.permission }}</span>
           </div>
         </template>
@@ -60,6 +60,7 @@
 
 <script setup lang="ts">
   import { computed, nextTick, ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import {
     fetchGetMenuPermissionTree,
@@ -79,6 +80,13 @@
   interface Emits {
     (e: 'update:modelValue', value: boolean): void
     (e: 'success'): void
+  }
+
+  const { t, te } = useI18n()
+
+  const getMenuTitle = (title?: string) => {
+    const value = title || ''
+    return te(value) ? t(value) : value
   }
 
   const props = withDefaults(defineProps<Props>(), {
