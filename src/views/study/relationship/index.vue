@@ -115,13 +115,32 @@
       </el-form>
     </div>
 
-    <div
-      ref="exportRef"
-      v-loading="loading"
-      :element-loading-text="loadingText"
-      element-loading-background="rgba(255,255,255,0.72)"
-      class="result-section"
-    >
+    <div ref="exportRef" class="result-section">
+      <div v-if="!result.summary && !loading" class="ai-state-card ai-state-empty">
+        <div class="ai-state-icon">AI</div>
+        <div class="ai-state-title">等待抽取实体关系</div>
+        <div class="ai-state-desc">输入待分析文本后，点击「开始抽取」，系统会生成摘要、实体列表、关系网络、时间线和知识图谱。</div>
+        <div class="ai-state-tips">
+          <span>实体识别</span>
+          <span>关系抽取</span>
+          <span>图谱可视化</span>
+        </div>
+      </div>
+
+      <div v-else-if="loading" class="ai-state-card ai-loading-state">
+        <div class="ai-loading-ring"></div>
+        <div class="ai-state-title">正在抽取实体关系</div>
+        <div class="ai-state-desc">{{ loadingText }}</div>
+        <div class="ai-loading-progress"><span></span></div>
+        <div class="ai-loading-steps">
+          <span>识别实体</span>
+          <span>抽取关系</span>
+          <span>整理事件</span>
+          <span>生成图谱</span>
+        </div>
+      </div>
+
+      <template v-else>
       <div class="stats-grid">
         <div class="card stat-card">
           <div class="stat-label">实体数量</div>
@@ -146,9 +165,6 @@
           <div class="section-title">摘要与关键词</div>
         </div>
 
-        <div v-if="!result.summary && !loading" class="empty-wrap">
-          <el-empty description="请先输入文本并点击“开始抽取”" />
-        </div>
 
         <template v-if="result.summary">
           <div class="summary-box">{{ result.summary }}</div>
@@ -329,6 +345,7 @@
           <div class="capability-item">支持项目人物-组织-技术三层图谱</div>
         </div>
       </div>
+      </template>
     </div>
   </div>
 </template>
@@ -1155,4 +1172,149 @@
       align-items: flex-start;
     }
   }
+
+
+/* 统一 AI 生成页：默认态 + 生成中状态 */
+.ai-state-card {
+  min-height: 460px;
+  padding: 56px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px dashed #d8e2ef;
+  border-radius: 14px;
+  box-sizing: border-box;
+}
+
+.ai-state-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #409eff;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: #ecf5ff;
+  border: 1px solid #d9ecff;
+  border-radius: 20px;
+  box-shadow: 0 10px 24px rgba(64, 158, 255, 0.12);
+}
+
+.ai-state-title {
+  margin-bottom: 8px;
+  color: #303133;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.ai-state-desc {
+  max-width: 520px;
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.ai-state-tips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.ai-state-tips span {
+  padding: 6px 12px;
+  color: #606266;
+  font-size: 13px;
+  line-height: 1;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 999px;
+}
+
+.ai-loading-state {
+  border-style: solid;
+  border-color: #d9ecff;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.ai-loading-ring {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 20px;
+  border: 4px solid #e8f3ff;
+  border-top-color: #409eff;
+  border-radius: 50%;
+  animation: aiStateSpin 1s linear infinite;
+}
+
+.ai-loading-progress {
+  width: min(360px, 80%);
+  height: 8px;
+  margin-top: 20px;
+  overflow: hidden;
+  background: #edf2f7;
+  border-radius: 999px;
+}
+
+.ai-loading-progress span {
+  display: block;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(64, 158, 255, 0.2), #409eff, rgba(64, 158, 255, 0.2));
+  border-radius: inherit;
+  animation: aiStateProgress 1.35s ease-in-out infinite;
+}
+
+.ai-loading-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.ai-loading-steps span {
+  padding: 6px 10px;
+  color: #409eff;
+  font-size: 12px;
+  background: #ecf5ff;
+  border: 1px solid #d9ecff;
+  border-radius: 999px;
+}
+
+@keyframes aiStateSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes aiStateProgress {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(240%);
+  }
+}
+
+@media (max-width: 768px) {
+  .ai-state-card {
+    min-height: 360px;
+    padding: 42px 18px;
+  }
+
+  .ai-state-tips,
+  .ai-loading-steps {
+    gap: 8px;
+  }
+}
+
 </style>

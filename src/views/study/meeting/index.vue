@@ -87,102 +87,124 @@
         </el-form>
       </div>
 
-      <div v-loading="loading" :element-loading-text="loadingText" element-loading-background="rgba(255,255,255,0.72)" class="result-area">
-        <div class="overview-grid">
-          <div class="card overview-card">
-            <div class="metric-label">关键决策</div>
-            <div class="metric-value">{{ result.keyDecisions.length }}</div>
-          </div>
-          <div class="card overview-card">
-            <div class="metric-label">待办事项</div>
-            <div class="metric-value">{{ result.actionItems.length }}</div>
-          </div>
-          <div class="card overview-card">
-            <div class="metric-label">风险提醒</div>
-            <div class="metric-value">{{ result.riskWarnings.length }}</div>
-          </div>
-          <div class="card overview-card">
-            <div class="metric-label">参会人员</div>
-            <div class="metric-value">{{ result.attendeeList.length }}</div>
+      <div class="result-area">
+        <div v-if="!result.summary && !loading" class="ai-state-card ai-state-empty">
+          <!-- <div class="ai-state-icon">AI</div>
+          <div class="ai-state-title">等待生成会议纪要</div> -->
+          <div class="ai-state-desc">填写左侧会议内容后，点击「生成会议纪要」，系统会整理总结、关键决策、待办事项、责任人与风险提醒。</div>
+          <div class="ai-state-tips">
+            <span>会议总结</span>
+            <span>任务拆解</span>
+            <span>邮件发送</span>
           </div>
         </div>
 
-        <div class="card block-card">
-          <div class="section-head">
-            <div class="section-title">会议总结</div>
-          </div>
-
-          <div v-if="!result.summary && !loading" class="empty-wrap">
-            <el-empty description="填写左侧内容后，点击“生成会议纪要”查看结果" />
-          </div>
-
-          <div v-if="result.summary" class="summary-box">
-            {{ result.summary }}
+        <div v-else-if="loading" class="ai-state-card ai-loading-state">
+          <div class="ai-loading-ring"></div>
+          <div class="ai-state-title">正在生成会议纪要</div>
+          <div class="ai-state-desc">{{ loadingText }}</div>
+          <div class="ai-loading-progress"><span></span></div>
+          <div class="ai-loading-steps">
+            <span>提取议题</span>
+            <span>识别决策</span>
+            <span>拆解任务</span>
+            <span>整理纪要</span>
           </div>
         </div>
 
-        <div class="double-grid">
-          <div class="card block-card">
-            <div class="section-head">
-              <div class="section-title">参会人员</div>
+        <template v-else>
+          <div class="overview-grid">
+            <div class="card overview-card">
+              <div class="metric-label">关键决策</div>
+              <div class="metric-value">{{ result.keyDecisions.length }}</div>
             </div>
-            <div class="tag-wrap">
-              <el-tag v-for="item in result.attendeeList" :key="item" effect="plain" round>
-                {{ item }}
-              </el-tag>
+            <div class="card overview-card">
+              <div class="metric-label">待办事项</div>
+              <div class="metric-value">{{ result.actionItems.length }}</div>
+            </div>
+            <div class="card overview-card">
+              <div class="metric-label">风险提醒</div>
+              <div class="metric-value">{{ result.riskWarnings.length }}</div>
+            </div>
+            <div class="card overview-card">
+              <div class="metric-label">参会人员</div>
+              <div class="metric-value">{{ result.attendeeList.length }}</div>
             </div>
           </div>
 
           <div class="card block-card">
             <div class="section-head">
-              <div class="section-title">关键决策</div>
+              <div class="section-title">会议总结</div>
             </div>
-            <div class="info-list">
-              <div v-for="(item, index) in result.keyDecisions" :key="index" class="info-item">
-                {{ index + 1 }}. {{ item }}
+
+            <div v-if="result.summary" class="summary-box">
+              {{ result.summary }}
+            </div>
+          </div>
+
+          <div class="double-grid">
+            <div class="card block-card">
+              <div class="section-head">
+                <div class="section-title">参会人员</div>
+              </div>
+              <div class="tag-wrap">
+                <el-tag v-for="item in result.attendeeList" :key="item" effect="plain" round>
+                  {{ item }}
+                </el-tag>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div class="card block-card">
-          <div class="section-head">
-            <div class="section-title">待办事项拆解</div>
-          </div>
-
-          <el-table :data="result.actionItems" stripe border>
-            <el-table-column prop="taskName" label="任务事项" min-width="220" />
-            <el-table-column prop="owner" label="责任人" width="120" />
-            <el-table-column prop="dueDate" label="截止时间" width="140" />
-            <el-table-column prop="priority" label="优先级" width="100" />
-            <el-table-column prop="status" label="状态" width="100" />
-            <el-table-column prop="note" label="备注" min-width="220" show-overflow-tooltip />
-          </el-table>
-        </div>
-
-        <div class="double-grid">
-          <div class="card block-card">
-            <div class="section-head">
-              <div class="section-title">风险提醒</div>
-            </div>
-            <div class="info-list risk-list">
-              <div v-for="(item, index) in result.riskWarnings" :key="index" class="info-item risk-item">
-                {{ index + 1 }}. {{ item }}
+            <div class="card block-card">
+              <div class="section-head">
+                <div class="section-title">关键决策</div>
+              </div>
+              <div class="info-list">
+                <div v-for="(item, index) in result.keyDecisions" :key="index" class="info-item">
+                  {{ index + 1 }}. {{ item }}
+                </div>
               </div>
             </div>
           </div>
 
           <div class="card block-card">
             <div class="section-head">
-              <div class="section-title">后续建议</div>
+              <div class="section-title">待办事项拆解</div>
             </div>
-            <div class="info-list">
-              <div v-for="(item, index) in result.followUpSuggestions" :key="index" class="info-item">
-                {{ index + 1 }}. {{ item }}
+
+            <el-table :data="result.actionItems" stripe border>
+              <el-table-column prop="taskName" label="任务事项" min-width="220" />
+              <el-table-column prop="owner" label="责任人" width="120" />
+              <el-table-column prop="dueDate" label="截止时间" width="140" />
+              <el-table-column prop="priority" label="优先级" width="100" />
+              <el-table-column prop="status" label="状态" width="100" />
+              <el-table-column prop="note" label="备注" min-width="220" show-overflow-tooltip />
+            </el-table>
+          </div>
+
+          <div class="double-grid">
+            <div class="card block-card">
+              <div class="section-head">
+                <div class="section-title">风险提醒</div>
+              </div>
+              <div class="info-list risk-list">
+                <div v-for="(item, index) in result.riskWarnings" :key="index" class="info-item risk-item">
+                  {{ index + 1 }}. {{ item }}
+                </div>
+              </div>
+            </div>
+
+            <div class="card block-card">
+              <div class="section-head">
+                <div class="section-title">后续建议</div>
+              </div>
+              <div class="info-list">
+                <div v-for="(item, index) in result.followUpSuggestions" :key="index" class="info-item">
+                  {{ index + 1 }}. {{ item }}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </template>
       </div>
     </div>
     <el-dialog v-model="emailDialogVisible" title="发送会议纪要邮件" width="520px">
@@ -667,5 +689,148 @@ async function handleSendEmail() {
   color: #6b7280;
   font-size: 13px;
   line-height: 1.7;
+}
+
+/* 统一 AI 生成页：默认态 + 生成中状态 */
+.ai-state-card {
+  min-height: 460px;
+  padding: 56px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px dashed #d8e2ef;
+  border-radius: 14px;
+  box-sizing: border-box;
+}
+
+.ai-state-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #409eff;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: #ecf5ff;
+  border: 1px solid #d9ecff;
+  border-radius: 20px;
+  box-shadow: 0 10px 24px rgba(64, 158, 255, 0.12);
+}
+
+.ai-state-title {
+  margin-bottom: 8px;
+  color: #303133;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.ai-state-desc {
+  max-width: 520px;
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.ai-state-tips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.ai-state-tips span {
+  padding: 6px 12px;
+  color: #606266;
+  font-size: 13px;
+  line-height: 1;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 999px;
+}
+
+.ai-loading-state {
+  border-style: solid;
+  border-color: #d9ecff;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.ai-loading-ring {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 20px;
+  border: 4px solid #e8f3ff;
+  border-top-color: #409eff;
+  border-radius: 50%;
+  animation: aiStateSpin 1s linear infinite;
+}
+
+.ai-loading-progress {
+  width: min(360px, 80%);
+  height: 8px;
+  margin-top: 20px;
+  overflow: hidden;
+  background: #edf2f7;
+  border-radius: 999px;
+}
+
+.ai-loading-progress span {
+  display: block;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(64, 158, 255, 0.2), #409eff, rgba(64, 158, 255, 0.2));
+  border-radius: inherit;
+  animation: aiStateProgress 1.35s ease-in-out infinite;
+}
+
+.ai-loading-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.ai-loading-steps span {
+  padding: 6px 10px;
+  color: #409eff;
+  font-size: 12px;
+  background: #ecf5ff;
+  border: 1px solid #d9ecff;
+  border-radius: 999px;
+}
+
+@keyframes aiStateSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes aiStateProgress {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(240%);
+  }
+}
+
+@media (max-width: 768px) {
+  .ai-state-card {
+    min-height: 360px;
+    padding: 42px 18px;
+  }
+
+  .ai-state-tips,
+  .ai-loading-steps {
+    gap: 8px;
+  }
 }
 </style>

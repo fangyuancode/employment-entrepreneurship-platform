@@ -108,14 +108,34 @@
         </el-form>
       </div>
 
-      <div v-loading="loading" :element-loading-text="loadingText" element-loading-background="rgba(255,255,255,0.76)" class="result-panel card">
+      <div class="result-panel card">
         <div class="card-title">生成结果</div>
 
-        <div v-if="!result.projectName && !loading" class="empty-state">
-          <el-empty description="填写左侧信息后，点击“生成产品设计方案”查看结果" />
+        <div v-if="!result.projectName && !loading" class="ai-state-card ai-state-empty">
+          <!-- <div class="ai-state-icon">AI</div>
+          <div class="ai-state-title">等待生成产品设计方案</div> -->
+          <div class="ai-state-desc">填写左侧产品信息后，点击「生成产品设计方案」，系统会输出产品定位、页面结构、用户流程和视觉建议。</div>
+          <div class="ai-state-tips">
+            <span>产品定位</span>
+            <span>页面结构</span>
+            <span>视觉方案</span>
+          </div>
         </div>
 
-        <template v-if="result.projectName">
+        <div v-else-if="loading" class="ai-state-card ai-loading-state">
+          <div class="ai-loading-ring"></div>
+          <div class="ai-state-title">正在生成产品设计方案</div>
+          <div class="ai-state-desc">{{ loadingText }}</div>
+          <div class="ai-loading-progress"><span></span></div>
+          <div class="ai-loading-steps">
+            <span>理解需求</span>
+            <span>规划结构</span>
+            <span>设计视觉</span>
+            <span>生成方案</span>
+          </div>
+        </div>
+
+        <template v-else-if="result.projectName">
           <div class="result-top">
             <h3>{{ result.projectName }}</h3>
             <p>{{ result.designGoal }}</p>
@@ -463,7 +483,9 @@ async function handleGenerate() {
       setAiDemoCache('product-design.generate', payload, cloneAiCachePayload(result))
     }
 
-    ElMessage.success(isDemoRequest ? '产品设计方案生成成功，示例结果已缓存' : '产品设计方案生成成功')
+    ElMessage.success(
+      isDemoRequest ? '产品设计方案生成成功，示例结果已缓存' : '产品设计方案生成成功'
+    )
   } catch (error: any) {
     ElMessage.error(error?.message || '生成失败，请稍后重试')
   } finally {
@@ -840,6 +862,149 @@ async function handleGenerate() {
 
   .palette-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 统一 AI 生成页：默认态 + 生成中状态 */
+.ai-state-card {
+  min-height: 460px;
+  padding: 56px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px dashed #d8e2ef;
+  border-radius: 14px;
+  box-sizing: border-box;
+}
+
+.ai-state-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #409eff;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: #ecf5ff;
+  border: 1px solid #d9ecff;
+  border-radius: 20px;
+  box-shadow: 0 10px 24px rgba(64, 158, 255, 0.12);
+}
+
+.ai-state-title {
+  margin-bottom: 8px;
+  color: #303133;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.ai-state-desc {
+  max-width: 520px;
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.ai-state-tips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.ai-state-tips span {
+  padding: 6px 12px;
+  color: #606266;
+  font-size: 13px;
+  line-height: 1;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 999px;
+}
+
+.ai-loading-state {
+  border-style: solid;
+  border-color: #d9ecff;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.ai-loading-ring {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 20px;
+  border: 4px solid #e8f3ff;
+  border-top-color: #409eff;
+  border-radius: 50%;
+  animation: aiStateSpin 1s linear infinite;
+}
+
+.ai-loading-progress {
+  width: min(360px, 80%);
+  height: 8px;
+  margin-top: 20px;
+  overflow: hidden;
+  background: #edf2f7;
+  border-radius: 999px;
+}
+
+.ai-loading-progress span {
+  display: block;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(64, 158, 255, 0.2), #409eff, rgba(64, 158, 255, 0.2));
+  border-radius: inherit;
+  animation: aiStateProgress 1.35s ease-in-out infinite;
+}
+
+.ai-loading-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.ai-loading-steps span {
+  padding: 6px 10px;
+  color: #409eff;
+  font-size: 12px;
+  background: #ecf5ff;
+  border: 1px solid #d9ecff;
+  border-radius: 999px;
+}
+
+@keyframes aiStateSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes aiStateProgress {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(240%);
+  }
+}
+
+@media (max-width: 768px) {
+  .ai-state-card {
+    min-height: 360px;
+    padding: 42px 18px;
+  }
+
+  .ai-state-tips,
+  .ai-loading-steps {
+    gap: 8px;
   }
 }
 </style>
