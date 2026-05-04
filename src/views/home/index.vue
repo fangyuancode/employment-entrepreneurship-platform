@@ -18,6 +18,7 @@
 
         <div class="top-actions">
           <el-button type="primary" text class="ghost-btn" @click="goLogin">登录</el-button>
+          <!-- <el-button type="primary" text class="ghost-btn" @click="goPage('/aichat')">AI就业</el-button> -->
           <el-button type="primary" class="solid-btn" @click="goPage('/toolbox/jobanalysis')">
             立即体验
           </el-button>
@@ -41,6 +42,7 @@
               查看岗位分析
             </el-button>
             <el-button size="large" @click="goPage('/study/business')"> 体验商业计划书 </el-button>
+            <el-button size="large" @click="goPage('/aichat')"> AI就业 </el-button>
             <el-button type="primary" size="large" @click="goBiganalysis" plain>大屏数据分析 </el-button>
           </div>
 
@@ -295,7 +297,8 @@ import {
   Grid,
   Histogram,
   Opportunity,
-  MagicStick
+  MagicStick,
+  ChatLineRound
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -314,10 +317,18 @@ const navList = [
   { key: 'workflow', label: '使用流程' }
 ]
 
-const heroTags = ['岗位分析', '技能图谱', '商业计划书', '品牌文案', '会议纪要', '智能识别']
+const heroTags = [
+  '岗位分析',
+  'AI就业',
+  '技能图谱',
+  '商业计划书',
+  '品牌文案',
+  '会议纪要',
+  '智能识别'
+]
 
 const heroMetrics = [
-  { value: '12+', label: '核心功能模块' },
+  { value: '13+', label: '核心功能模块' },
   { value: '15W+', label: '岗位数据规模' },
   { value: 'AI', label: '多场景智能驱动' }
 ]
@@ -332,24 +343,30 @@ const quickPaths = [
 const newsList = [
   {
     date: '01',
+    title: 'AI就业入口新增',
+    desc: '用户可直接询问岗位趋势、薪资水平、技能要求和求职建议。',
+    path: '/aichat'
+  },
+  {
+    date: '02',
     title: '岗位分析与可视化能力持续完善',
     desc: '支持岗位分布、技能热度、薪资趋势、分类洞察等数据展示。',
     path: '/toolbox/jobanalysis'
   },
   {
-    date: '02',
+    date: '03',
     title: '技能图谱与迁移推荐增强',
     desc: '围绕岗位、技能、公司和城市建立关联,辅助学习路径规划。',
     path: '/toolbox/jobskillgraph'
   },
   {
-    date: '03',
+    date: '04',
     title: '创业内容生成能力集成',
     desc: '商业计划书、品牌文案、产品设计和路演 PPT 模块形成协同。',
     path: '/study/business'
   },
   {
-    date: '04',
+    date: '05',
     title: '办公智能化场景进一步扩展',
     desc: '会议纪要、实体关系抽取、辅助识别等功能提升实际应用价值。',
     path: '/study/meeting'
@@ -359,7 +376,7 @@ const newsList = [
 const overviewList = [
   {
     title: '核心模块',
-    value: '12+',
+    value: '13+',
     desc: '覆盖创业、求职、设计、识别、分析等多个应用场景',
     icon: Grid
   },
@@ -502,6 +519,13 @@ const groupedFeatures = [
     desc: '聚焦岗位数据的采集、分析、检索与能力图谱构建。',
     items: [
       {
+        title: 'AI就业',
+        desc: '基于岗位数据库和大模型回答就业求职问题。',
+        path: '/aichat',
+        icon: ChatLineRound,
+        tag: '智能问答'
+      },
+      {
         title: '岗位分析大屏',
         desc: '查看岗位分布、趋势与技能热度。',
         path: '/toolbox/jobanalysis',
@@ -514,14 +538,14 @@ const groupedFeatures = [
         path: '/toolbox/joblist',
         icon: Briefcase,
         tag: '岗位查询'
-      },
-      {
-        title: '技能迁移分析',
-        desc: '辅助理解岗位能力迁移与学习方向。',
-        path: '/toolbox/migration',
-        icon: Opportunity,
-        tag: '迁移推荐'
       }
+      // {
+      //   title: '技能迁移分析',
+      //   desc: '辅助理解岗位能力迁移与学习方向。',
+      //   path: '/toolbox/migration',
+      //   icon: Opportunity,
+      //   tag: '迁移推荐'
+      // }
     ]
   },
   {
@@ -638,7 +662,22 @@ const scrollToSection = (key: string) => {
 
 const goPage = (path: string) => {
   if (!path) return
-  router.push(path)
+  console.log('path', path)
+  if (path == '/aichat') {
+    // 打开新标签
+    const url = router.resolve({
+      path: '/aichat'
+    })
+    window.open(url.href)
+  } else if (path == '/toolbox/jobanalysis') {
+    // 打开新窗口
+    const url = router.resolve({
+      path: '/toolbox/jobanalysis'
+    })
+    window.open(url.href)
+  } else {
+    router.push(path)
+  }
 }
 
 const goLogin = () => {

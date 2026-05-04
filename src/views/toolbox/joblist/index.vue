@@ -287,9 +287,12 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, reactive, ref } from 'vue'
+  import { onMounted, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
+  import { useRoute } from 'vue-router'
   import { getJobDetail, getJobOptions, getJobPage, type JobItem } from '@/api/job-list'
+
+  const route = useRoute()
 
   const loading = ref(false)
   const detailLoading = ref(false)
@@ -298,6 +301,7 @@
   const total = ref(0)
   const tableData = ref<JobItem[]>([])
   const detailData = ref<JobItem | null>(null)
+  const routeJobId = ref<number | null>(null)
 
   const queryForm = reactive({
     pageNum: 1,
@@ -316,6 +320,26 @@
     experiences: [] as string[],
     categoryMains: [] as string[]
   })
+
+  const getQueryString = (value: unknown) => {
+    if (Array.isArray(value)) return String(value[0] || '')
+    return typeof value === 'string' ? value : ''
+  }
+
+  const applyRouteQuery = () => {
+    const query = route.query
+
+    queryForm.keyword = getQueryString(query.keyword)
+    queryForm.companyName = getQueryString(query.companyName)
+    queryForm.city = getQueryString(query.city)
+    queryForm.degree = getQueryString(query.degree)
+    queryForm.experience = getQueryString(query.experience)
+    queryForm.categoryMain = getQueryString(query.categoryMain)
+    queryForm.pageNum = Number(getQueryString(query.pageNum)) || 1
+
+    const jobId = Number(getQueryString(query.jobId))
+    routeJobId.value = Number.isFinite(jobId) && jobId > 0 ? jobId : null
+  }
 
   const getPageData = async () => {
     loading.value = true
@@ -396,6 +420,31 @@
     }
   }
 
+  const openRouteJobDetail = async () => {
+    if (!routeJobId.value) return
+
+    const jobId = routeJobId.value
+    const matchedRow = tableData.value.find((item) => Number(item.id) === jobId)
+
+    if (matchedRow) {
+      await handleViewDetail(matchedRow)
+      return
+    }
+
+    detailVisible.value = true
+    detailLoading.value = true
+    detailData.value = null
+
+    try {
+      detailData.value = await getJobDetail(jobId)
+    } catch (error) {
+      console.error('路由岗位详情查询失败：', error)
+      ElMessage.error('岗位详情加载失败')
+    } finally {
+      detailLoading.value = false
+    }
+  }
+
   const parseArrayLike = (value?: string) => {
     if (!value) return []
 
@@ -418,10 +467,23 @@
       .filter(Boolean)
   }
 
+  const reloadByRouteQuery = async () => {
+    applyRouteQuery()
+    await getPageData()
+    await openRouteJobDetail()
+  }
+
   onMounted(async () => {
     await getOptionData()
-    await getPageData()
+    await reloadByRouteQuery()
   })
+
+  watch(
+    () => route.query,
+    async () => {
+      await reloadByRouteQuery()
+    }
+  )
 </script>
 
 <style scoped>

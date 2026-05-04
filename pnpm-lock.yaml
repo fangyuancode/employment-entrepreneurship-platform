@@ -83,6 +83,9 @@ importers:
       vue-draggable-plus:
         specifier: ^0.6.0
         version: 0.6.0(@types/sortablejs@1.15.8)
+      vue-element-plus-x:
+        specifier: ^2.0.0
+        version: 2.0.0(element-plus@2.11.4(vue@3.5.22(typescript@5.6.3)))(rollup@4.52.3)(vue@3.5.22(typescript@5.6.3))
       vue-i18n:
         specifier: ^9.14.0
         version: 9.14.5(vue@3.5.22(typescript@5.6.3))
@@ -2130,6 +2133,10 @@ packages:
   deep-pick-omit@1.2.1:
     resolution: {integrity: sha512-2J6Kc/m3irCeqVG42T+SaUMesaK7oGWaedGnQQK/+O0gYc+2SP5bKh/KKTE7d7SJ+GCA9UUE1GRzh6oDe0EnGw==}
 
+  deepmerge@4.3.1:
+    resolution: {integrity: sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==}
+    engines: {node: '>=0.10.0'}
+
   default-browser-id@5.0.0:
     resolution: {integrity: sha512-A6p/pu/6fyBcA1TRz/GqWYPViplrftcW2gZC9q79ngNCKAeR/X3gcEdXQHl4KNXV+3wgIJ1CPkJQ3IHM6lcsyA==}
     engines: {node: '>=18'}
@@ -3581,6 +3588,10 @@ packages:
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
 
+  radash@12.1.1:
+    resolution: {integrity: sha512-h36JMxKRqrAxVD8201FrCpyeNuUY9Y5zZwujr20fFO77tpUtGa6EZzfKw/3WaiBX95fq7+MpsuMLNdSnORAwSA==}
+    engines: {node: '>=14.18.0'}
+
   raf@3.4.1:
     resolution: {integrity: sha512-Sq4CW4QhwOHE8ucn6J34MqtZCeWFP2aQSmrlroYgqAV1PjStIhJXxYuTgUIfkEk7zTLjmIjLmU5q+fbD1NnOJA==}
 
@@ -3650,6 +3661,19 @@ packages:
     hasBin: true
     peerDependencies:
       rolldown: 1.x
+      rollup: 2.x || 3.x || 4.x
+    peerDependenciesMeta:
+      rolldown:
+        optional: true
+      rollup:
+        optional: true
+
+  rollup-plugin-visualizer@6.0.11:
+    resolution: {integrity: sha512-TBwVHVY7buHjIKVLqr9scTVFwqZqMXINcCphPwIWKPDCOBIa+jCQfafvbjRJDZgXdq/A996Dy6yGJ/+/NtAXDQ==}
+    engines: {node: '>=18'}
+    hasBin: true
+    peerDependencies:
+      rolldown: 1.x || ^1.0.0-beta
       rollup: 2.x || 3.x || 4.x
     peerDependenciesMeta:
       rolldown:
@@ -3986,6 +4010,10 @@ packages:
     resolution: {integrity: sha512-q5W7tVM71e2xjHZTlgfTDoPF/SmqKG5hddq9SzR49CH2hayqRKJtQ4mtRlSxKaJlR/+9rEM+mnBHf7I2/BQcpQ==}
     engines: {node: '>=6.10'}
 
+  ts-md5@2.0.1:
+    resolution: {integrity: sha512-yF35FCoEOFBzOclSkMNEUbFQZuv89KEQ+5Xz03HrMSGUGB1+r+El+JiGOFwsP4p9RFNzwlrydYoTLvPOuICl9w==}
+    engines: {node: '>=18'}
+
   tslib@2.3.0:
     resolution: {integrity: sha512-N82ooyxVNm6h1riLCoyS9e3fuJ3AMG2zIZs2Gd1ATcSFjSA23Q0fzjjZeh0jbJvWVDZ0cJT8yaNNaaXHzueNjg==}
 
@@ -4011,6 +4039,9 @@ packages:
 
   type@2.7.3:
     resolution: {integrity: sha512-8j+1QmAbPvLZow5Qpi6NCaN8FB60p/6x8/vfNqOk/hC+HuvFZhL4+WfekuhQLiqFZXOgQdrs3B+XxEmCc6b3FQ==}
+
+  typescript-api-pro@0.0.6:
+    resolution: {integrity: sha512-wRA64AFESZkwyqukGgQJAbzF1E77CCYbydy74TwtQ5QopcXql6DsY00E1aCsCSkdH+NyEwOJsb8L5UoaRvndgg==}
 
   typescript-eslint@8.44.1:
     resolution: {integrity: sha512-0ws8uWGrUVTjEeN2OM4K1pLKHK/4NiNP/vz6ns+LjT/6sqpaYzIVFajZb1fj/IDwpsrrHb3Jy0Qm5u9CPcKaeg==}
@@ -4105,6 +4136,26 @@ packages:
   uuid@11.1.0:
     resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
     hasBin: true
+
+  virtua@0.49.1:
+    resolution: {integrity: sha512-6f79msqg3jzNFdqJiS0FSzhRN1EHlDhR7EvW7emp6z5qQ22VdsReiDHflkpMEMhoAyUuYr69nwT0aagiM7NrUg==}
+    peerDependencies:
+      react: '>=16.14.0'
+      react-dom: '>=16.14.0'
+      solid-js: '>=1.0'
+      svelte: '>=5.0'
+      vue: '>=3.2'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+      solid-js:
+        optional: true
+      svelte:
+        optional: true
+      vue:
+        optional: true
 
   vite-hot-client@2.1.0:
     resolution: {integrity: sha512-7SpgZmU7R+dDnSmvXE1mfDtnHLHQSisdySVR7lO8ceAXvM0otZeuQQ6C8LrS5d/aYyP/QZ0hI0L+dIPrm4YlFQ==}
@@ -4217,6 +4268,12 @@ packages:
       '@vue/composition-api':
         optional: true
 
+  vue-element-plus-x@2.0.0:
+    resolution: {integrity: sha512-lhnqxXX54SjyMBdGfwDUSoada/Ip4lvpEXOyXIdvZP/mx7MPzzJt/+suFeI5MW6iyiebgC67eclI1LlVK0V9Gw==}
+    peerDependencies:
+      element-plus: ^2.9.7
+      vue: ^3.5.17
+
   vue-eslint-parser@9.4.3:
     resolution: {integrity: sha512-2rYRLWlIpaiN8xbPiDyXZXRgLGOtWxERV7ND5fFAv5qo1D2N9Fu9MNajBNc6o13lZ+24DAWCkQCvj4klgmcITg==}
     engines: {node: ^14.17.0 || >=16.0.0}
@@ -4299,6 +4356,9 @@ packages:
   wsl-utils@0.1.0:
     resolution: {integrity: sha512-h3Fbisa2nKGPxCpm89Hk33lBLsnaGBvctQopaBSOW/uIs6FTe1ATyAnKFJrzVs9vpGdsTe73WF3V4lIsk4Gacw==}
     engines: {node: '>=18'}
+
+  x-sender@1.3.9:
+    resolution: {integrity: sha512-HmqhreDXnB7ezwWWTYEvQBTGv7JTg2E8HqY0CGmsvjxJa5WdNECuFhktqPzH1Pj0YLVdc5AWY7vAdDnBZCMuTw==}
 
   xgplayer-subtitles@3.0.23:
     resolution: {integrity: sha512-deGdV75giVzfTTdG9XATmji39NHwKTpEelWt2rRx/RyXGgU2bQFp0Ft7yWaK2Uu8A/WVrP5fpxEAj4MstREMkQ==}
@@ -6381,6 +6441,8 @@ snapshots:
 
   deep-pick-omit@1.2.1: {}
 
+  deepmerge@4.3.1: {}
+
   default-browser-id@5.0.0: {}
 
   default-browser@5.2.1:
@@ -7787,6 +7849,8 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
+  radash@12.1.1: {}
+
   raf@3.4.1:
     dependencies:
       performance-now: 2.1.0
@@ -7842,6 +7906,15 @@ snapshots:
   robust-predicates@3.0.3: {}
 
   rollup-plugin-visualizer@5.14.0(rollup@4.52.3):
+    dependencies:
+      open: 8.4.2
+      picomatch: 4.0.3
+      source-map: 0.7.6
+      yargs: 17.7.2
+    optionalDependencies:
+      rollup: 4.52.3
+
+  rollup-plugin-visualizer@6.0.11(rollup@4.52.3):
     dependencies:
       open: 8.4.2
       picomatch: 4.0.3
@@ -8220,6 +8293,8 @@ snapshots:
 
   ts-dedent@2.2.0: {}
 
+  ts-md5@2.0.1: {}
+
   tslib@2.3.0: {}
 
   tslib@2.8.1: {}
@@ -8240,6 +8315,8 @@ snapshots:
   type-fest@0.21.3: {}
 
   type@2.7.3: {}
+
+  typescript-api-pro@0.0.6: {}
 
   typescript-eslint@8.44.1(eslint@9.36.0(jiti@2.6.0))(typescript@5.6.3):
     dependencies:
@@ -8350,6 +8427,10 @@ snapshots:
 
   uuid@11.1.0: {}
 
+  virtua@0.49.1(vue@3.5.22(typescript@5.6.3)):
+    optionalDependencies:
+      vue: 3.5.22(typescript@5.6.3)
+
   vite-hot-client@2.1.0(vite@7.1.7(@types/node@24.8.1)(jiti@2.6.0)(lightningcss@1.30.1)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)):
     dependencies:
       vite: 7.1.7(@types/node@24.8.1)(jiti@2.6.0)(lightningcss@1.30.1)(sass@1.93.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -8453,6 +8534,27 @@ snapshots:
     dependencies:
       '@types/sortablejs': 1.15.8
 
+  vue-element-plus-x@2.0.0(element-plus@2.11.4(vue@3.5.22(typescript@5.6.3)))(rollup@4.52.3)(vue@3.5.22(typescript@5.6.3)):
+    dependencies:
+      '@element-plus/icons-vue': 2.3.2(vue@3.5.22(typescript@5.6.3))
+      '@vueuse/core': 13.9.0(vue@3.5.22(typescript@5.6.3))
+      deepmerge: 4.3.1
+      element-plus: 2.11.4(vue@3.5.22(typescript@5.6.3))
+      radash: 12.1.1
+      rollup-plugin-visualizer: 6.0.11(rollup@4.52.3)
+      ts-md5: 2.0.1
+      typescript-api-pro: 0.0.6
+      virtua: 0.49.1(vue@3.5.22(typescript@5.6.3))
+      vue: 3.5.22(typescript@5.6.3)
+      x-sender: 1.3.9
+    transitivePeerDependencies:
+      - react
+      - react-dom
+      - rolldown
+      - rollup
+      - solid-js
+      - svelte
+
   vue-eslint-parser@9.4.3(eslint@9.36.0(jiti@2.6.0)):
     dependencies:
       debug: 4.4.3
@@ -8547,6 +8649,8 @@ snapshots:
   wsl-utils@0.1.0:
     dependencies:
       is-wsl: 3.1.0
+
+  x-sender@1.3.9: {}
 
   xgplayer-subtitles@3.0.23(core-js@3.45.1):
     dependencies:

@@ -49,7 +49,13 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     path: '/jobscreen',
     name: 'jobscreen',
     component: () => import('@/views/jobscreen/index.vue'),
-    meta: { title: '首页' }
+    meta: { title: '大屏' }
+  },
+  {
+    path: '/aichat',
+    name: 'aichat',
+    component: () => import('@/views/aichat/index.vue'),
+    meta: { title: '智能聊天' }
   },
   {
     path: '/outside',
