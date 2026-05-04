@@ -32,6 +32,18 @@ export const toolboxRoutes: AppRouteRecord = {
         roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
     },
+
+    {
+      path: 'careercenter',
+      name: 'careercenter',
+      component: '/toolbox/careercenter',
+      meta: {
+        title: 'menus.toolbox.careercenter',
+        keepAlive: false,
+        fixedTab: true,
+        roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
+      }
+    },
     {
       path: 'jobanalysis',
       name: 'jobanalysis',

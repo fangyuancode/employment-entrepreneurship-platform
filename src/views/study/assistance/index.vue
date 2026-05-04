@@ -29,11 +29,7 @@
 
             <el-col :span="12">
               <el-form-item label="产品类型" prop="productType">
-                <el-select
-                  v-model="form.productType"
-                  placeholder="请选择产品类型"
-                  style="width: 100%"
-                >
+                <el-select v-model="form.productType" placeholder="请选择产品类型" style="width: 100%">
                   <el-option label="AI Web 平台" value="AI Web 平台" />
                   <el-option label="SaaS 管理平台" value="SaaS 管理平台" />
                   <el-option label="校园服务平台" value="校园服务平台" />
@@ -45,44 +41,25 @@
 
             <el-col :span="24">
               <el-form-item label="目标用户" prop="targetUsers">
-                <el-input
-                  v-model="form.targetUsers"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="如：大学生创业团队、产品经理、运营人员、内容创作者"
-                />
+                <el-input v-model="form.targetUsers" type="textarea" :rows="3" placeholder="如：大学生创业团队、产品经理、运营人员、内容创作者" />
               </el-form-item>
             </el-col>
 
             <el-col :span="24">
               <el-form-item label="核心使用场景" prop="coreScenario">
-                <el-input
-                  v-model="form.coreScenario"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="如：从想法输入到生成商业计划、品牌文案、页面原型与视觉设计稿"
-                />
+                <el-input v-model="form.coreScenario" type="textarea" :rows="3" placeholder="如：从想法输入到生成商业计划、品牌文案、页面原型与视觉设计稿" />
               </el-form-item>
             </el-col>
 
             <el-col :span="24">
               <el-form-item label="核心功能模块" prop="coreFeatures">
-                <el-input
-                  v-model="form.coreFeatures"
-                  type="textarea"
-                  :rows="4"
-                  placeholder="如：AI问答、计划书生成、品牌文案生成、产品设计助手、图片生成、导出功能"
-                />
+                <el-input v-model="form.coreFeatures" type="textarea" :rows="4" placeholder="如：AI问答、计划书生成、品牌文案生成、产品设计助手、图片生成、导出功能" />
               </el-form-item>
             </el-col>
 
             <el-col :span="12">
               <el-form-item label="设计风格偏好" prop="stylePreference">
-                <el-select
-                  v-model="form.stylePreference"
-                  placeholder="请选择风格"
-                  style="width: 100%"
-                >
+                <el-select v-model="form.stylePreference" placeholder="请选择风格" style="width: 100%">
                   <el-option label="科技简洁" value="科技简洁" />
                   <el-option label="高级专业" value="高级专业" />
                   <el-option label="年轻活力" value="年轻活力" />
@@ -105,28 +82,19 @@
 
             <el-col :span="12">
               <el-form-item label="竞品/参考产品" prop="competitorReference">
-                <el-input
-                  v-model="form.competitorReference"
-                  placeholder="如：Notion、Figma、Canva、秘塔、即梦"
-                />
+                <el-input v-model="form.competitorReference" placeholder="如：Notion、Figma、Canva、秘塔、即梦" />
               </el-form-item>
             </el-col>
 
             <el-col :span="12">
               <el-form-item label="品牌关键词" prop="brandKeywords">
-                <el-input
-                  v-model="form.brandKeywords"
-                  placeholder="如：智能、高效、协作、创新、可视化"
-                />
+                <el-input v-model="form.brandKeywords" placeholder="如：智能、高效、协作、创新、可视化" />
               </el-form-item>
             </el-col>
 
             <el-col :span="24">
               <el-form-item label="颜色偏好" prop="colorPreference">
-                <el-input
-                  v-model="form.colorPreference"
-                  placeholder="如：蓝紫科技感、浅色背景、低饱和、局部强调色"
-                />
+                <el-input v-model="form.colorPreference" placeholder="如：蓝紫科技感、浅色背景、低饱和、局部强调色" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -140,12 +108,7 @@
         </el-form>
       </div>
 
-      <div
-        v-loading="loading"
-        :element-loading-text="loadingText"
-        element-loading-background="rgba(255,255,255,0.76)"
-        class="result-panel card"
-      >
+      <div v-loading="loading" :element-loading-text="loadingText" element-loading-background="rgba(255,255,255,0.76)" class="result-panel card">
         <div class="card-title">生成结果</div>
 
         <div v-if="!result.projectName && !loading" class="empty-state">
@@ -216,11 +179,7 @@
             <div class="result-section" v-if="result.colorPalette?.length">
               <div class="section-title">推荐配色方案</div>
               <div class="palette-list">
-                <div
-                  v-for="(color, index) in result.colorPalette"
-                  :key="`${color}-${index}`"
-                  class="palette-item"
-                >
+                <div v-for="(color, index) in result.colorPalette" :key="`${color}-${index}`" class="palette-item">
                   <div class="palette-color" :style="{ backgroundColor: color }"></div>
                   <div class="palette-text">{{ color }}</div>
                 </div>
@@ -240,11 +199,7 @@
             <div class="result-section" v-if="result.componentSuggestions?.length">
               <div class="section-title">组件建议</div>
               <div class="component-list">
-                <div
-                  v-for="(item, index) in result.componentSuggestions"
-                  :key="`${item}-${index}`"
-                  class="component-item"
-                >
+                <div v-for="(item, index) in result.componentSuggestions" :key="`${item}-${index}`" class="component-item">
                   {{ index + 1 }}. {{ item }}
                 </div>
               </div>
@@ -267,11 +222,7 @@
               <div v-if="result.sceneImageMap?.wireframeScene" class="inline-image-block">
                 <div class="inline-image-title">线框图概念视觉</div>
                 <div class="single-image-card">
-                  <img
-                    :src="getPreviewImage(result.sceneImageMap.wireframeScene)"
-                    alt="线框图概念视觉"
-                    crossorigin="anonymous"
-                  />
+                  <img :src="getPreviewImage(result.sceneImageMap.wireframeScene)" alt="线框图概念视觉" crossorigin="anonymous" />
                 </div>
               </div>
             </div>
@@ -283,11 +234,7 @@
               <div v-if="result.sceneImageMap?.prototypeScene" class="inline-image-block">
                 <div class="inline-image-title">高保真界面视觉</div>
                 <div class="single-image-card">
-                  <img
-                    :src="getPreviewImage(result.sceneImageMap.prototypeScene)"
-                    alt="高保真界面视觉"
-                    crossorigin="anonymous"
-                  />
+                  <img :src="getPreviewImage(result.sceneImageMap.prototypeScene)" alt="高保真界面视觉" crossorigin="anonymous" />
                 </div>
               </div>
             </div>
@@ -295,55 +242,35 @@
             <div class="result-section" v-if="result.sceneImageMap?.moodboardScene">
               <div class="section-title">视觉风格板</div>
               <div class="single-image-card">
-                <img
-                  :src="getPreviewImage(result.sceneImageMap.moodboardScene)"
-                  alt="视觉风格板"
-                  crossorigin="anonymous"
-                />
+                <img :src="getPreviewImage(result.sceneImageMap.moodboardScene)" alt="视觉风格板" crossorigin="anonymous" />
               </div>
             </div>
 
             <div class="result-section" v-if="result.sceneImageMap?.homepageScene">
               <div class="section-title">首页主视觉图</div>
               <div class="single-image-card">
-                <img
-                  :src="getPreviewImage(result.sceneImageMap.homepageScene)"
-                  alt="首页主视觉图"
-                  crossorigin="anonymous"
-                />
+                <img :src="getPreviewImage(result.sceneImageMap.homepageScene)" alt="首页主视觉图" crossorigin="anonymous" />
               </div>
             </div>
 
             <div class="result-section" v-if="result.sceneImageMap?.dashboardScene">
               <div class="section-title">控制台页面视觉</div>
               <div class="single-image-card">
-                <img
-                  :src="getPreviewImage(result.sceneImageMap.dashboardScene)"
-                  alt="控制台页面视觉"
-                  crossorigin="anonymous"
-                />
+                <img :src="getPreviewImage(result.sceneImageMap.dashboardScene)" alt="控制台页面视觉" crossorigin="anonymous" />
               </div>
             </div>
 
             <div class="result-section" v-if="result.sceneImageMap?.designSystemScene">
               <div class="section-title">设计系统展示图</div>
               <div class="single-image-card">
-                <img
-                  :src="getPreviewImage(result.sceneImageMap.designSystemScene)"
-                  alt="设计系统展示图"
-                  crossorigin="anonymous"
-                />
+                <img :src="getPreviewImage(result.sceneImageMap.designSystemScene)" alt="设计系统展示图" crossorigin="anonymous" />
               </div>
             </div>
 
             <div class="result-section" v-if="result.imagePrompts?.length">
               <div class="section-title">图片提示词</div>
               <div class="prompt-list">
-                <div
-                  v-for="(prompt, index) in result.imagePrompts"
-                  :key="index"
-                  class="prompt-item"
-                >
+                <div v-for="(prompt, index) in result.imagePrompts" :key="index" class="prompt-item">
                   <div class="prompt-index">提示词 {{ index + 1 }}</div>
                   <div class="section-content pre-wrap">{{ prompt }}</div>
                 </div>
@@ -357,22 +284,95 @@
 </template>
 
 <script setup lang="ts">
-  import { reactive, ref } from 'vue'
-  import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-  import {
-    generateProductDesign,
-    previewProductDesignImage,
-    type ProductDesignForm,
-    type ProductDesignResult
-  } from '@/api/product-design'
+import { reactive, ref } from 'vue'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import {
+  generateProductDesign,
+  previewProductDesignImage,
+  type ProductDesignForm,
+  type ProductDesignResult
+} from '@/api/product-design'
 
-  defineOptions({ name: 'Assistance' })
+defineOptions({ name: 'Assistance' })
 
-  const formRef = ref<FormInstance>()
-  const loading = ref(false)
-  const loadingText = ref('正在分析产品需求并生成设计方案...')
+const formRef = ref<FormInstance>()
+const loading = ref(false)
+const loadingText = ref('正在分析产品需求并生成设计方案...')
 
-  const form = reactive<ProductDesignForm>({
+const form = reactive<ProductDesignForm>({
+  projectName: '',
+  productType: '',
+  targetUsers: '',
+  coreScenario: '',
+  coreFeatures: '',
+  stylePreference: '',
+  platform: '',
+  competitorReference: '',
+  brandKeywords: '',
+  colorPreference: ''
+})
+
+const createEmptyResult = (): ProductDesignResult => ({
+  projectName: '',
+  productPositioning: '',
+  designGoal: '',
+  userPersona: '',
+  designStrategy: '',
+  featureModules: '',
+  pageStructure: '',
+  interactionHighlights: '',
+  visualStyle: '',
+  designSystemSuggestion: '',
+  uxWritingSuggestion: '',
+  wireframeDescription: '',
+  prototypeDescription: '',
+  mermaidUserFlow: '',
+  mermaidInfoArchitecture: '',
+  colorPalette: [],
+  typographySuggestion: '',
+  iconStyleSuggestion: '',
+  componentSuggestions: [],
+  designKeywords: [],
+  imagePrompts: [],
+  imageUrls: [],
+  sceneImageMap: {}
+})
+
+const result = reactive<ProductDesignResult>(createEmptyResult())
+
+const rules: FormRules<ProductDesignForm> = {
+  projectName: [{ required: true, message: '请输入项目名称', trigger: 'blur' }],
+  productType: [{ required: true, message: '请选择产品类型', trigger: 'change' }],
+  targetUsers: [{ required: true, message: '请输入目标用户', trigger: 'blur' }],
+  coreScenario: [{ required: true, message: '请输入核心使用场景', trigger: 'blur' }],
+  coreFeatures: [{ required: true, message: '请输入核心功能模块', trigger: 'blur' }],
+  stylePreference: [{ required: true, message: '请选择设计风格偏好', trigger: 'change' }],
+  platform: [{ required: true, message: '请选择目标平台', trigger: 'change' }]
+}
+
+function assignResult(data: ProductDesignResult) {
+  Object.assign(result, createEmptyResult(), data || {})
+}
+
+function fillDemo() {
+  Object.assign(form, {
+    projectName: '智创AI创业助手',
+    productType: 'AI Web 平台',
+    targetUsers: '大学生创业团队、独立开发者、初创项目负责人、比赛参赛者',
+    coreScenario:
+      '用户输入创业想法后，系统帮助其完成商业计划书、品牌文案、产品设计方案、视觉海报和展示材料生成。',
+    coreFeatures:
+      'AI 对话问答、商业计划生成、品牌文案生成、产品设计助手、页面原型建议、图片生成、结果导出与项目展示。',
+    stylePreference: '科技简洁',
+    platform: 'PC Web',
+    competitorReference: 'Notion、Figma、Canva、秘塔、即梦',
+    brandKeywords: '智能、高效、专业、协作、可视化、创新',
+    colorPreference: '浅色背景、蓝紫科技感、局部高亮色、整体简洁高级'
+  })
+}
+
+function handleReset() {
+  Object.assign(form, {
     projectName: '',
     productType: '',
     targetUsers: '',
@@ -384,358 +384,424 @@
     brandKeywords: '',
     colorPreference: ''
   })
+  assignResult(createEmptyResult())
+}
 
-  const createEmptyResult = (): ProductDesignResult => ({
-    projectName: '',
-    productPositioning: '',
-    designGoal: '',
-    userPersona: '',
-    designStrategy: '',
-    featureModules: '',
-    pageStructure: '',
-    interactionHighlights: '',
-    visualStyle: '',
-    designSystemSuggestion: '',
-    uxWritingSuggestion: '',
-    wireframeDescription: '',
-    prototypeDescription: '',
-    mermaidUserFlow: '',
-    mermaidInfoArchitecture: '',
-    colorPalette: [],
-    typographySuggestion: '',
-    iconStyleSuggestion: '',
-    componentSuggestions: [],
-    designKeywords: [],
-    imagePrompts: [],
-    imageUrls: [],
-    sceneImageMap: {}
-  })
+function getPreviewImage(url?: string) {
+  if (!url) return ''
+  return previewProductDesignImage(url)
+}
 
-  const result = reactive<ProductDesignResult>(createEmptyResult())
+async function handleGenerate() {
+  if (!formRef.value) return
 
-  const rules: FormRules<ProductDesignForm> = {
-    projectName: [{ required: true, message: '请输入项目名称', trigger: 'blur' }],
-    productType: [{ required: true, message: '请选择产品类型', trigger: 'change' }],
-    targetUsers: [{ required: true, message: '请输入目标用户', trigger: 'blur' }],
-    coreScenario: [{ required: true, message: '请输入核心使用场景', trigger: 'blur' }],
-    coreFeatures: [{ required: true, message: '请输入核心功能模块', trigger: 'blur' }],
-    stylePreference: [{ required: true, message: '请选择设计风格偏好', trigger: 'change' }],
-    platform: [{ required: true, message: '请选择目标平台', trigger: 'change' }]
-  }
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
 
-  function assignResult(data: ProductDesignResult) {
-    Object.assign(result, createEmptyResult(), data || {})
-  }
+  loading.value = true
 
-  function fillDemo() {
-    Object.assign(form, {
-      projectName: '智创AI创业助手',
-      productType: 'AI Web 平台',
-      targetUsers: '大学生创业团队、独立开发者、初创项目负责人、比赛参赛者',
-      coreScenario:
-        '用户输入创业想法后，系统帮助其完成商业计划书、品牌文案、产品设计方案、视觉海报和展示材料生成。',
-      coreFeatures:
-        'AI 对话问答、商业计划生成、品牌文案生成、产品设计助手、页面原型建议、图片生成、结果导出与项目展示。',
-      stylePreference: '科技简洁',
-      platform: 'PC Web',
-      competitorReference: 'Notion、Figma、Canva、秘塔、即梦',
-      brandKeywords: '智能、高效、专业、协作、可视化、创新',
-      colorPreference: '浅色背景、蓝紫科技感、局部高亮色、整体简洁高级'
-    })
-  }
+  const loadingSteps = [
+    '正在分析产品需求...',
+    '正在生成设计策略与页面结构...',
+    '正在生成用户流程图与信息架构...',
+    '正在构建设计系统建议...',
+    '正在生成视觉化设计图片...'
+  ]
 
-  function handleReset() {
-    Object.assign(form, {
-      projectName: '',
-      productType: '',
-      targetUsers: '',
-      coreScenario: '',
-      coreFeatures: '',
-      stylePreference: '',
-      platform: '',
-      competitorReference: '',
-      brandKeywords: '',
-      colorPreference: ''
-    })
-    assignResult(createEmptyResult())
-  }
+  let timer: ReturnType<typeof setInterval> | null = null
+  let index = 0
 
-  function getPreviewImage(url?: string) {
-    if (!url) return ''
-    return previewProductDesignImage(url)
-  }
+  try {
+    loadingText.value = loadingSteps[0]
+    timer = setInterval(() => {
+      index = (index + 1) % loadingSteps.length
+      loadingText.value = loadingSteps[index]
+    }, 1800)
 
-  async function handleGenerate() {
-    if (!formRef.value) return
+    const data = await generateProductDesign({ ...form })
 
-    const valid = await formRef.value.validate().catch(() => false)
-    if (!valid) return
-
-    loading.value = true
-
-    const loadingSteps = [
-      '正在分析产品需求...',
-      '正在生成设计策略与页面结构...',
-      '正在生成用户流程图与信息架构...',
-      '正在构建设计系统建议...',
-      '正在生成视觉化设计图片...'
-    ]
-
-    let timer: ReturnType<typeof setInterval> | null = null
-    let index = 0
-
-    try {
-      loadingText.value = loadingSteps[0]
-      timer = setInterval(() => {
-        index = (index + 1) % loadingSteps.length
-        loadingText.value = loadingSteps[index]
-      }, 1800)
-
-      const data = await generateProductDesign({ ...form })
-
-      if (!data) {
-        ElMessage.error('生成失败')
-        return
-      }
-
-      assignResult(data)
-      ElMessage.success('产品设计方案生成成功')
-    } catch (error: any) {
-      ElMessage.error(error?.message || '生成失败，请稍后重试')
-    } finally {
-      loading.value = false
-      if (timer) clearInterval(timer)
+    if (!data) {
+      ElMessage.error('生成失败')
+      return
     }
+
+    assignResult(data)
+    ElMessage.success('产品设计方案生成成功')
+  } catch (error: any) {
+    ElMessage.error(error?.message || '生成失败，请稍后重试')
+  } finally {
+    loading.value = false
+    if (timer) clearInterval(timer)
   }
+}
 </script>
 
 <style scoped>
-  .design-page {
-    padding: 16px;
-    background: #f5f7fa;
-    min-height: 100%;
-  }
+.design-page {
+  min-height: 100%;
+  padding: 16px;
+  background: #f5f7fa;
+  box-sizing: border-box;
+}
 
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 20px 24px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 14px;
+  box-sizing: border-box;
+}
 
-  .header-left h2 {
-    margin: 0 0 8px;
-    font-size: 24px;
-    color: #1f2d3d;
-  }
+.header-left {
+  min-width: 0;
+}
 
-  .header-left p {
-    margin: 0;
-    color: #606266;
-    line-height: 1.8;
-    max-width: 820px;
-  }
+.header-left h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #303133;
+}
 
-  .header-actions {
-    display: flex;
-    gap: 12px;
-    flex-shrink: 0;
-  }
+.header-left p {
+  max-width: 900px;
+  margin: 0;
+  color: #606266;
+  line-height: 1.8;
+  font-size: 14px;
+}
 
+.header-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.page-body {
+  display: grid;
+  grid-template-columns: minmax(430px, 0.92fr) minmax(0, 1.28fr);
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.card {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 14px;
+  box-sizing: border-box;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.form-panel {
+  position: sticky;
+  top: 16px;
+  align-self: flex-start;
+  height: fit-content;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.form-panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.result-panel {
+  min-width: 0;
+  align-self: flex-start;
+}
+
+.card-title {
+  margin-bottom: 18px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.form-footer {
+  position: sticky;
+  bottom: -20px;
+  z-index: 4;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin: 8px -20px -20px;
+  padding: 14px 20px 16px;
+  background: #fff;
+  border-top: 1px solid #ebeef5;
+  border-radius: 0 0 14px 14px;
+}
+
+.result-top {
+  margin-bottom: 16px;
+  padding: 18px 20px;
+  background: #f8fafc;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+}
+
+.result-top h3 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #303133;
+  line-height: 1.5;
+}
+
+.result-top p {
+  margin: 0;
+  color: #606266;
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.result-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.result-section {
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.result-section:hover {
+  border-color: #dcdfe6;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.section-title {
+  position: relative;
+  margin-bottom: 12px;
+  padding-left: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 3px;
+  height: 16px;
+  border-radius: 4px;
+  background: #409eff;
+}
+
+.section-content {
+  color: #606266;
+  line-height: 1.9;
+  font-size: 14px;
+}
+
+.pre-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tag-item {
+  margin: 0;
+}
+
+.palette-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.palette-item {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+}
+
+.palette-color {
+  height: 72px;
+}
+
+.palette-text {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #606266;
+  text-align: center;
+  background: #fff;
+}
+
+.component-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.component-item {
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #edf1f7;
+  border-radius: 10px;
+  color: #606266;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.code-block {
+  max-height: 360px;
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+  color: #e2e8f0;
+  background: #0f172a;
+  border-radius: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.8;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.prompt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prompt-item {
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+}
+
+.prompt-index {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #409eff;
+}
+
+.inline-image-block {
+  margin-top: 16px;
+}
+
+.inline-image-title {
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #409eff;
+}
+
+.single-image-card {
+  width: 100%;
+  overflow: hidden;
+  background: #f8fafc;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+}
+
+.single-image-card img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+}
+
+.empty-state {
+  padding: 70px 0;
+  background: #f8fafc;
+  border: 1px dashed #dcdfe6;
+  border-radius: 12px;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 18px;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #303133;
+}
+
+:deep(.el-textarea__inner) {
+  line-height: 1.7;
+}
+
+@media (max-width: 1200px) {
   .page-body {
-    display: grid;
-    grid-template-columns: 430px 1fr;
-    gap: 16px;
-    align-items: start;
+    grid-template-columns: 1fr;
   }
 
-  .card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 18px;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
-  }
-
-  .card-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1f2d3d;
-    margin-bottom: 16px;
+  .form-panel {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .form-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 8px;
+    position: static;
+    margin: 8px 0 0;
+    padding: 0;
+    border-top: none;
+    border-radius: 0;
   }
 
-  .result-top {
-    padding: 16px 18px;
-    border-radius: 12px;
-    background: #f8fafc;
-    border: 1px solid #ebeef5;
-    margin-bottom: 18px;
-  }
-
-  .result-top h3 {
-    margin: 0 0 8px;
-    font-size: 22px;
-    color: #1f2d3d;
-  }
-
-  .result-top p {
-    margin: 0;
-    color: #606266;
-    line-height: 1.8;
-  }
-
-  .result-vertical {
-    display: flex;
+  .page-header {
     flex-direction: column;
-    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .design-page {
+    padding: 12px;
   }
 
-  .result-section {
-    border: 1px solid #ebeef5;
-    border-radius: 12px;
-    padding: 16px;
-    background: #fff;
+  .page-header {
+    padding: 18px;
   }
 
-  .section-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: #303133;
-    margin-bottom: 12px;
-  }
-
-  .section-content {
-    color: #606266;
-    line-height: 1.9;
-    font-size: 14px;
-  }
-
-  .pre-wrap {
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  .tag-list {
-    display: flex;
+  .header-actions,
+  .form-footer {
+    width: 100%;
     flex-wrap: wrap;
-    gap: 10px;
   }
 
-  .tag-item {
-    margin: 0;
+  .header-actions .el-button,
+  .form-footer .el-button {
+    flex: 1;
+    margin-left: 0;
+  }
+
+  .page-body {
+    gap: 12px;
+  }
+
+  .card {
+    padding: 16px;
   }
 
   .palette-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .palette-item {
-    border: 1px solid #ebeef5;
-    border-radius: 12px;
-    overflow: hidden;
-    background: #fff;
-  }
-
-  .palette-color {
-    height: 72px;
-  }
-
-  .palette-text {
-    padding: 10px 12px;
-    font-size: 13px;
-    color: #606266;
-    text-align: center;
-  }
-
-  .component-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .component-item {
-    padding: 10px 12px;
-    background: #f8fafc;
-    border-radius: 10px;
-    color: #606266;
-    line-height: 1.7;
-  }
-
-  .code-block {
-    margin: 0;
-    background: #0f172a;
-    color: #e2e8f0;
-    padding: 14px;
-    border-radius: 12px;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    line-height: 1.8;
-    font-size: 13px;
-  }
-
-  .prompt-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .prompt-item {
-    background: #f8fafc;
-    border: 1px solid #ebeef5;
-    border-radius: 12px;
-    padding: 14px;
-  }
-
-  .prompt-index {
-    font-size: 13px;
-    color: #909399;
-    margin-bottom: 8px;
-  }
-
-  .single-image-card {
-    width: 100%;
-    overflow: hidden;
-    border-radius: 12px;
-    border: 1px solid #ebeef5;
-    background: #fff;
-  }
-
-  .single-image-card img {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-
-  .inline-image-block {
-    margin-top: 16px;
-  }
-
-  .inline-image-title {
-    font-size: 14px;
-    color: #606266;
-    margin-bottom: 10px;
-  }
-
-  .empty-state {
-    padding: 50px 0;
-  }
-
-  @media (max-width: 1200px) {
-    .page-body {
-      grid-template-columns: 1fr;
-    }
-
-    .page-header {
-      flex-direction: column;
-    }
-  }
+}
 </style>

@@ -141,8 +141,7 @@ declare namespace Api {
     }
 
 
-
-    /** 用户登录记录列表 */
+/** 用户登录记录列表 */
     type UserLoginLogList = Api.Common.PaginatedResponse<UserLoginLogItem>
 
     /** 用户登录记录项 */
@@ -219,6 +218,7 @@ declare namespace Api {
       pc: number
       uniqueUserToday: number
     }
+
 
     /** 角色列表 */
     type RoleList = Api.Common.PaginatedResponse<RoleListItem>

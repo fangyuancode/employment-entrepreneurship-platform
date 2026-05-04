@@ -13,12 +13,7 @@
         <el-button type="primary" :loading="loading" @click="handleGenerate">
           生成路演 PPT 文案
         </el-button>
-        <el-button
-          type="success"
-          :loading="buildingFile"
-          :disabled="!result.projectName || !result.slideList?.length"
-          @click="handleBuildPptFile"
-        >
+        <el-button type="success" :loading="buildingFile" :disabled="!result.projectName || !result.slideList?.length" @click="handleBuildPptFile">
           生成 PPT 文件
         </el-button>
       </div>
@@ -51,56 +46,31 @@
 
             <el-col :span="24">
               <el-form-item label="目标用户" prop="targetUsers">
-                <el-input
-                  v-model="form.targetUsers"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="请输入目标用户群体，例如：大学生创业团队、独立开发者、比赛参赛者"
-                />
+                <el-input v-model="form.targetUsers" type="textarea" :rows="3" placeholder="请输入目标用户群体，例如：大学生创业团队、独立开发者、比赛参赛者" />
               </el-form-item>
             </el-col>
 
             <el-col :span="24">
               <el-form-item label="核心痛点" prop="coreProblem">
-                <el-input
-                  v-model="form.coreProblem"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="请输入用户或行业当前存在的主要问题"
-                />
+                <el-input v-model="form.coreProblem" type="textarea" :rows="3" placeholder="请输入用户或行业当前存在的主要问题" />
               </el-form-item>
             </el-col>
 
             <el-col :span="24">
               <el-form-item label="解决方案" prop="solution">
-                <el-input
-                  v-model="form.solution"
-                  type="textarea"
-                  :rows="4"
-                  placeholder="请输入你的项目方案、产品能力和服务模式"
-                />
+                <el-input v-model="form.solution" type="textarea" :rows="4" placeholder="请输入你的项目方案、产品能力和服务模式" />
               </el-form-item>
             </el-col>
 
             <el-col :span="24">
               <el-form-item label="商业模式" prop="businessModel">
-                <el-input
-                  v-model="form.businessModel"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="如：会员订阅、企业服务、按次收费、联合运营"
-                />
+                <el-input v-model="form.businessModel" type="textarea" :rows="3" placeholder="如：会员订阅、企业服务、按次收费、联合运营" />
               </el-form-item>
             </el-col>
 
             <el-col :span="24">
               <el-form-item label="核心竞争优势" prop="competitiveAdvantage">
-                <el-input
-                  v-model="form.competitiveAdvantage"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="请输入项目相较于竞品和传统方案的优势"
-                />
+                <el-input v-model="form.competitiveAdvantage" type="textarea" :rows="3" placeholder="请输入项目相较于竞品和传统方案的优势" />
               </el-form-item>
             </el-col>
 
@@ -138,25 +108,14 @@
             <el-button type="primary" :loading="loading" @click="handleGenerate">
               生成路演 PPT 文案
             </el-button>
-            <el-button
-              type="success"
-              plain
-              :loading="buildingFile"
-              :disabled="!result.projectName || !result.slideList?.length"
-              @click="handleBuildPptFile"
-            >
+            <el-button type="success" plain :loading="buildingFile" :disabled="!result.projectName || !result.slideList?.length" @click="handleBuildPptFile">
               生成 PPT 文件
             </el-button>
           </div>
         </el-form>
       </div>
 
-      <div
-        v-loading="loading || buildingFile"
-        :element-loading-text="loading ? loadingText : buildingText"
-        element-loading-background="rgba(255,255,255,0.76)"
-        class="result-panel card"
-      >
+      <div v-loading="loading || buildingFile" :element-loading-text="loading ? loadingText : buildingText" element-loading-background="rgba(255,255,255,0.76)" class="result-panel card">
         <div class="card-title">生成结果</div>
 
         <div v-if="!result.projectName && !loading" class="empty-state">
@@ -226,55 +185,35 @@
             <div class="result-section" v-if="result.sceneImageMap?.coverScene">
               <div class="section-title">封面主视觉图</div>
               <div class="single-image-card">
-                <img
-                  :src="getPreviewImage(result.sceneImageMap.coverScene)"
-                  alt="封面主视觉图"
-                  crossorigin="anonymous"
-                />
+                <img :src="getPreviewImage(result.sceneImageMap.coverScene)" alt="封面主视觉图" crossorigin="anonymous" />
               </div>
             </div>
 
             <div class="result-section" v-if="result.sceneImageMap?.solutionScene">
               <div class="section-title">方案展示图</div>
               <div class="single-image-card">
-                <img
-                  :src="getPreviewImage(result.sceneImageMap.solutionScene)"
-                  alt="方案展示图"
-                  crossorigin="anonymous"
-                />
+                <img :src="getPreviewImage(result.sceneImageMap.solutionScene)" alt="方案展示图" crossorigin="anonymous" />
               </div>
             </div>
 
             <div class="result-section" v-if="result.sceneImageMap?.marketScene">
               <div class="section-title">市场场景图</div>
               <div class="single-image-card">
-                <img
-                  :src="getPreviewImage(result.sceneImageMap.marketScene)"
-                  alt="市场场景图"
-                  crossorigin="anonymous"
-                />
+                <img :src="getPreviewImage(result.sceneImageMap.marketScene)" alt="市场场景图" crossorigin="anonymous" />
               </div>
             </div>
 
             <div class="result-section" v-if="result.sceneImageMap?.teamScene">
               <div class="section-title">团队展示图</div>
               <div class="single-image-card">
-                <img
-                  :src="getPreviewImage(result.sceneImageMap.teamScene)"
-                  alt="团队展示图"
-                  crossorigin="anonymous"
-                />
+                <img :src="getPreviewImage(result.sceneImageMap.teamScene)" alt="团队展示图" crossorigin="anonymous" />
               </div>
             </div>
 
             <div class="result-section" v-if="result.imagePrompts?.length">
               <div class="section-title">图片提示词</div>
               <div class="prompt-list">
-                <div
-                  v-for="(prompt, index) in result.imagePrompts"
-                  :key="index"
-                  class="prompt-item"
-                >
+                <div v-for="(prompt, index) in result.imagePrompts" :key="index" class="prompt-item">
                   <div class="prompt-index">提示词 {{ index + 1 }}</div>
                   <div class="section-content pre-wrap">{{ prompt }}</div>
                 </div>
@@ -291,23 +230,14 @@
                 </div>
 
                 <div class="file-actions">
-                  <a
-                    class="download-link"
-                    :href="getFullDownloadUrl(pptFile.downloadUrl)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a class="download-link" :href="getFullDownloadUrl(pptFile.downloadUrl)" target="_blank" rel="noopener noreferrer">
                     下载 PPT 文件
                   </a>
                 </div>
               </div>
 
               <div class="preview-grid" v-if="pptFile.previewImages?.length">
-                <div
-                  v-for="(img, index) in pptFile.previewImages"
-                  :key="`${img}-${index}`"
-                  class="preview-card"
-                >
+                <div v-for="(img, index) in pptFile.previewImages" :key="`${img}-${index}`" class="preview-card">
                   <div class="preview-index">第 {{ index + 1 }} 页</div>
                   <img :src="getPreviewUrl(img)" :alt="`slide-${index + 1}`" />
                 </div>
@@ -325,28 +255,104 @@
 </template>
 
 <script setup lang="ts">
-  import { reactive, ref } from 'vue'
-  import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-  import {
-    buildPitchPptFile,
-    buildPitchPptResourceUrl,
-    generatePitchPpt,
-    previewPitchPptImage,
-    type PitchPptBuildRequest,
-    type PitchPptFileResponse,
-    type PitchPptForm,
-    type PitchPptResult
-  } from '@/api/pitch-ppt'
+import { reactive, ref } from 'vue'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import {
+  buildPitchPptFile,
+  buildPitchPptResourceUrl,
+  generatePitchPpt,
+  previewPitchPptImage,
+  type PitchPptBuildRequest,
+  type PitchPptFileResponse,
+  type PitchPptForm,
+  type PitchPptResult
+} from '@/api/pitch-ppt'
 
-  defineOptions({ name: 'PitchPpt' })
+defineOptions({ name: 'PitchPpt' })
 
-  const formRef = ref<FormInstance>()
-  const loading = ref(false)
-  const buildingFile = ref(false)
-  const loadingText = ref('正在生成路演 PPT 结构...')
-  const buildingText = ref('正在生成 PPT 文件...')
+const formRef = ref<FormInstance>()
+const loading = ref(false)
+const buildingFile = ref(false)
+const loadingText = ref('正在生成路演 PPT 结构...')
+const buildingText = ref('正在生成 PPT 文件...')
 
-  const form = reactive<PitchPptForm>({
+const form = reactive<PitchPptForm>({
+  projectName: '',
+  industry: '',
+  targetUsers: '',
+  coreProblem: '',
+  solution: '',
+  businessModel: '',
+  competitiveAdvantage: '',
+  teamInfo: '',
+  stage: '',
+  style: ''
+})
+
+const createEmptyResult = (): PitchPptResult => ({
+  projectName: '',
+  totalPages: 0,
+  pptSummary: '',
+  openingScript: '',
+  closingScript: '',
+  qaSuggestions: '',
+  designStyleSuggestion: '',
+  slideList: [],
+  imagePrompts: [],
+  imageUrls: [],
+  sceneImageMap: {}
+})
+
+const createEmptyPptFile = (): PitchPptFileResponse => ({
+  fileId: '',
+  fileName: '',
+  downloadUrl: '',
+  previewImages: []
+})
+
+const result = reactive<PitchPptResult>(createEmptyResult())
+const pptFile = reactive<PitchPptFileResponse>(createEmptyPptFile())
+
+const rules: FormRules<PitchPptForm> = {
+  projectName: [{ required: true, message: '请输入项目名称', trigger: 'blur' }],
+  industry: [{ required: true, message: '请选择行业赛道', trigger: 'change' }],
+  targetUsers: [{ required: true, message: '请输入目标用户', trigger: 'blur' }],
+  coreProblem: [{ required: true, message: '请输入核心痛点', trigger: 'blur' }],
+  solution: [{ required: true, message: '请输入解决方案', trigger: 'blur' }],
+  businessModel: [{ required: true, message: '请输入商业模式', trigger: 'blur' }],
+  competitiveAdvantage: [{ required: true, message: '请输入核心竞争优势', trigger: 'blur' }],
+  stage: [{ required: true, message: '请选择项目阶段', trigger: 'change' }],
+  style: [{ required: true, message: '请选择输出风格', trigger: 'change' }]
+}
+
+function assignResult(data: PitchPptResult) {
+  Object.assign(result, createEmptyResult(), data || {})
+}
+
+function assignPptFile(data?: PitchPptFileResponse) {
+  Object.assign(pptFile, createEmptyPptFile(), data || {})
+}
+
+function fillDemo() {
+  Object.assign(form, {
+    projectName: '智创 AI 创业助手',
+    industry: 'AI 创业助手',
+    targetUsers: '大学生创业团队、独立开发者、比赛参赛者、初创项目负责人',
+    coreProblem:
+      '很多创业团队缺乏从想法到项目包装的完整能力，商业计划、品牌表达、产品设计和路演材料准备效率低。',
+    solution:
+      '通过 AI 创业就业助手平台，为用户提供商业计划书生成、品牌文案生成、产品设计助手、路演 PPT 助手、图片生成等一体化能力。',
+    businessModel: '基础功能免费，高级生成会员订阅，比赛指导服务与企业定制服务收费。',
+    competitiveAdvantage:
+      '功能链条完整、适合比赛展示、生成速度快、可视化表达强、面向创业场景更聚焦。',
+    teamInfo: '前端2人、后端1人、AI工程师1人、产品策划1人',
+    stage: 'MVP 验证期',
+    style: '比赛答辩型'
+  })
+}
+
+function handleReset() {
+  Object.assign(form, {
     projectName: '',
     industry: '',
     targetUsers: '',
@@ -358,485 +364,602 @@
     stage: '',
     style: ''
   })
+  assignResult(createEmptyResult())
+  assignPptFile()
+}
 
-  const createEmptyResult = (): PitchPptResult => ({
-    projectName: '',
-    totalPages: 0,
-    pptSummary: '',
-    openingScript: '',
-    closingScript: '',
-    qaSuggestions: '',
-    designStyleSuggestion: '',
-    slideList: [],
-    imagePrompts: [],
-    imageUrls: [],
-    sceneImageMap: {}
-  })
+function getPreviewImage(url?: string) {
+  if (!url) return ''
+  return previewPitchPptImage(url)
+}
 
-  const createEmptyPptFile = (): PitchPptFileResponse => ({
-    fileId: '',
-    fileName: '',
-    downloadUrl: '',
-    previewImages: []
-  })
+function getFullDownloadUrl(url?: string) {
+  if (!url) return ''
+  return buildPitchPptResourceUrl(url)
+}
 
-  const result = reactive<PitchPptResult>(createEmptyResult())
-  const pptFile = reactive<PitchPptFileResponse>(createEmptyPptFile())
+function getPreviewUrl(url?: string) {
+  if (!url) return ''
+  return buildPitchPptResourceUrl(url)
+}
 
-  const rules: FormRules<PitchPptForm> = {
-    projectName: [{ required: true, message: '请输入项目名称', trigger: 'blur' }],
-    industry: [{ required: true, message: '请选择行业赛道', trigger: 'change' }],
-    targetUsers: [{ required: true, message: '请输入目标用户', trigger: 'blur' }],
-    coreProblem: [{ required: true, message: '请输入核心痛点', trigger: 'blur' }],
-    solution: [{ required: true, message: '请输入解决方案', trigger: 'blur' }],
-    businessModel: [{ required: true, message: '请输入商业模式', trigger: 'blur' }],
-    competitiveAdvantage: [{ required: true, message: '请输入核心竞争优势', trigger: 'blur' }],
-    stage: [{ required: true, message: '请选择项目阶段', trigger: 'change' }],
-    style: [{ required: true, message: '请选择输出风格', trigger: 'change' }]
-  }
+async function handleGenerate() {
+  if (!formRef.value) return
 
-  function assignResult(data: PitchPptResult) {
-    Object.assign(result, createEmptyResult(), data || {})
-  }
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
 
-  function assignPptFile(data?: PitchPptFileResponse) {
-    Object.assign(pptFile, createEmptyPptFile(), data || {})
-  }
+  loading.value = true
+  assignPptFile()
 
-  function fillDemo() {
-    Object.assign(form, {
-      projectName: '智创 AI 创业助手',
-      industry: 'AI 创业助手',
-      targetUsers: '大学生创业团队、独立开发者、比赛参赛者、初创项目负责人',
-      coreProblem:
-        '很多创业团队缺乏从想法到项目包装的完整能力，商业计划、品牌表达、产品设计和路演材料准备效率低。',
-      solution:
-        '通过 AI 创业就业助手平台，为用户提供商业计划书生成、品牌文案生成、产品设计助手、路演 PPT 助手、图片生成等一体化能力。',
-      businessModel: '基础功能免费，高级生成会员订阅，比赛指导服务与企业定制服务收费。',
-      competitiveAdvantage:
-        '功能链条完整、适合比赛展示、生成速度快、可视化表达强、面向创业场景更聚焦。',
-      teamInfo: '前端2人、后端1人、AI工程师1人、产品策划1人',
-      stage: 'MVP 验证期',
-      style: '比赛答辩型'
-    })
-  }
+  const loadingSteps = [
+    '正在分析项目内容...',
+    '正在生成 PPT 页面结构...',
+    '正在编写每页核心内容...',
+    '正在生成演讲备注与答辩问题...',
+    '正在生成路演配图...'
+  ]
 
-  function handleReset() {
-    Object.assign(form, {
-      projectName: '',
-      industry: '',
-      targetUsers: '',
-      coreProblem: '',
-      solution: '',
-      businessModel: '',
-      competitiveAdvantage: '',
-      teamInfo: '',
-      stage: '',
-      style: ''
-    })
-    assignResult(createEmptyResult())
-    assignPptFile()
-  }
+  let timer: ReturnType<typeof setInterval> | null = null
+  let index = 0
 
-  function getPreviewImage(url?: string) {
-    if (!url) return ''
-    return previewPitchPptImage(url)
-  }
+  try {
+    loadingText.value = loadingSteps[0]
+    timer = setInterval(() => {
+      index = (index + 1) % loadingSteps.length
+      loadingText.value = loadingSteps[index]
+    }, 1800)
 
-  function getFullDownloadUrl(url?: string) {
-    if (!url) return ''
-    return buildPitchPptResourceUrl(url)
-  }
+    const data = await generatePitchPpt({ ...form })
 
-  function getPreviewUrl(url?: string) {
-    if (!url) return ''
-    return buildPitchPptResourceUrl(url)
-  }
-
-  async function handleGenerate() {
-    if (!formRef.value) return
-
-    const valid = await formRef.value.validate().catch(() => false)
-    if (!valid) return
-
-    loading.value = true
-    assignPptFile()
-
-    const loadingSteps = [
-      '正在分析项目内容...',
-      '正在生成 PPT 页面结构...',
-      '正在编写每页核心内容...',
-      '正在生成演讲备注与答辩问题...',
-      '正在生成路演配图...'
-    ]
-
-    let timer: ReturnType<typeof setInterval> | null = null
-    let index = 0
-
-    try {
-      loadingText.value = loadingSteps[0]
-      timer = setInterval(() => {
-        index = (index + 1) % loadingSteps.length
-        loadingText.value = loadingSteps[index]
-      }, 1800)
-
-      const data = await generatePitchPpt({ ...form })
-
-      if (!data) {
-        ElMessage.error('生成失败')
-        return
-      }
-
-      assignResult(data)
-      ElMessage.success('路演 PPT 文案生成成功')
-    } catch (error: any) {
-      ElMessage.error(error?.message || '生成失败，请稍后重试')
-    } finally {
-      loading.value = false
-      if (timer) clearInterval(timer)
-    }
-  }
-
-  async function handleBuildPptFile() {
-    if (!result.projectName || !result.slideList?.length) {
-      ElMessage.warning('请先生成 PPT 文案')
+    if (!data) {
+      ElMessage.error('生成失败')
       return
     }
 
-    buildingFile.value = true
-
-    const buildingSteps = [
-      '正在整理 PPT 页面内容...',
-      '正在调用 Kimi 优化 PPT 结构...',
-      '正在生成真实 PPT 文件...',
-      '正在生成在线预览图片...',
-      '正在整理下载链接...'
-    ]
-
-    let timer: ReturnType<typeof setInterval> | null = null
-    let index = 0
-
-    try {
-      buildingText.value = buildingSteps[0]
-      timer = setInterval(() => {
-        index = (index + 1) % buildingSteps.length
-        buildingText.value = buildingSteps[index]
-      }, 1800)
-
-      const payload: PitchPptBuildRequest = {
-        projectName: result.projectName,
-        pptSummary: result.pptSummary,
-        openingScript: result.openingScript,
-        closingScript: result.closingScript,
-        qaSuggestions: result.qaSuggestions,
-        designStyleSuggestion: result.designStyleSuggestion,
-        slideList: result.slideList
-      }
-
-      const data = await buildPitchPptFile(payload)
-
-      if (!data) {
-        ElMessage.error('PPT 文件生成失败')
-        return
-      }
-
-      assignPptFile(data)
-      ElMessage.success('PPT 文件生成成功')
-    } catch (error: any) {
-      ElMessage.error(error?.message || 'PPT 文件生成失败')
-    } finally {
-      buildingFile.value = false
-      if (timer) clearInterval(timer)
-    }
+    assignResult(data)
+    ElMessage.success('路演 PPT 文案生成成功')
+  } catch (error: any) {
+    ElMessage.error(error?.message || '生成失败，请稍后重试')
+  } finally {
+    loading.value = false
+    if (timer) clearInterval(timer)
   }
+}
+
+async function handleBuildPptFile() {
+  if (!result.projectName || !result.slideList?.length) {
+    ElMessage.warning('请先生成 PPT 文案')
+    return
+  }
+
+  buildingFile.value = true
+
+  const buildingSteps = [
+    '正在整理 PPT 页面内容...',
+    '正在调用 Kimi 优化 PPT 结构...',
+    '正在生成真实 PPT 文件...',
+    '正在生成在线预览图片...',
+    '正在整理下载链接...'
+  ]
+
+  let timer: ReturnType<typeof setInterval> | null = null
+  let index = 0
+
+  try {
+    buildingText.value = buildingSteps[0]
+    timer = setInterval(() => {
+      index = (index + 1) % buildingSteps.length
+      buildingText.value = buildingSteps[index]
+    }, 1800)
+
+    const payload: PitchPptBuildRequest = {
+      projectName: result.projectName,
+      pptSummary: result.pptSummary,
+      openingScript: result.openingScript,
+      closingScript: result.closingScript,
+      qaSuggestions: result.qaSuggestions,
+      designStyleSuggestion: result.designStyleSuggestion,
+      slideList: result.slideList
+    }
+
+    const data = await buildPitchPptFile(payload)
+
+    if (!data) {
+      ElMessage.error('PPT 文件生成失败')
+      return
+    }
+
+    assignPptFile(data)
+    ElMessage.success('PPT 文件生成成功')
+  } catch (error: any) {
+    ElMessage.error(error?.message || 'PPT 文件生成失败')
+  } finally {
+    buildingFile.value = false
+    if (timer) clearInterval(timer)
+  }
+}
 </script>
 
 <style scoped>
-  .pitch-page {
-    padding: 16px;
-    background: #f5f7fa;
-    min-height: 100%;
+.pitch-page,
+.pitch-page * {
+  box-sizing: border-box;
+}
+
+.pitch-page {
+  min-height: 100%;
+  padding: 16px;
+  background: #f5f7fa;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 16px;
+  padding: 20px 24px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.header-left {
+  min-width: 0;
+}
+
+.header-left h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1.4;
+}
+
+.header-left p {
+  max-width: 920px;
+  margin: 0;
+  color: #606266;
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.page-body {
+  display: grid;
+  grid-template-columns: minmax(430px, 0.92fr) minmax(0, 1.28fr);
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.card {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.form-panel {
+  position: sticky;
+  top: 16px;
+  align-self: flex-start;
+  height: fit-content;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.form-panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.result-panel {
+  min-width: 0;
+  align-self: flex-start;
+}
+
+.card-title {
+  position: relative;
+  margin-bottom: 18px;
+  padding-left: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1.5;
+}
+
+.card-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 3px;
+  height: 16px;
+  border-radius: 999px;
+  background: #409eff;
+}
+
+.form-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin: 8px -20px -20px;
+  padding: 14px 20px 16px;
+  background: #fff;
+  border-top: 1px solid #ebeef5;
+  border-radius: 0 0 14px 14px;
+  flex-wrap: wrap;
+}
+
+.result-top {
+  margin-bottom: 16px;
+  padding: 18px 20px;
+  background: #f8fafc;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+}
+
+.result-top h3 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #303133;
+  line-height: 1.5;
+}
+
+.result-top p {
+  margin: 0;
+  color: #606266;
+  line-height: 1.9;
+  font-size: 14px;
+}
+
+.result-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.result-section {
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.result-section:hover {
+  border-color: #dcdfe6;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+}
+
+.section-title {
+  position: relative;
+  margin-bottom: 12px;
+  padding-left: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1.5;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 3px;
+  height: 16px;
+  border-radius: 999px;
+  background: #409eff;
+}
+
+.section-content {
+  color: #606266;
+  line-height: 1.9;
+  font-size: 14px;
+}
+
+.pre-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.slide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.slide-card {
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #edf1f7;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.slide-card:hover {
+  background: #fff;
+  border-color: #dcdfe6;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.slide-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ebeef5;
+  flex-wrap: wrap;
+}
+
+.slide-page {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  color: #409eff;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(64, 158, 255, 0.1);
+  border-radius: 999px;
+}
+
+.slide-title {
+  min-width: 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.slide-block {
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+}
+
+.slide-block + .slide-block {
+  margin-top: 10px;
+}
+
+.block-label {
+  margin-bottom: 6px;
+  color: #409eff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.prompt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prompt-item {
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+}
+
+.prompt-index {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #409eff;
+}
+
+.single-image-card {
+  width: 100%;
+  overflow: hidden;
+  background: #f8fafc;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+}
+
+.single-image-card img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+}
+
+.file-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  background: #f8fafc;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.file-info {
+  min-width: 0;
+}
+
+.file-name {
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.file-tip {
+  margin-top: 4px;
+  color: #909399;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.download-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 16px;
+  color: #fff;
+  font-size: 14px;
+  text-decoration: none;
+  background: #67c23a;
+  border-radius: 8px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.download-link:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.preview-card {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.preview-card:hover {
+  border-color: #dcdfe6;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.preview-index {
+  padding: 10px 12px;
+  color: #606266;
+  font-size: 13px;
+  background: #fafafa;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.preview-card img {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  background: #f8fafc;
+}
+
+.empty-state {
+  padding: 72px 0;
+  background: #f8fafc;
+  border: 1px dashed #dcdfe6;
+  border-radius: 12px;
+}
+
+.empty-preview {
+  padding: 20px 0 0;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 18px;
+}
+
+:deep(.el-form-item__label) {
+  color: #303133;
+  font-weight: 500;
+}
+
+:deep(.el-textarea__inner) {
+  line-height: 1.7;
+}
+
+:deep(.el-button + .el-button) {
+  margin-left: 0;
+}
+
+@media (max-width: 1200px) {
+  .page-body {
+    grid-template-columns: 1fr;
   }
 
   .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 16px;
+    flex-direction: column;
   }
 
-  .header-left h2 {
-    margin: 0 0 8px;
-    font-size: 24px;
-    color: #1f2d3d;
-  }
-
-  .header-left p {
-    margin: 0;
-    color: #606266;
-    line-height: 1.8;
-    max-width: 860px;
-  }
-
-  .header-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    flex-shrink: 0;
-  }
-
-  .page-body {
-    display: grid;
-    grid-template-columns: 430px 1fr;
-    gap: 16px;
-    align-items: start;
-  }
-
-  .card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 18px;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
-  }
-
-  .card-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1f2d3d;
-    margin-bottom: 16px;
+  .form-panel {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .form-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 8px;
-    flex-wrap: wrap;
+    position: static;
+    margin: 8px 0 0;
+    padding: 0;
+    border-top: none;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .preview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .pitch-page {
+    padding: 12px;
   }
 
-  .result-top {
-    padding: 16px 18px;
-    border-radius: 12px;
-    background: #f8fafc;
-    border: 1px solid #ebeef5;
-    margin-bottom: 18px;
+  .page-header {
+    padding: 18px;
   }
 
-  .result-top h3 {
-    margin: 0 0 8px;
-    font-size: 22px;
-    color: #1f2d3d;
-  }
-
-  .result-top p {
-    margin: 0;
-    color: #606266;
-    line-height: 1.8;
-  }
-
-  .result-vertical {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .result-section {
-    border: 1px solid #ebeef5;
-    border-radius: 12px;
-    padding: 16px;
-    background: #fff;
-  }
-
-  .section-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: #303133;
-    margin-bottom: 12px;
-  }
-
-  .section-content {
-    color: #606266;
-    line-height: 1.9;
-    font-size: 14px;
-  }
-
-  .pre-wrap {
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  .slide-list {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .slide-card {
-    border: 1px solid #ebeef5;
-    border-radius: 12px;
-    padding: 14px;
-    background: #f8fafc;
-  }
-
-  .slide-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-  }
-
-  .slide-page {
-    font-size: 13px;
-    color: #409eff;
-    background: rgba(64, 158, 255, 0.1);
-    padding: 4px 10px;
-    border-radius: 999px;
-  }
-
-  .slide-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #303133;
-  }
-
-  .slide-block + .slide-block {
-    margin-top: 12px;
-  }
-
-  .block-label {
-    font-size: 13px;
-    color: #909399;
-    margin-bottom: 6px;
-  }
-
-  .prompt-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .prompt-item {
-    background: #f8fafc;
-    border: 1px solid #ebeef5;
-    border-radius: 12px;
-    padding: 14px;
-  }
-
-  .prompt-index {
-    font-size: 13px;
-    color: #909399;
-    margin-bottom: 8px;
-  }
-
-  .single-image-card {
+  .header-actions,
+  .form-footer {
     width: 100%;
-    overflow: hidden;
-    border-radius: 12px;
-    border: 1px solid #ebeef5;
-    background: #fff;
+  }
+
+  .header-actions .el-button,
+  .form-footer .el-button {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .card {
+    padding: 16px;
   }
 
   .single-image-card img {
-    display: block;
-    width: 100%;
-    height: auto;
+    max-height: 300px;
   }
-
-  .file-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 18px;
-    padding: 14px 16px;
-    border-radius: 12px;
-    background: #f8fafc;
-    border: 1px solid #ebeef5;
-    flex-wrap: wrap;
-  }
-
-  .file-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: #303133;
-  }
-
-  .file-tip {
-    margin-top: 4px;
-    font-size: 13px;
-    color: #909399;
-  }
-
-  .file-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .download-link {
-    display: inline-block;
-    padding: 10px 16px;
-    background: #67c23a;
-    color: #fff;
-    border-radius: 8px;
-    text-decoration: none;
-    transition: opacity 0.2s ease;
-  }
-
-  .download-link:hover {
-    opacity: 0.92;
-  }
-
-  .preview-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-  }
-
-  .preview-card {
-    border: 1px solid #ebeef5;
-    border-radius: 12px;
-    overflow: hidden;
-    background: #fff;
-  }
-
-  .preview-index {
-    padding: 10px 12px;
-    font-size: 13px;
-    color: #606266;
-    border-bottom: 1px solid #ebeef5;
-    background: #fafafa;
-  }
-
-  .preview-card img {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-
-  .empty-state {
-    padding: 50px 0;
-  }
-
-  .empty-preview {
-    padding: 20px 0 0;
-  }
-
-  @media (max-width: 1200px) {
-    .page-body {
-      grid-template-columns: 1fr;
-    }
-
-    .page-header {
-      flex-direction: column;
-    }
-  }
-
-  @media (max-width: 900px) {
-    .preview-grid {
-      grid-template-columns: 1fr;
-    }
-  }
+}
 </style>
