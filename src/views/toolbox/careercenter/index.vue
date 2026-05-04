@@ -423,6 +423,13 @@
   import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
   import * as echarts from 'echarts'
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+  import {
+    cloneAiCachePayload,
+    getAiDemoCache,
+    isSameAiPayload,
+    setAiDemoCache,
+    waitAiCacheDelay
+  } from '@/utils/ai-demo-cache'
   import { Loading } from '@element-plus/icons-vue'
   import {
     analyzeCareerCenter,
@@ -492,6 +499,7 @@
   }
 
   const result = ref<CareerCenterAnalyzeResult>({ ...emptyResult })
+  const demoFormSnapshot = ref<CareerCenterRequest | null>(null)
   const loading = ref(false)
   const loadingText = ref('正在分析岗位画像')
   const loadingPercent = ref(8)
@@ -545,7 +553,8 @@
     try {
       const demo = await getCareerCenterDemo()
       Object.assign(form, demo)
-      ElMessage.success('已填充职业规划示例')
+      demoFormSnapshot.value = cloneAiCachePayload(form)
+      ElMessage.success('已填充职业规划示例，首次生成后会自动缓存结果')
     } catch (error) {
       Object.assign(form, {
         targetJob: 'Java开发工程师',
@@ -560,20 +569,53 @@
         expectedSalary: '8K-12K',
         outputStyle: '比赛展示型'
       })
+      demoFormSnapshot.value = cloneAiCachePayload(form)
+      ElMessage.success('已填充职业规划示例，首次生成后会自动缓存结果')
     }
   }
 
   async function handleAnalyze () {
     await formRef.value?.validate()
+
+    const payload = cloneAiCachePayload(form)
+    const isDemoRequest = demoFormSnapshot.value
+      ? isSameAiPayload(payload, demoFormSnapshot.value)
+      : false
+    const cachedData = isDemoRequest
+      ? getAiDemoCache<CareerCenterAnalyzeResult>('career-center.analyze', payload)
+      : null
+
     loading.value = true
+
+    if (cachedData) {
+      try {
+        loadingText.value = '检测到示例数据已有本地缓存，3秒后直接展示职业规划报告'
+        loadingPercent.value = 80
+        await waitAiCacheDelay()
+        result.value = cachedData
+        stopLoadingStage()
+        await nextTick()
+        renderCharts()
+        ElMessage.success('已加载示例本地缓存结果')
+      } finally {
+        loading.value = false
+      }
+      return
+    }
+
     startLoadingStage()
     try {
-      const data = await analyzeCareerCenter({ ...form })
+      const data = await analyzeCareerCenter(payload)
       result.value = data
+
+      if (isDemoRequest) {
+        setAiDemoCache('career-center.analyze', payload, data)
+      }
+
       stopLoadingStage()
       await nextTick()
       renderCharts()
-      ElMessage.success('AI职业规划报告生成成功')
+      ElMessage.success(isDemoRequest ? 'AI职业规划报告生成成功，示例结果已缓存' : 'AI职业规划报告生成成功')
     } catch (error) {
       window.clearInterval(loadingTimer)
       loadingText.value = '职业规划生成失败，请稍后重试'
@@ -598,6 +640,7 @@
       outputStyle: '求职实用型'
     })
     result.value = { ...emptyResult }
+    demoFormSnapshot.value = null
     disposeCharts()
   }
 

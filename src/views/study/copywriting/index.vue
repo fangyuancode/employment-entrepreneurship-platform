@@ -259,6 +259,13 @@
 import { reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import {
+  cloneAiCachePayload,
+  getAiDemoCache,
+  isSameAiPayload,
+  setAiDemoCache,
+  waitAiCacheDelay
+} from '@/utils/ai-demo-cache'
+import {
   generateBrandCopywriting,
   generateBrandImages,
   previewBrandImage,
@@ -269,6 +276,8 @@ import {
 defineOptions({ name: 'BrandCopywritingPage' })
 
 const formRef = ref<FormInstance>()
+const demoFormSnapshot = ref<BrandCopywritingForm | null>(null)
+const isUsingDemoResult = ref(false)
 const loading = ref(false)
 const generatingImages = ref(false)
 const loadingText = ref('正在准备生成...')
@@ -340,7 +349,26 @@ const handleGenerate = async () => {
   try {
     await formRef.value.validate()
 
+    const payload = cloneAiCachePayload(form)
+    const isDemoRequest = demoFormSnapshot.value
+      ? isSameAiPayload(payload, demoFormSnapshot.value)
+      : false
+    const cachedData = isDemoRequest
+      ? getAiDemoCache<BrandCopywritingResult>('brand-copywriting.generate', payload)
+      : null
+
     loading.value = true
+
+    if (cachedData) {
+      loadingText.value = '检测到示例数据已有本地缓存，3秒后直接展示品牌文案...'
+      await waitAiCacheDelay()
+      Object.assign(result, createEmptyResult(), cachedData)
+      isUsingDemoResult.value = true
+      ElMessage.success('已加载示例本地缓存结果')
+      return
+    }
+
+    isUsingDemoResult.value = isDemoRequest
     loadingText.value = '正在检查输入内容...'
     await new Promise((resolve) => setTimeout(resolve, 300))
 
@@ -348,7 +376,7 @@ const handleGenerate = async () => {
     await new Promise((resolve) => setTimeout(resolve, 400))
 
     loadingText.value = '正在生成品牌名称与核心文案...'
-    const data = await generateBrandCopywriting({ ...form })
+    const data = await generateBrandCopywriting(payload)
 
     Object.assign(result, createEmptyResult(), data || {})
 
@@ -361,8 +389,12 @@ const handleGenerate = async () => {
       await handleGenerateImages(true)
     }
 
+    if (isDemoRequest) {
+      setAiDemoCache('brand-copywriting.generate', payload, cloneAiCachePayload(result))
+    }
+
     loadingText.value = '全部内容生成完成'
-    ElMessage.success('品牌与文案生成成功')
+    ElMessage.success(isDemoRequest ? '品牌与文案生成成功，示例结果已缓存' : '品牌与文案生成成功')
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error?.response?.data?.msg || error?.message || '生成失败，请稍后重试')
@@ -378,19 +410,40 @@ const handleGenerateImages = async (silent = false) => {
     return
   }
 
+  const imagePayload = cloneAiCachePayload({
+    projectName: result.projectName,
+    imagePrompts: result.imagePrompts
+  })
+  const cachedImages = isUsingDemoResult.value
+    ? getAiDemoCache<{ imageUrls: string[]; sceneImageMap: Record<string, string> }>(
+        'brand-copywriting.images',
+        imagePayload
+      )
+    : null
+
   try {
     generatingImages.value = true
 
-    const data = await generateBrandImages({
-      projectName: result.projectName,
-      imagePrompts: result.imagePrompts
-    })
+    if (cachedImages) {
+      if (!silent) loadingText.value = '检测到示例配图已有本地缓存，3秒后直接展示...'
+      await waitAiCacheDelay()
+      result.imageUrls = cachedImages.imageUrls || []
+      result.sceneImageMap = cachedImages.sceneImageMap || buildSceneImageMap(result.imageUrls)
+      if (!silent) ElMessage.success('已加载示例配图缓存')
+      return
+    }
+
+    const data = await generateBrandImages(imagePayload)
 
     const imageUrls = data?.imageUrls || []
     const sceneImageMap = data?.sceneImageMap || buildSceneImageMap(imageUrls)
 
     result.imageUrls = imageUrls
     result.sceneImageMap = sceneImageMap
+
+    if (isUsingDemoResult.value) {
+      setAiDemoCache('brand-copywriting.images', imagePayload, { imageUrls, sceneImageMap })
+    }
 
     if (!silent) {
       ElMessage.success(
@@ -408,6 +461,8 @@ const handleGenerateImages = async (silent = false) => {
 const handleReset = () => {
   formRef.value?.resetFields()
   Object.assign(result, createEmptyResult())
+  demoFormSnapshot.value = null
+  isUsingDemoResult.value = false
 }
 
 const fillDemo = () => {
@@ -422,6 +477,9 @@ const fillDemo = () => {
     region: '甘肃 + 全国高校市场',
     style: '比赛展示型'
   })
+  demoFormSnapshot.value = cloneAiCachePayload(form)
+  isUsingDemoResult.value = false
+  ElMessage.success('示例数据已填充，首次生成后会自动缓存结果')
 }
 
 const copyAllContent = async () => {

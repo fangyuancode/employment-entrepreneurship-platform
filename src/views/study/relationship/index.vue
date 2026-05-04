@@ -338,6 +338,13 @@
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
   import {
+    cloneAiCachePayload,
+    getAiDemoCache,
+    isSameAiPayload,
+    setAiDemoCache,
+    waitAiCacheDelay
+  } from '@/utils/ai-demo-cache'
+  import {
     extractEntityRelation,
     getEntityRelationDemo,
     getEntityRelationTypes,
@@ -359,6 +366,7 @@
   let relationChart: echarts.ECharts | null = null
 
   const loading = ref(false)
+  const demoFormSnapshot = ref<EntityRelationForm | null>(null)
   const loadingText = ref('正在分析文本、抽取实体与关系...')
 
   const entityTypeOptions = ref<string[]>([])
@@ -491,6 +499,7 @@
     form.enableTimeline = true
     form.language = 'zh-CN'
     resetResult()
+    demoFormSnapshot.value = null
     renderAllCharts()
   }
 
@@ -501,6 +510,9 @@
     } catch (error) {
       form.text = `2026年3月，星火智创团队在兰州发布了“AI创业助手”平台。该项目由张晨与李悦联合发起，依托B站大学创新实践团队进行研发，核心技术包括大语言模型、知识图谱与多智能体协作。4月，团队与启航科技有限公司达成合作，共同推进产品上线。`
     }
+
+    demoFormSnapshot.value = cloneAiCachePayload(form)
+    ElMessage.success('示例数据已填充，首次抽取后会自动缓存结果')
   }
 
   async function initOptions() {
@@ -519,7 +531,43 @@
     const valid = await formRef.value.validate().catch(() => false)
     if (!valid) return
 
+    const payload = cloneAiCachePayload(form)
+    const isDemoRequest = demoFormSnapshot.value
+      ? isSameAiPayload(payload, demoFormSnapshot.value)
+      : false
+    const cachedData = isDemoRequest
+      ? getAiDemoCache<EntityRelationResult>('entity-relationship.extract', payload)
+      : null
+
     loading.value = true
+
+    if (cachedData) {
+      try {
+        loadingText.value = '检测到示例数据已有本地缓存，3秒后直接展示抽取结果...'
+        await waitAiCacheDelay()
+        result.projectName = cachedData.projectName || ''
+        result.summary = cachedData.summary || ''
+        result.keywords = cachedData.keywords || []
+        result.entities = cachedData.entities || []
+        result.relations = cachedData.relations || []
+        result.events = cachedData.events || []
+        result.timeline = cachedData.timeline || []
+        result.graphNodes = cachedData.graphNodes || []
+        result.graphLinks = cachedData.graphLinks || []
+        result.entityTypeStats = cachedData.entityTypeStats || {}
+        result.relationTypeStats = cachedData.relationTypeStats || {}
+        result.insightSuggestions = cachedData.insightSuggestions || []
+        result.qaSuggestions = cachedData.qaSuggestions || []
+        ElMessage.success('已加载示例本地缓存结果')
+        await nextTick()
+        renderAllCharts()
+      } finally {
+        loading.value = false
+        loadingText.value = '正在分析文本、抽取实体与关系...'
+      }
+      return
+    }
+
     const texts = [
       '正在分析文本结构...',
       '正在抽取实体...',
@@ -534,7 +582,7 @@
     }, 900)
 
     try {
-      const data = await extractEntityRelation({ ...form })
+      const data = await extractEntityRelation(payload)
 
       result.projectName = data.projectName || ''
       result.summary = data.summary || ''
@@ -550,7 +598,11 @@
       result.insightSuggestions = data.insightSuggestions || []
       result.qaSuggestions = data.qaSuggestions || []
 
-      ElMessage.success('实体关系抽取完成')
+      if (isDemoRequest) {
+        setAiDemoCache('entity-relationship.extract', payload, cloneAiCachePayload(result))
+      }
+
+      ElMessage.success(isDemoRequest ? '实体关系抽取完成，示例结果已缓存' : '实体关系抽取完成')
       await nextTick()
       renderAllCharts()
     } catch (error: any) {

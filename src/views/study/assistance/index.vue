@@ -287,6 +287,13 @@
 import { reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import {
+  cloneAiCachePayload,
+  getAiDemoCache,
+  isSameAiPayload,
+  setAiDemoCache,
+  waitAiCacheDelay
+} from '@/utils/ai-demo-cache'
+import {
   generateProductDesign,
   previewProductDesignImage,
   type ProductDesignForm,
@@ -296,6 +303,7 @@ import {
 defineOptions({ name: 'Assistance' })
 
 const formRef = ref<FormInstance>()
+const demoFormSnapshot = ref<ProductDesignForm | null>(null)
 const loading = ref(false)
 const loadingText = ref('正在分析产品需求并生成设计方案...')
 
@@ -369,6 +377,8 @@ function fillDemo() {
     brandKeywords: '智能、高效、专业、协作、可视化、创新',
     colorPreference: '浅色背景、蓝紫科技感、局部高亮色、整体简洁高级'
   })
+  demoFormSnapshot.value = cloneAiCachePayload(form)
+  ElMessage.success('示例数据已填充，首次生成后会自动缓存结果')
 }
 
 function handleReset() {
@@ -385,6 +395,7 @@ function handleReset() {
     colorPreference: ''
   })
   assignResult(createEmptyResult())
+  demoFormSnapshot.value = null
 }
 
 function getPreviewImage(url?: string) {
@@ -398,7 +409,28 @@ async function handleGenerate() {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
+  const payload = cloneAiCachePayload(form)
+  const isDemoRequest = demoFormSnapshot.value
+    ? isSameAiPayload(payload, demoFormSnapshot.value)
+    : false
+  const cachedData = isDemoRequest
+    ? getAiDemoCache<ProductDesignResult>('product-design.generate', payload)
+    : null
+
   loading.value = true
+
+  if (cachedData) {
+    try {
+      loadingText.value = '检测到示例数据已有本地缓存，3秒后直接展示产品设计方案...'
+      await waitAiCacheDelay()
+      assignResult(cachedData)
+      ElMessage.success('已加载示例本地缓存结果')
+    } finally {
+      loading.value = false
+      loadingText.value = '正在分析产品需求并生成设计方案...'
+    }
+    return
+  }
 
   const loadingSteps = [
     '正在分析产品需求...',
@@ -418,7 +450,7 @@ async function handleGenerate() {
       loadingText.value = loadingSteps[index]
     }, 1800)
 
-    const data = await generateProductDesign({ ...form })
+    const data = await generateProductDesign(payload)
 
     if (!data) {
       ElMessage.error('生成失败')
@@ -426,12 +458,18 @@ async function handleGenerate() {
     }
 
     assignResult(data)
-    ElMessage.success('产品设计方案生成成功')
+
+    if (isDemoRequest) {
+      setAiDemoCache('product-design.generate', payload, cloneAiCachePayload(result))
+    }
+
+    ElMessage.success(isDemoRequest ? '产品设计方案生成成功，示例结果已缓存' : '产品设计方案生成成功')
   } catch (error: any) {
     ElMessage.error(error?.message || '生成失败，请稍后重试')
   } finally {
     loading.value = false
     if (timer) clearInterval(timer)
+    loadingText.value = '正在分析产品需求并生成设计方案...'
   }
 }
 </script>

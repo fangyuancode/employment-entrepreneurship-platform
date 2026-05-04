@@ -230,6 +230,13 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { ElMessage, FormInstance, FormRules } from 'element-plus'
+import {
+  cloneAiCachePayload,
+  getAiDemoCache,
+  isSameAiPayload,
+  setAiDemoCache,
+  waitAiCacheDelay
+} from '@/utils/ai-demo-cache'
 // import html2canvas from 'html2canvas'
 // import jsPDF from 'jspdf'
 // import {
@@ -250,6 +257,8 @@ defineOptions({ name: 'BusinessPlanPage' })
 
 const formRef = ref<FormInstance>()
 const pdfContentRef = ref<HTMLElement | null>(null)
+const demoFormSnapshot = ref<BusinessPlanForm | null>(null)
+const isUsingDemoResult = ref(false)
 
 const loading = ref(false)
 const generatingImages = ref(false)
@@ -311,20 +320,38 @@ const handleGenerateImages = async (fromGenerate = false) => {
     return
   }
 
+  const imagePayload = cloneAiCachePayload({
+    projectName: result.projectName,
+    imagePrompts: result.imagePrompts
+  })
+  const cachedImages = isUsingDemoResult.value
+    ? getAiDemoCache<{ imageUrls: string[] }>('business-plan.images', imagePayload)
+    : null
+
   try {
     generatingImages.value = true
 
     if (!fromGenerate) {
       loading.value = true
-      loadingText.value = '正在生成项目配图，请稍候...'
+      loadingText.value = cachedImages
+        ? '检测到示例配图已有本地缓存，3秒后直接展示...'
+        : '正在生成项目配图，请稍候...'
     }
 
-    const data = await generateBusinessPlanImages({
-      projectName: result.projectName,
-      imagePrompts: result.imagePrompts
-    })
+    if (cachedImages) {
+      await waitAiCacheDelay()
+      result.imageUrls = cachedImages.imageUrls || []
+      if (!fromGenerate) ElMessage.success('已加载示例配图缓存')
+      return
+    }
+
+    const data = await generateBusinessPlanImages(imagePayload)
 
     result.imageUrls = data?.imageUrls || []
+
+    if (isUsingDemoResult.value) {
+      setAiDemoCache('business-plan.images', imagePayload, { imageUrls: result.imageUrls || [] })
+    }
 
     if (!fromGenerate) {
       if (result.imageUrls.length > 0) {
@@ -351,7 +378,26 @@ const handleGenerate = async () => {
   try {
     await formRef.value.validate()
 
+    const payload = cloneAiCachePayload(form)
+    const isDemoRequest = demoFormSnapshot.value
+      ? isSameAiPayload(payload, demoFormSnapshot.value)
+      : false
+    const cachedData = isDemoRequest
+      ? getAiDemoCache<BusinessPlanResult>('business-plan.generate', payload)
+      : null
+
     loading.value = true
+
+    if (cachedData) {
+      loadingText.value = '检测到示例数据已有本地缓存，3秒后直接展示商业计划...'
+      await waitAiCacheDelay()
+      Object.assign(result, createEmptyResult(), cachedData)
+      isUsingDemoResult.value = true
+      ElMessage.success('已加载示例本地缓存结果')
+      return
+    }
+
+    isUsingDemoResult.value = isDemoRequest
     loadingText.value = '正在检查输入内容...'
 
     await new Promise((resolve) => setTimeout(resolve, 300))
@@ -362,7 +408,7 @@ const handleGenerate = async () => {
 
     loadingText.value = '正在生成商业计划书，请稍候...'
 
-    const data = await generateBusinessPlan({ ...form })
+    const data = await generateBusinessPlan(payload)
 
     Object.assign(result, createEmptyResult(), data || {})
 
@@ -374,8 +420,12 @@ const handleGenerate = async () => {
       await handleGenerateImages(true)
     }
 
+    if (isDemoRequest) {
+      setAiDemoCache('business-plan.generate', payload, cloneAiCachePayload(result))
+    }
+
     loadingText.value = '全部内容生成完成'
-    ElMessage.success('商业计划生成成功')
+    ElMessage.success(isDemoRequest ? '商业计划生成成功，示例结果已缓存' : '商业计划生成成功')
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error?.response?.data?.msg || error?.message || '生成失败，请稍后重试')
@@ -432,6 +482,8 @@ const handleExportPdf = async () => {
 const handleReset = () => {
   formRef.value?.resetFields()
   Object.assign(result, createEmptyResult())
+  demoFormSnapshot.value = null
+  isUsingDemoResult.value = false
 }
 
 const fillDemo = () => {
@@ -452,6 +504,9 @@ const fillDemo = () => {
     region: '甘肃 + 全国高校市场',
     style: '比赛展示型'
   })
+  demoFormSnapshot.value = cloneAiCachePayload(form)
+  isUsingDemoResult.value = false
+  ElMessage.success('示例数据已填充，首次生成后会自动缓存结果')
 }
 
 const copyFullText = async () => {
@@ -707,6 +762,7 @@ const copyFullText = async () => {
   gap: 12px;
   margin-top: 16px;
   padding-top: 14px;
+  padding-bottom: 10px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.76), #fff 42%);
 }
 

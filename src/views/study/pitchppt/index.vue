@@ -258,6 +258,13 @@
 import { reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import {
+  cloneAiCachePayload,
+  getAiDemoCache,
+  isSameAiPayload,
+  setAiDemoCache,
+  waitAiCacheDelay
+} from '@/utils/ai-demo-cache'
+import {
   buildPitchPptFile,
   buildPitchPptResourceUrl,
   generatePitchPpt,
@@ -271,6 +278,7 @@ import {
 defineOptions({ name: 'PitchPpt' })
 
 const formRef = ref<FormInstance>()
+const demoFormSnapshot = ref<PitchPptForm | null>(null)
 const loading = ref(false)
 const buildingFile = ref(false)
 const loadingText = ref('正在生成路演 PPT 结构...')
@@ -349,6 +357,8 @@ function fillDemo() {
     stage: 'MVP 验证期',
     style: '比赛答辩型'
   })
+  demoFormSnapshot.value = cloneAiCachePayload(form)
+  ElMessage.success('示例数据已填充，首次生成后会自动缓存结果')
 }
 
 function handleReset() {
@@ -366,6 +376,7 @@ function handleReset() {
   })
   assignResult(createEmptyResult())
   assignPptFile()
+  demoFormSnapshot.value = null
 }
 
 function getPreviewImage(url?: string) {
@@ -389,8 +400,29 @@ async function handleGenerate() {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
+  const payload = cloneAiCachePayload(form)
+  const isDemoRequest = demoFormSnapshot.value
+    ? isSameAiPayload(payload, demoFormSnapshot.value)
+    : false
+  const cachedData = isDemoRequest
+    ? getAiDemoCache<PitchPptResult>('pitch-ppt.generate', payload)
+    : null
+
   loading.value = true
   assignPptFile()
+
+  if (cachedData) {
+    try {
+      loadingText.value = '检测到示例数据已有本地缓存，3秒后直接展示 PPT 文案...'
+      await waitAiCacheDelay()
+      assignResult(cachedData)
+      ElMessage.success('已加载示例本地缓存结果')
+    } finally {
+      loading.value = false
+      loadingText.value = '正在生成路演 PPT 结构...'
+    }
+    return
+  }
 
   const loadingSteps = [
     '正在分析项目内容...',
@@ -410,7 +442,7 @@ async function handleGenerate() {
       loadingText.value = loadingSteps[index]
     }, 1800)
 
-    const data = await generatePitchPpt({ ...form })
+    const data = await generatePitchPpt(payload)
 
     if (!data) {
       ElMessage.error('生成失败')
@@ -418,12 +450,18 @@ async function handleGenerate() {
     }
 
     assignResult(data)
-    ElMessage.success('路演 PPT 文案生成成功')
+
+    if (isDemoRequest) {
+      setAiDemoCache('pitch-ppt.generate', payload, cloneAiCachePayload(result))
+    }
+
+    ElMessage.success(isDemoRequest ? '路演 PPT 文案生成成功，示例结果已缓存' : '路演 PPT 文案生成成功')
   } catch (error: any) {
     ElMessage.error(error?.message || '生成失败，请稍后重试')
   } finally {
     loading.value = false
     if (timer) clearInterval(timer)
+    loadingText.value = '正在生成路演 PPT 结构...'
   }
 }
 
@@ -433,7 +471,36 @@ async function handleBuildPptFile() {
     return
   }
 
+  const payload: PitchPptBuildRequest = cloneAiCachePayload({
+    projectName: result.projectName,
+    pptSummary: result.pptSummary,
+    openingScript: result.openingScript,
+    closingScript: result.closingScript,
+    qaSuggestions: result.qaSuggestions,
+    designStyleSuggestion: result.designStyleSuggestion,
+    slideList: result.slideList
+  })
+  const isDemoRequest = demoFormSnapshot.value
+    ? isSameAiPayload(cloneAiCachePayload(form), demoFormSnapshot.value)
+    : false
+  const cachedData = isDemoRequest
+    ? getAiDemoCache<PitchPptFileResponse>('pitch-ppt.build-file', payload)
+    : null
+
   buildingFile.value = true
+
+  if (cachedData) {
+    try {
+      buildingText.value = '检测到示例 PPT 文件已有本地缓存，3秒后直接展示...'
+      await waitAiCacheDelay()
+      assignPptFile(cachedData)
+      ElMessage.success('已加载示例 PPT 文件缓存')
+    } finally {
+      buildingFile.value = false
+      buildingText.value = '正在生成 PPT 文件...'
+    }
+    return
+  }
 
   const buildingSteps = [
     '正在整理 PPT 页面内容...',
@@ -453,16 +520,6 @@ async function handleBuildPptFile() {
       buildingText.value = buildingSteps[index]
     }, 1800)
 
-    const payload: PitchPptBuildRequest = {
-      projectName: result.projectName,
-      pptSummary: result.pptSummary,
-      openingScript: result.openingScript,
-      closingScript: result.closingScript,
-      qaSuggestions: result.qaSuggestions,
-      designStyleSuggestion: result.designStyleSuggestion,
-      slideList: result.slideList
-    }
-
     const data = await buildPitchPptFile(payload)
 
     if (!data) {
@@ -471,12 +528,18 @@ async function handleBuildPptFile() {
     }
 
     assignPptFile(data)
-    ElMessage.success('PPT 文件生成成功')
+
+    if (isDemoRequest) {
+      setAiDemoCache('pitch-ppt.build-file', payload, cloneAiCachePayload(pptFile))
+    }
+
+    ElMessage.success(isDemoRequest ? 'PPT 文件生成成功，示例结果已缓存' : 'PPT 文件生成成功')
   } catch (error: any) {
     ElMessage.error(error?.message || 'PPT 文件生成失败')
   } finally {
     buildingFile.value = false
     if (timer) clearInterval(timer)
+    buildingText.value = '正在生成 PPT 文件...'
   }
 }
 </script>
