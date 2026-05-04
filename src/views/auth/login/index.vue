@@ -243,6 +243,21 @@ const setupAccount = (key: AccountKey) => {
   formData.password = selectedAccount?.password ?? ''
 }
 
+
+const collectLoginClientInfo = () => {
+  const nav = window.navigator
+  return {
+    loginSource: 'web-admin',
+    clientTime: new Date().toISOString(),
+    clientTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    clientLanguage: nav.language || '',
+    clientPlatform: nav.platform || '',
+    screenWidth: window.screen?.width || window.innerWidth,
+    screenHeight: window.screen?.height || window.innerHeight,
+    devicePixelRatio: String(window.devicePixelRatio || 1)
+  }
+}
+
 const handleSubmit = async () => {
   if (!formRef.value) return
 
@@ -260,7 +275,8 @@ const handleSubmit = async () => {
     const { username, password } = formData
     const { token, refreshToken } = await fetchLogin({
       username,
-      password
+      password,
+      ...collectLoginClientInfo()
     })
 
     if (!token) {

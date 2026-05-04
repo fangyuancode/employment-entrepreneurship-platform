@@ -6,6 +6,7 @@ import { exceptionRoutes } from './exception'
 import { studyRoutes } from './study'
 import { toolboxRoutes } from "./toolbox"
 import { helpRoutes } from './help'
+import { setingRoutes } from './seting'
 /**
  * 导出所有模块化路由
  */
@@ -16,5 +17,6 @@ export const routeModules: AppRouteRecord[] = [
   // exceptionRoutes,
   studyRoutes,
   toolboxRoutes,
-  helpRoutes
+  helpRoutes,
+  setingRoutes
 ]

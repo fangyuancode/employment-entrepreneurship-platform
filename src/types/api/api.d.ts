@@ -35,6 +35,22 @@ declare namespace Api {
       username: string
       /** 密码 */
       password: string
+      /** 登录来源 */
+      loginSource?: string
+      /** 客户端时间 */
+      clientTime?: string
+      /** 客户端时区 */
+      clientTimezone?: string
+      /** 浏览器语言 */
+      clientLanguage?: string
+      /** 平台信息 */
+      clientPlatform?: string
+      /** 屏幕宽度 */
+      screenWidth?: number
+      /** 屏幕高度 */
+      screenHeight?: number
+      /** 设备像素比 */
+      devicePixelRatio?: string
     }
 
     /** 注册参数 */
@@ -48,6 +64,8 @@ declare namespace Api {
     interface LoginResponse {
       token: string
       refreshToken?: string
+      loginLogId?: number
+      sessionId?: string
     }
 
     /** 用户信息 */
@@ -120,6 +138,86 @@ declare namespace Api {
       enabled: number
       disabled: number
       admin: number
+    }
+
+
+
+    /** 用户登录记录列表 */
+    type UserLoginLogList = Api.Common.PaginatedResponse<UserLoginLogItem>
+
+    /** 用户登录记录项 */
+    interface UserLoginLogItem {
+      id: number
+      userId?: number
+      username?: string
+      nickName?: string
+      roleId?: number
+      roleName?: string
+      loginStatus: 'SUCCESS' | 'FAIL' | string
+      failureReason?: string
+      onlineStatus?: string
+      loginTime?: string
+      logoutTime?: string
+      durationMs?: number
+      ip?: string
+      address?: string
+      country?: string
+      province?: string
+      city?: string
+      isp?: string
+      userAgent?: string
+      browser?: string
+      browserVersion?: string
+      os?: string
+      osVersion?: string
+      device?: string
+      deviceType?: string
+      engine?: string
+      mobile?: boolean
+      requestMethod?: string
+      requestUri?: string
+      referer?: string
+      origin?: string
+      host?: string
+      acceptLanguage?: string
+      loginSource?: string
+      clientTime?: string
+      clientTimezone?: string
+      clientLanguage?: string
+      clientPlatform?: string
+      screenWidth?: number
+      screenHeight?: number
+      devicePixelRatio?: string
+      tokenHash?: string
+      sessionId?: string
+      remark?: string
+      createdAt?: string
+    }
+
+    /** 用户登录记录查询参数 */
+    interface UserLoginLogSearchParams extends Api.Common.CommonSearchParams {
+      username?: string
+      loginStatus?: string
+      onlineStatus?: string
+      ip?: string
+      address?: string
+      deviceType?: string
+      startTime?: string
+      endTime?: string
+    }
+
+    /** 用户登录记录统计 */
+    interface UserLoginLogStatistics {
+      total: number
+      success: number
+      failed: number
+      today: number
+      todaySuccess: number
+      todayFailed: number
+      online: number
+      mobile: number
+      pc: number
+      uniqueUserToday: number
     }
 
     /** 角色列表 */

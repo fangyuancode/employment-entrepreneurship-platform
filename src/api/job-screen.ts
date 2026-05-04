@@ -108,7 +108,7 @@ export function getJobScreenNational (params?: ScreenQuery) {
   return request.get<NationalScreenData>({
     url: '/api/common/job-screen/national',
     params,
-    timeout: 600000
+    timeout: 4800000
   })
 }
 
@@ -116,7 +116,7 @@ export function getJobScreenProvince (params?: ScreenQuery) {
   return request.get<ProvinceScreenData>({
     url: '/api/common/job-screen/province',
     params,
-    timeout: 600000
+    timeout: 4800000
   })
 }
 
@@ -124,7 +124,7 @@ export function getJobScreenOptions (params?: ScreenQuery) {
   return request.get<ScreenOptionsData>({
     url: '/api/common/job-screen/options',
     params,
-    timeout: 60000
+    timeout: 4800000
   })
 }
 
@@ -132,7 +132,7 @@ export function getJobScreenInsight (params?: ScreenQuery) {
   return request.get<InsightData>({
     url: '/api/common/job-screen/insight',
     params,
-    timeout: 60000
+    timeout: 4800000
   })
 }
 
@@ -140,7 +140,7 @@ export function getJobScreenHighSalary (params?: ScreenQuery) {
   return request.get<HighSalaryData>({
     url: '/api/common/job-screen/high-salary',
     params,
-    timeout: 60000
+    timeout: 4800000
   })
 }
 

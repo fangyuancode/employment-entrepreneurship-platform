@@ -649,11 +649,48 @@ function normalizeRegionName(name: string) {
   if (!name) return ''
   return String(name)
     .trim()
-    .replace('北京市', '')
-    .replace('天津市', '')
-    .replace('上海市', '')
-    .replace('重庆市', '')
+    .replace('北京市', '北京')
+    .replace('天津市', '天津')
+    .replace('上海市', '上海')
+    .replace('重庆市', '重庆')
 }
+
+function stripRegionSuffix(name: string) {
+  return normalizeRegionName(name)
+    .replace(/特别行政区$/, '')
+    .replace(/壮族自治区$/, '')
+    .replace(/回族自治区$/, '')
+    .replace(/维吾尔自治区$/, '')
+    .replace(/自治区$/, '')
+    .replace(/省$/, '')
+    .replace(/市$/, '')
+    .replace(/地区$/, '')
+    .replace(/盟$/, '')
+    .trim()
+}
+
+function getMapFeatureNames(mapName: string): string[] {
+  const mapInfo = (echarts as any).getMap?.(mapName)
+  const geoJson = mapInfo?.geoJson || mapInfo?.geoJSON
+  const features = geoJson?.features || []
+  return features.map((item: any) => String(item?.properties?.name || '').trim()).filter(Boolean)
+}
+
+function matchMapFeatureName(name: string, mapName: string) {
+  const currentName = normalizeRegionName(name)
+  const featureNames = getMapFeatureNames(mapName)
+
+  if (!currentName || !featureNames.length) return currentName
+  if (featureNames.includes(currentName)) return currentName
+
+  const currentKey = stripRegionSuffix(currentName)
+  const matchedName = featureNames.find(
+    (featureName) => stripRegionSuffix(featureName) === currentKey
+  )
+
+  return matchedName || currentName
+}
+
 function renderMap() {
   mapChart = initChart(mapRef.value, mapChart)
   if (!mapChart) return
@@ -665,14 +702,14 @@ function renderMap() {
     : provinceData.value?.mapData || []
   const mapData = rawMapData.map((item: any) => ({
     ...item,
-    name: normalizeRegionName(item.name)
+    name: matchMapFeatureName(item.name, mapName)
   }))
 
   const scatterData = !isNational
-    ? (provinceData.value?.mapData || [])
+    ? rawMapData
         .filter((item: any) => item.longitude && item.latitude)
         .map((item: any) => ({
-          name: item.name,
+          name: matchMapFeatureName(item.name, mapName),
           value: [item.longitude, item.latitude, item.value],
           avgSalary: item.avgSalary,
           hotCategory: item.hotCategory,
@@ -1378,6 +1415,7 @@ onBeforeUnmount(() => {
   --el-button-border-color: rgba(88, 220, 255, 0.92);
   --el-button-text-color: #00182c;
   font-weight: 700;
+  color: #ffffff;
 }
 
 .screen-body {
@@ -1813,8 +1851,11 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 10px;
   padding: 4px 18px 18px;
-  max-height: 210px;
+  max-height: 240px;
   overflow: auto;
+}
+.insight-list::-webkit-scrollbar {
+  display: none;
 }
 
 .insight-item {

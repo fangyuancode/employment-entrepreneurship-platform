@@ -205,3 +205,48 @@ export function fetchSaveRoleMenus(data: Api.SystemManage.RoleMenuPermissionPara
     showSuccessMessage: true
   })
 }
+
+// =========================
+// 用户登录信息记录
+// =========================
+
+// 获取用户登录记录分页列表
+export function fetchGetUserLoginLogList(params: Api.SystemManage.UserLoginLogSearchParams) {
+  return request.get<Api.SystemManage.UserLoginLogList>({
+    url: '/api/user-login-log/list',
+    params
+  })
+}
+
+// 获取用户登录记录统计
+export function fetchGetUserLoginLogStatistics() {
+  return request.get<Api.SystemManage.UserLoginLogStatistics>({
+    url: '/api/user-login-log/statistics'
+  })
+}
+
+// 删除单条登录记录
+export function fetchDeleteUserLoginLog(id: number) {
+  return request.del<string>({
+    url: `/api/user-login-log/delete/${id}`,
+    showSuccessMessage: true
+  })
+}
+
+// 批量删除登录记录
+export function fetchBatchDeleteUserLoginLogs(ids: number[]) {
+  return request.post<string>({
+    url: '/api/user-login-log/deleteBatch',
+    data: { ids },
+    showSuccessMessage: true
+  })
+}
+
+// 按当前筛选条件清空登录记录；不传条件时清空全部记录
+export function fetchClearUserLoginLogs(params: Api.SystemManage.UserLoginLogSearchParams) {
+  return request.del<string>({
+    url: '/api/user-login-log/clear',
+    params,
+    showSuccessMessage: true
+  })
+}
