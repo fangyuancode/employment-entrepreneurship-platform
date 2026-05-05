@@ -8,6 +8,7 @@ export interface ScreenQuery {
   degree?: string
   experience?: string
   province?: string
+  city?: string
 }
 
 export interface NameValueItem {
@@ -76,6 +77,33 @@ export interface ProvinceScreenData {
   mode: 'province'
 }
 
+export interface CityScreenSummary {
+  province: string
+  city: string
+  jobCount: number
+  districtCount: number
+  cityCount: number
+  avgSalaryK: number
+  skillWordCount: number
+}
+
+export interface CityScreenData {
+  summary: CityScreenSummary
+  province: string
+  city: string
+  mapData: RegionMapItem[]
+  cityJobTop10: NameValueItem[]
+  citySalaryTop10: NameValueItem[]
+  categoryTop10: NameValueItem[]
+  skillTop15: NameValueItem[]
+  degreeDistribution: NameValueItem[]
+  experienceDistribution: NameValueItem[]
+  industryTop10: NameValueItem[]
+  companySizeTop10: NameValueItem[]
+  welfareTop20: NameValueItem[]
+  mode: 'city'
+}
+
 export interface ScreenOptionsData {
   provinces: string[]
 }
@@ -115,6 +143,14 @@ export function getJobScreenNational (params?: ScreenQuery) {
 export function getJobScreenProvince (params?: ScreenQuery) {
   return request.get<ProvinceScreenData>({
     url: '/api/common/job-screen/province',
+    params,
+    timeout: 4800000
+  })
+}
+
+export function getJobScreenCity (params?: ScreenQuery) {
+  return request.get<CityScreenData>({
+    url: '/api/common/job-screen/city',
     params,
     timeout: 4800000
   })

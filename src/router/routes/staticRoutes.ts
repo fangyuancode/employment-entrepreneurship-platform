@@ -52,7 +52,7 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     meta: { title: '大屏' }
   },
   {
-    path: '/bigmap',
+    path: '/jobscreen/bigmap',
     name: 'JobScreenBigMap',
     component: () => import('@/views/jobscreen/bigmap.vue'),
     // component: '/jobscreen/bigmap',

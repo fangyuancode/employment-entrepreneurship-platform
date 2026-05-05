@@ -28,7 +28,7 @@
       <section class="filter-bar">
         <div class="filter-title">
           <strong>{{ modeLabel }}</strong>
-          <span>{{ currentMode === 'national' ? '点击地图省份可进入省级下钻' : '当前展示省内城市分布，可返回全国' }}</span>
+          <span>{{ currentMode === 'national' ? '点击地图省份可进入省级下钻' : currentMode === 'province' ? '点击城市可进入区县下钻，可返回全国' : '当前展示城市区县分布，可返回省级' }}</span>
         </div>
 
         <el-form :inline="true" :model="queryForm" class="filter-form">
@@ -97,7 +97,7 @@
 
           <div class="panel-card">
             <div class="panel-title">
-              <span>{{ currentMode === 'national' ? '岗位数量 TOP10 省份' : '城市岗位 TOP10' }}</span>
+              <span>{{ currentMode === 'national' ? '岗位数量 TOP10 省份' : currentMode === 'province' ? '城市岗位 TOP10' : '区县岗位 TOP10' }}</span>
               <em>JOB RANK</em>
             </div>
             <div ref="leftTopRef" class="chart-box"></div>
@@ -116,13 +116,13 @@
           <div class="panel-card map-card">
             <div class="panel-title panel-title--map">
               <div>
-                <span>{{ currentMode === 'national' ? '全国岗位分布总览' : `${currentProvince} 岗位城市分布` }}</span>
-                <p>{{ currentMode === 'national' ? 'Map Drilldown · 点击省份进入详情' : 'Province Detail · 城市级岗位画像' }}</p>
+                <span>{{ currentMode === 'national' ? '全国岗位分布总览' : currentMode === 'province' ? `${currentProvince} 岗位城市分布` : `${currentCity} 岗位区县分布` }}</span>
+                <p>{{ currentMode === 'national' ? 'Map Drilldown · 点击省份进入详情' : currentMode === 'province' ? 'Province Detail · 点击城市进入区县' : 'City Detail · 区县级岗位画像' }}</p>
               </div>
               <div class="map-actions">
-                <el-tag class="map-tag" effect="plain">{{ currentMode === 'national' ? '全国地图' : '省级地图' }}</el-tag>
+                <el-tag class="map-tag" effect="plain">{{ currentMode === 'national' ? '全国地图' : currentMode === 'province' ? '省级地图' : '城市地图' }}</el-tag>
                 <el-button class="screen-btn map-open-btn" size="small" @click="openBigMapPage">打开大图</el-button>
-                <el-button v-if="currentMode === 'province'" class="screen-btn" size="small" @click="backToNational">返回全国</el-button>
+                <el-button v-if="currentMode !== 'national'" class="screen-btn" size="small" @click="backToPreviousMap">{{ currentMode === 'city' ? '返回省级' : '返回全国' }}</el-button>
               </div>
             </div>
 
@@ -153,7 +153,9 @@
               {{
                 currentMode === 'national'
                   ? '悬停查看岗位数、平均薪资、热门岗位类别、热门技能；点击省份进入详情。'
-                  : '悬停查看城市岗位数、平均薪资、热门类别、热门技能。'
+                  : currentMode === 'province'
+                  ? '悬停查看城市岗位数、平均薪资、热门类别、热门技能；点击城市进入区县分布。'
+                  : '悬停查看区县岗位数、平均薪资、热门类别、热门技能。'
               }}
             </div>
           </div>
@@ -170,7 +172,7 @@
         <aside class="right-panel">
           <div class="panel-card">
             <div class="panel-title">
-              <span>{{ currentMode === 'national' ? '平均薪资 TOP10 地区' : '城市平均薪资 TOP10' }}</span>
+              <span>{{ currentMode === 'national' ? '平均薪资 TOP10 地区' : currentMode === 'province' ? '城市平均薪资 TOP10' : '区县平均薪资 TOP10' }}</span>
               <em>SALARY RANK</em>
             </div>
             <div ref="rightTopRef" class="chart-box"></div>
@@ -251,15 +253,23 @@ import {
   getJobScreenNational,
   getJobScreenOptions,
   getJobScreenProvince,
+  getJobScreenCity,
   getJobScreenInsight,
   getJobScreenHighSalary,
   type NameValueItem,
   type NationalScreenData,
   type ProvinceScreenData,
+  type CityScreenData,
   type InsightData,
   type HighSalaryData
 } from '@/api/job-screen'
-import { registerChinaMap, registerProvinceMap } from '@/utils/echarts-map'
+import {
+  getMapFeatureByName,
+  getMapFeatures,
+  registerChinaMap,
+  registerCityMap,
+  registerProvinceMap
+} from '@/utils/echarts-map'
 
 const loading = ref(false)
 const router = useRouter()
@@ -273,11 +283,15 @@ const queryForm = reactive({
 })
 
 const provinceOptions = ref<string[]>([])
-const currentMode = ref<'national' | 'province'>('national')
+const currentMode = ref<'national' | 'province' | 'city'>('national')
 const currentProvince = ref('')
+const currentCity = ref('')
+const currentCityAdcode = ref('')
+const currentMapName = ref('china')
 
 const nationalData = ref<NationalScreenData | null>(null)
 const provinceData = ref<ProvinceScreenData | null>(null)
+const cityData = ref<CityScreenData | null>(null)
 const insightData = ref<InsightData | null>(null)
 const highSalaryData = ref<HighSalaryData | null>(null)
 
@@ -398,9 +412,24 @@ const summary = computed(() => {
       }
     )
   }
+
+  if (currentMode.value === 'city') {
+    return (
+      cityData.value?.summary || {
+        province: currentProvince.value,
+        city: currentCity.value,
+        jobCount: 0,
+        districtCount: 0,
+        cityCount: 0,
+        avgSalaryK: 0,
+        skillWordCount: 0
+      }
+    )
+  }
+
   return (
     provinceData.value?.summary || {
-      province: '',
+      province: currentProvince.value,
       jobCount: 0,
       cityCount: 0,
       avgSalaryK: 0,
@@ -427,19 +456,21 @@ const currentTime = ref('')
 let clockTimer: number | null = null
 
 const modeLabel = computed(() => {
-  return currentMode.value === 'national' ? '全国总览' : `${currentProvince.value || '-'} 省级下钻`
+  if (currentMode.value === 'national') return '全国总览'
+  if (currentMode.value === 'city') return `${currentCity.value || '-'} 城市下钻`
+  return `${currentProvince.value || '-'} 省级下钻`
 })
 
 const kpiCards = computed(() => [
   {
     icon: '岗',
-    label: currentMode.value === 'national' ? '全国岗位总数' : '省内岗位总数',
+    label: currentMode.value === 'national' ? '全国岗位总数' : currentMode.value === 'city' ? '城市岗位总数' : '省内岗位总数',
     value: formatLargeNumber(summary.value.jobCount),
     sub: 'Job Volume'
   },
   {
     icon: '城',
-    label: '覆盖城市数',
+    label: currentMode.value === 'city' ? '覆盖区县数' : '覆盖城市数',
     value: formatLargeNumber(summary.value.cityCount),
     sub: 'Covered Cities'
   },
@@ -463,13 +494,19 @@ const jobRunCards = computed(() => [
     title:
       currentMode.value === 'national'
         ? '全国岗位分布地图'
-        : `${currentProvince.value} 城市分布地图`,
+        : currentMode.value === 'city'
+          ? `${currentCity.value} 区县分布地图`
+          : `${currentProvince.value} 城市分布地图`,
     subtitle:
-      currentMode.value === 'national' ? 'china_job_distribution' : 'province_city_distribution',
+      currentMode.value === 'national'
+        ? 'china_job_distribution'
+        : currentMode.value === 'city'
+          ? 'city_district_distribution'
+          : 'province_city_distribution',
     status: '正常',
     metrics: [
-      { label: '地图层级', value: currentMode.value === 'national' ? '全国' : '省级' },
-      { label: '下钻能力', value: currentMode.value === 'national' ? '省份' : '城市' },
+      { label: '地图层级', value: currentMode.value === 'national' ? '全国' : currentMode.value === 'city' ? '城市' : '省级' },
+      { label: '下钻能力', value: currentMode.value === 'national' ? '省份' : currentMode.value === 'province' ? '城市' : '区县' },
       { label: '交互状态', value: '可用' }
     ]
   },
@@ -528,7 +565,9 @@ async function toggleFullScreen() {
 }
 
 async function refreshCurrentScreen() {
-  if (currentMode.value === 'province' && currentProvince.value) {
+  if (currentMode.value === 'city' && currentCity.value && currentCityAdcode.value) {
+    await loadCity(currentCity.value, currentCityAdcode.value)
+  } else if (currentMode.value === 'province' && currentProvince.value) {
     await loadProvince(currentProvince.value)
   } else {
     await loadNational()
@@ -537,7 +576,9 @@ async function refreshCurrentScreen() {
 
 async function searchByFilter() {
   await loadOptions()
-  if (queryForm.province) {
+  if (currentMode.value === 'city' && currentCity.value && currentCityAdcode.value) {
+    await loadCity(currentCity.value, currentCityAdcode.value)
+  } else if (queryForm.province) {
     await loadProvince(queryForm.province)
   } else {
     await loadNational()
@@ -564,7 +605,8 @@ async function loadInsightAndHighSalary() {
     categoryMain: queryForm.categoryMain,
     degree: queryForm.degree,
     experience: queryForm.experience,
-    province: currentMode.value === 'province' ? currentProvince.value : queryForm.province
+    province: currentMode.value !== 'national' ? currentProvince.value : queryForm.province,
+    city: currentMode.value === 'city' ? currentCity.value : undefined
   }
 
   const [insightRes, highSalaryRes] = await Promise.all([
@@ -581,6 +623,9 @@ async function loadNational() {
     loading.value = true
     currentMode.value = 'national'
     currentProvince.value = ''
+    currentCity.value = ''
+    currentCityAdcode.value = ''
+    currentMapName.value = 'china'
     queryForm.province = ''
 
     await registerChinaMap()
@@ -594,6 +639,7 @@ async function loadNational() {
 
     nationalData.value = res
     provinceData.value = null
+    cityData.value = null
 
     await loadInsightAndHighSalary()
 
@@ -608,7 +654,7 @@ async function loadNational() {
 }
 
 async function loadProvince(provinceName?: string) {
-  const targetProvince = provinceName || queryForm.province
+  const targetProvince = getProvinceShortName(provinceName || queryForm.province)
   if (!targetProvince) {
     ElMessage.warning('请选择省份后再查看详情')
     return
@@ -618,6 +664,9 @@ async function loadProvince(provinceName?: string) {
     loading.value = true
     currentMode.value = 'province'
     currentProvince.value = targetProvince
+    currentCity.value = ''
+    currentCityAdcode.value = ''
+    currentMapName.value = targetProvince
     queryForm.province = targetProvince
 
     await registerProvinceMap(targetProvince)
@@ -631,6 +680,7 @@ async function loadProvince(provinceName?: string) {
     })
 
     provinceData.value = res
+    cityData.value = null
 
     await loadInsightAndHighSalary()
 
@@ -644,14 +694,132 @@ async function loadProvince(provinceName?: string) {
   }
 }
 
+
+function parseFeatureCenter(center: any): [number, number] | null {
+  if (Array.isArray(center) && center.length >= 2) {
+    const lng = Number(center[0])
+    const lat = Number(center[1])
+    return Number.isFinite(lng) && Number.isFinite(lat) ? [lng, lat] : null
+  }
+
+  if (typeof center === 'string') {
+    const [lngText, latText] = center.split(',')
+    const lng = Number(lngText)
+    const lat = Number(latText)
+    return Number.isFinite(lng) && Number.isFinite(lat) ? [lng, lat] : null
+  }
+
+  return null
+}
+
+function buildEmptyCityScreenData(cityName: string, mapName: string): CityScreenData {
+  const features = getMapFeatures(mapName)
+  const mapData = features
+    .map((feature: any) => {
+      const properties = feature?.properties || {}
+      const name = String(properties.name || '').trim()
+      const center = parseFeatureCenter(properties.center || properties.centroid)
+      return {
+        name,
+        value: 0,
+        avgSalary: 0,
+        hotCategory: '-',
+        hotSkill: '-',
+        longitude: center?.[0],
+        latitude: center?.[1]
+      }
+    })
+    .filter((item: any) => item.name)
+
+  return {
+    summary: {
+      province: currentProvince.value,
+      city: cityName,
+      jobCount: 0,
+      districtCount: mapData.length,
+      cityCount: mapData.length,
+      avgSalaryK: 0,
+      skillWordCount: 0
+    },
+    province: currentProvince.value,
+    city: cityName,
+    mapData,
+    cityJobTop10: [],
+    citySalaryTop10: [],
+    categoryTop10: [],
+    skillTop15: [],
+    degreeDistribution: [],
+    experienceDistribution: [],
+    industryTop10: [],
+    companySizeTop10: [],
+    welfareTop20: [],
+    mode: 'city'
+  }
+}
+
+async function loadCity(cityName: string, cityAdcode: string) {
+  const targetCity = normalizeRegionName(cityName)
+  const targetAdcode = String(cityAdcode || '').trim()
+
+  if (!targetCity || !targetAdcode) {
+    ElMessage.warning('当前城市地图数据不完整，暂不能继续下钻')
+    return
+  }
+
+  try {
+    loading.value = true
+    const cityMapName = await registerCityMap(targetCity, targetAdcode)
+
+    currentMode.value = 'city'
+    currentCity.value = targetCity
+    currentCityAdcode.value = targetAdcode
+    currentMapName.value = cityMapName
+
+    try {
+      const res = await getJobScreenCity({
+        keyword: queryForm.keyword,
+        categoryMain: queryForm.categoryMain,
+        degree: queryForm.degree,
+        experience: queryForm.experience,
+        province: currentProvince.value,
+        city: targetCity
+      })
+      cityData.value = res
+    } catch (error) {
+      console.warn('城市区县岗位数据接口不可用，先展示城市区县地图。', error)
+      cityData.value = buildEmptyCityScreenData(targetCity, cityMapName)
+    }
+
+    await loadInsightAndHighSalary()
+    await nextTick()
+    renderAll()
+  } catch (error) {
+    console.error(error)
+    ElMessage.warning('当前城市暂未找到区县地图，不能继续下钻')
+  } finally {
+    loading.value = false
+  }
+}
+
 async function handleProvinceSelect(value: string) {
-  if (!value) return
+  if (!value) {
+    await loadNational()
+    return
+  }
   await loadProvince(value)
 }
 
 function backToNational() {
   queryForm.province = ''
   loadNational()
+}
+
+function backToPreviousMap() {
+  if (currentMode.value === 'city' && currentProvince.value) {
+    loadProvince(currentProvince.value)
+    return
+  }
+  backToNational()
 }
 
 function resetQuery() {
@@ -669,8 +837,13 @@ function openBigMapPage() {
     mode: currentMode.value
   }
 
-  if (currentMode.value === 'province' && currentProvince.value) {
+  if (currentMode.value !== 'national' && currentProvince.value) {
     query.province = currentProvince.value
+  }
+
+  if (currentMode.value === 'city' && currentCity.value && currentCityAdcode.value) {
+    query.city = currentCity.value
+    query.cityAdcode = currentCityAdcode.value
   }
 
   const queryKeys: Array<keyof typeof queryForm> = [
@@ -687,7 +860,7 @@ function openBigMapPage() {
   // 这里不要手动拼接 #/xxx，统一交给 vue-router 生成地址。
   // 这样无论项目使用 hash history、web history，还是部署在二级目录，都不会打开错误地址。
   const target = router.resolve({
-    path: '/bigmap',
+    path: '/jobscreen/bigmap',
     query
   })
 
@@ -793,8 +966,10 @@ function stripRegionSuffix(name: string) {
     .replace(/自治区$/, '')
     .replace(/省$/, '')
     .replace(/市$/, '')
+    .replace(/自治州$/, '')
     .replace(/地区$/, '')
     .replace(/盟$/, '')
+    .replace(/州$/, '')
     .trim()
 }
 
@@ -910,10 +1085,13 @@ function renderMap() {
   if (!mapChart) return
 
   const isNational = currentMode.value === 'national'
-  const mapName = isNational ? 'china' : currentProvince.value
+  const isCity = currentMode.value === 'city'
+  const mapName = currentMapName.value || (isNational ? 'china' : currentProvince.value)
   const rawMapData = isNational
     ? nationalData.value?.mapData || []
-    : provinceData.value?.mapData || []
+    : isCity
+      ? cityData.value?.mapData || []
+      : provinceData.value?.mapData || []
 
   const mapData = rawMapData.map((item: any) => ({
     ...item,
@@ -1254,13 +1432,38 @@ function renderMap() {
     syncSideLayerRoam()
   })
 
-  if (isNational) {
-    mapChart.on('click', (params: any) => {
-      const provinceName = getProvinceShortName(params?.name || '')
-      if (provinceName && provinceNameMap[provinceName]) {
-        loadProvince(provinceName)
-      }
-    })
+  mapChart.on('click', handleMapClick)
+}
+
+function getFeaturePropertiesFromClick(params: any) {
+  const clickName = String(params?.name || '').trim()
+  if (!clickName) return null
+  const feature = getMapFeatureByName(currentMapName.value, clickName)
+  return feature?.properties || null
+}
+
+async function handleMapClick(params: any) {
+  const properties = getFeaturePropertiesFromClick(params)
+  const name = String(properties?.name || params?.name || '').trim()
+  const adcode = String(properties?.adcode || '').trim()
+  const level = String(properties?.level || '').trim()
+
+  if (!name || !adcode) return
+
+  if (currentMode.value === 'national') {
+    const provinceName = getProvinceShortName(name)
+    if (provinceName && provinceNameMap[provinceName]) {
+      await loadProvince(provinceName)
+    }
+    return
+  }
+
+  if (currentMode.value === 'province') {
+    if (level && level !== 'city') {
+      ElMessage.info('当前已经是区县层级，不能继续下钻')
+      return
+    }
+    await loadCity(name, adcode)
   }
 }
 function renderLeftTop() {
@@ -1270,7 +1473,9 @@ function renderLeftTop() {
   const data =
     currentMode.value === 'national'
       ? nationalData.value?.provinceTop10 || []
-      : provinceData.value?.cityJobTop10 || []
+      : currentMode.value === 'city'
+        ? cityData.value?.cityJobTop10 || []
+        : provinceData.value?.cityJobTop10 || []
 
   leftTopChart.setOption(buildHorizontalBarOption(data, '岗位数量'))
 }
@@ -1282,7 +1487,9 @@ function renderLeftMiddle() {
   const rawData =
     currentMode.value === 'national'
       ? nationalData.value?.categoryMainTop || []
-      : provinceData.value?.categoryTop10 || []
+      : currentMode.value === 'city'
+        ? cityData.value?.categoryTop10 || []
+        : provinceData.value?.categoryTop10 || []
 
   const data = mergeOtherData(rawData, 10).slice(0, 10).reverse()
 
@@ -1360,12 +1567,16 @@ function renderLeftBottom() {
   const degreeData =
     currentMode.value === 'national'
       ? nationalData.value?.degreeDistribution || []
-      : provinceData.value?.degreeDistribution || []
+      : currentMode.value === 'city'
+        ? cityData.value?.degreeDistribution || []
+        : provinceData.value?.degreeDistribution || []
 
   const expData =
     currentMode.value === 'national'
       ? nationalData.value?.experienceDistribution || []
-      : provinceData.value?.experienceDistribution || []
+      : currentMode.value === 'city'
+        ? cityData.value?.experienceDistribution || []
+        : provinceData.value?.experienceDistribution || []
 
   const names = Array.from(
     new Set([...degreeData.map((i) => i.name), ...expData.map((i) => i.name)])
@@ -1420,7 +1631,9 @@ function renderRightTop() {
   const data =
     currentMode.value === 'national'
       ? nationalData.value?.avgSalaryProvinceTop10 || []
-      : provinceData.value?.citySalaryTop10 || []
+      : currentMode.value === 'city'
+        ? cityData.value?.citySalaryTop10 || []
+        : provinceData.value?.citySalaryTop10 || []
 
   rightTopChart.setOption({
     backgroundColor: 'transparent',
@@ -1458,7 +1671,9 @@ function renderRightMiddle() {
   const rawData =
     currentMode.value === 'national'
       ? nationalData.value?.skillTop20 || []
-      : provinceData.value?.skillTop15 || []
+      : currentMode.value === 'city'
+        ? cityData.value?.skillTop15 || []
+        : provinceData.value?.skillTop15 || []
 
   const data = rawData.filter((item: any) => {
     const name = String(item.name || '').trim()
@@ -1525,8 +1740,9 @@ function renderRightBottom() {
       ]
     })
   } else {
-    const industry = provinceData.value?.industryTop10 || []
-    const welfare = provinceData.value?.welfareTop20 || []
+    const sourceData = currentMode.value === 'city' ? cityData.value : provinceData.value
+    const industry = sourceData?.industryTop10 || []
+    const welfare = sourceData?.welfareTop20 || []
 
     rightBottomChart.setOption({
       backgroundColor: 'transparent',
