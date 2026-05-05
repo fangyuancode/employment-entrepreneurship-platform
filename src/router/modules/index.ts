@@ -6,6 +6,7 @@ import { toolboxRoutes } from './toolbox'
 import { helpRoutes } from './help'
 import { setingRoutes } from './seting'
 import { test1Routes } from './test1'
+// import { jobScreenBigMapRoute } from './jobscreen-bigmap'
 
 /**
  * 导出所有模块化路由。
@@ -19,5 +20,6 @@ export const routeModules: AppRouteRecord[] = [
   studyRoutes,
   toolboxRoutes,
   helpRoutes,
-  test1Routes
+  test1Routes,
+  // jobScreenBigMapRoute
 ]

@@ -52,6 +52,18 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     meta: { title: '大屏' }
   },
   {
+    path: '/bigmap',
+    name: 'JobScreenBigMap',
+    component: () => import('@/views/jobscreen/bigmap.vue'),
+    // component: '/jobscreen/bigmap',
+    meta: {
+      title: '岗位分布大地图',
+      // keepAlive: false,
+      // fixedTab: false,
+      // hideMenu: true
+    }
+  },
+  {
     path: '/aichat',
     name: 'aichat',
     component: () => import('@/views/aichat/index.vue'),

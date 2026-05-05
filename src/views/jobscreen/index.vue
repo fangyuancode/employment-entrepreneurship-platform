@@ -121,6 +121,7 @@
               </div>
               <div class="map-actions">
                 <el-tag class="map-tag" effect="plain">{{ currentMode === 'national' ? '全国地图' : '省级地图' }}</el-tag>
+                <el-button class="screen-btn map-open-btn" size="small" @click="openBigMapPage">打开大图</el-button>
                 <el-button v-if="currentMode === 'province'" class="screen-btn" size="small" @click="backToNational">返回全国</el-button>
               </div>
             </div>
@@ -245,6 +246,7 @@
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   getJobScreenNational,
   getJobScreenOptions,
@@ -260,6 +262,7 @@ import {
 import { registerChinaMap, registerProvinceMap } from '@/utils/echarts-map'
 
 const loading = ref(false)
+const router = useRouter()
 
 const queryForm = reactive({
   keyword: '',
@@ -296,6 +299,16 @@ let rightMiddleChart: echarts.ECharts | null = null
 let rightBottomChart: echarts.ECharts | null = null
 let bottomLeftChart: echarts.ECharts | null = null
 
+const MAP_SIDE_LAYER_COUNT = 7
+const MAP_ZOOM_MIN = 0.82
+const MAP_ZOOM_MAX = 3.2
+
+const mapZoom = ref(1)
+const mapPanOffset = reactive({ x: 0, y: 0 })
+let renderedMapNameForZoom = ''
+let mapBaseLayoutCenter: [string, string] = ['50%', '52%']
+let syncingMapRoam = false
+
 const provinceNameMap: Record<string, boolean> = {
   北京: true,
   天津: true,
@@ -331,6 +344,47 @@ const provinceNameMap: Record<string, boolean> = {
   新疆: true,
   香港: true,
   澳门: true
+}
+
+/**
+ * 全国地图热点坐标：用于在 2D ECharts 地图上模拟参考图中的“立体柱、光圈、飞线”效果。
+ * 后端全国聚合数据通常只有省份名称，没有经纬度，因此前端补充省级中心点。
+ */
+const provinceCenterMap: Record<string, [number, number]> = {
+  北京: [116.4074, 39.9042],
+  天津: [117.2009, 39.0842],
+  上海: [121.4737, 31.2304],
+  重庆: [106.5516, 29.563],
+  河北: [114.5025, 38.0455],
+  山西: [112.5492, 37.857],
+  辽宁: [123.4315, 41.8057],
+  吉林: [125.3245, 43.8868],
+  黑龙江: [126.6425, 45.7567],
+  江苏: [118.7969, 32.0603],
+  浙江: [120.1551, 30.2741],
+  安徽: [117.283, 31.8612],
+  福建: [119.2965, 26.0745],
+  江西: [115.8582, 28.6829],
+  山东: [117.1201, 36.6512],
+  河南: [113.6254, 34.7466],
+  湖北: [114.3054, 30.5931],
+  湖南: [112.9388, 28.2282],
+  广东: [113.2644, 23.1291],
+  海南: [110.3312, 20.0311],
+  四川: [104.0668, 30.5728],
+  贵州: [106.6302, 26.647],
+  云南: [102.8329, 24.8801],
+  陕西: [108.9398, 34.3416],
+  甘肃: [103.8343, 36.0611],
+  青海: [101.7782, 36.6171],
+  台湾: [121.5654, 25.033],
+  内蒙古: [111.7519, 40.8415],
+  广西: [108.3665, 22.817],
+  西藏: [91.1172, 29.6469],
+  宁夏: [106.2309, 38.4872],
+  新疆: [87.6168, 43.8256],
+  香港: [114.1694, 22.3193],
+  澳门: [113.5439, 22.1987]
 }
 
 const summary = computed(() => {
@@ -610,10 +664,85 @@ function resetQuery() {
   loadNational()
 }
 
+function openBigMapPage() {
+  const query: Record<string, string> = {
+    mode: currentMode.value
+  }
+
+  if (currentMode.value === 'province' && currentProvince.value) {
+    query.province = currentProvince.value
+  }
+
+  const queryKeys: Array<keyof typeof queryForm> = [
+    'keyword',
+    'categoryMain',
+    'degree',
+    'experience'
+  ]
+  queryKeys.forEach((key) => {
+    const value = String(queryForm[key] || '').trim()
+    if (value) query[key] = value
+  })
+
+  // 这里不要手动拼接 #/xxx，统一交给 vue-router 生成地址。
+  // 这样无论项目使用 hash history、web history，还是部署在二级目录，都不会打开错误地址。
+  const target = router.resolve({
+    path: '/bigmap',
+    query
+  })
+
+  if (!router.hasRoute('JobScreenBigMap')) {
+    ElMessage.warning('岗位分布大地图路由尚未注册，请先添加 /jobscreen/bigmap 路由')
+  }
+
+  window.open(target.href, '_blank', 'noopener,noreferrer')
+}
+
 function initChart(dom: HTMLDivElement | null, oldChart: echarts.ECharts | null) {
   if (!dom) return null
   if (oldChart) oldChart.dispose()
   return echarts.init(dom)
+}
+
+function clampMapZoom(value: number) {
+  return Math.min(MAP_ZOOM_MAX, Math.max(MAP_ZOOM_MIN, Number(value.toFixed(2))))
+}
+
+function toPercentNumber(value: string) {
+  const num = Number(String(value || '').replace('%', ''))
+  return Number.isFinite(num) ? num : 50
+}
+
+function getPanLayoutCenter(baseCenter: [string, string], yOffsetPercent = 0): [string, string] {
+  const width = mapRef.value?.clientWidth || 1
+  const height = mapRef.value?.clientHeight || 1
+  const x = toPercentNumber(baseCenter[0]) + (mapPanOffset.x / width) * 100
+  const y = toPercentNumber(baseCenter[1]) + (mapPanOffset.y / height) * 100 + yOffsetPercent
+
+  return [`${Number(x.toFixed(4))}%`, `${Number(y.toFixed(4))}%`]
+}
+
+function buildSideLayerRoamOptions(zoom = mapZoom.value) {
+  return Array.from({ length: MAP_SIDE_LAYER_COUNT }).map((_, index) => ({
+    id: `map-side-layer-${index}`,
+    zoom,
+    layoutCenter: getPanLayoutCenter(mapBaseLayoutCenter, 0.42 * (index + 1))
+  }))
+}
+
+function syncSideLayerRoam() {
+  if (!mapChart) return
+  syncingMapRoam = true
+  mapChart.setOption(
+    {
+      series: buildSideLayerRoamOptions()
+    },
+    false
+  )
+
+  window.setTimeout(() => {
+    syncingMapRoam = false
+  }, 0)
 }
 
 function renderAll() {
@@ -691,6 +820,91 @@ function matchMapFeatureName(name: string, mapName: string) {
   return matchedName || currentName
 }
 
+function getProvinceShortName(name: string) {
+  const targetKey = stripRegionSuffix(name)
+  return (
+    Object.keys(provinceNameMap).find((province) => stripRegionSuffix(province) === targetKey) ||
+    normalizeRegionName(name)
+  )
+}
+
+function getRegionCoord(item: any, isNational: boolean): [number, number] | null {
+  const lng = Number(item?.longitude)
+  const lat = Number(item?.latitude)
+  if (!isNational && Number.isFinite(lng) && Number.isFinite(lat) && lng && lat) {
+    return [lng, lat]
+  }
+
+  const shortName = getProvinceShortName(item?.name || '')
+  return provinceCenterMap[shortName] || null
+}
+
+function getTopMapItems(mapData: any[], isNational: boolean, maxCount = 8) {
+  return [...(mapData || [])]
+    .filter((item) => Number(item?.value || 0) > 0 && getRegionCoord(item, isNational))
+    .sort((a, b) => Number(b.value || 0) - Number(a.value || 0))
+    .slice(0, maxCount)
+}
+
+function buildMapHotSpotData(mapData: any[], isNational: boolean) {
+  return getTopMapItems(mapData, isNational, isNational ? 9 : 12).map((item) => {
+    const coord = getRegionCoord(item, isNational) as [number, number]
+    return {
+      name: item.name,
+      value: [coord[0], coord[1], Number(item.value || 0)],
+      raw: item,
+      avgSalary: item.avgSalary,
+      hotCategory: item.hotCategory,
+      hotSkill: item.hotSkill
+    }
+  })
+}
+
+function buildMapLineData(hotSpotData: any[]) {
+  if (!hotSpotData.length) return []
+
+  const hub = hotSpotData[0]
+  const hubCoord = [hub.value[0], hub.value[1]]
+
+  return hotSpotData.slice(1, 8).map((item, index) => ({
+    name: `${hub.name}-${item.name}`,
+    coords: [hubCoord, [item.value[0], item.value[1]]],
+    value: item.value[2],
+    lineStyle: {
+      width: index < 3 ? 1.35 : 0.9,
+      opacity: index < 3 ? 0.72 : 0.48,
+      curveness: index % 2 === 0 ? 0.24 : -0.2
+    }
+  }))
+}
+
+function buildMapPillarData(hotSpotData: any[]) {
+  return hotSpotData.slice(0, 7).map((item: any) => ({
+    name: item.name,
+    value: [item.value[0], item.value[1], item.value[2], item.name],
+    raw: item.raw || item
+  }))
+}
+
+function formatMapTooltip(params: any) {
+  const data = params?.data || {}
+  const source = data.raw || data
+  const valueText = Array.isArray(data.value) ? data.value[2] ?? 0 : data.value ?? 0
+  return `
+    <div style="min-width:150px;line-height:1.8;padding:4px 2px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:4px;color:#ffffff;">${
+        params.name || source.name || '-'
+      }</div>
+      <div>岗位数：<span style="color:#5de7ff;font-weight:700;">${valueText}</span></div>
+      <div>平均薪资：<span style="color:#ffd36c;font-weight:700;">${
+        source.avgSalary ?? 0
+      } K</span></div>
+      <div>热门类别：${source.hotCategory || '-'}</div>
+      <div>热门技能：${source.hotSkill || '-'}</div>
+    </div>
+  `
+}
+
 function renderMap() {
   mapChart = initChart(mapRef.value, mapChart)
   if (!mapChart) return
@@ -700,126 +914,355 @@ function renderMap() {
   const rawMapData = isNational
     ? nationalData.value?.mapData || []
     : provinceData.value?.mapData || []
+
   const mapData = rawMapData.map((item: any) => ({
     ...item,
-    name: matchMapFeatureName(item.name, mapName)
+    name: matchMapFeatureName(item.name, mapName),
+    value: Number(item.value || 0)
   }))
 
-  const scatterData = !isNational
-    ? rawMapData
-        .filter((item: any) => item.longitude && item.latitude)
-        .map((item: any) => ({
-          name: matchMapFeatureName(item.name, mapName),
-          value: [item.longitude, item.latitude, item.value],
-          avgSalary: item.avgSalary,
-          hotCategory: item.hotCategory,
-          hotSkill: item.hotSkill
-        }))
-    : []
+  const maxValue = Math.max(...mapData.map((item: any) => Number(item.value || 0)), 10)
+  const hotSpotData = buildMapHotSpotData(mapData, isNational)
+  const lineData = buildMapLineData(hotSpotData)
+  const pillarData = buildMapPillarData(hotSpotData)
+  const layoutSize = isNational ? '112%' : '104%'
+  const layoutCenter: [string, string] = isNational ? ['50%', '53%'] : ['50%', '52%']
+  const aspectScale = isNational ? 0.88 : 0.95
+  mapBaseLayoutCenter = layoutCenter
 
-  mapChart.setOption({
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'item',
-      formatter: (params: any) => {
-        const data = params.data || {}
-        const valueText = Array.isArray(data.value) ? data.value[2] ?? 0 : data.value ?? 0
-        return `
-            <div style="line-height:1.8;">
-              <div style="font-weight:600;font-size:14px;margin-bottom:4px;">${
-                params.name || '-'
-              }</div>
-              <div>岗位数：${valueText}</div>
-              <div>平均薪资：${data.avgSalary ?? 0} K</div>
-              <div>热门类别：${data.hotCategory || '-'}</div>
-              <div>热门技能：${data.hotSkill || '-'}</div>
-            </div>
-          `
-      }
+  if (renderedMapNameForZoom !== mapName) {
+    mapZoom.value = 1
+    mapPanOffset.x = 0
+    mapPanOffset.y = 0
+    renderedMapNameForZoom = mapName
+  }
+
+  const sideMapLayers = Array.from({ length: MAP_SIDE_LAYER_COUNT }).map((_, index) => ({
+    id: `map-side-layer-${index}`,
+    name: `地图侧壁-${index}`,
+    type: 'map',
+    map: mapName,
+    silent: true,
+    zlevel: 0,
+    z: index,
+    layoutCenter: getPanLayoutCenter(layoutCenter, 0.42 * (index + 1)),
+    layoutSize,
+    aspectScale,
+    zoom: mapZoom.value,
+    scaleLimit: {
+      min: MAP_ZOOM_MIN,
+      max: MAP_ZOOM_MAX
     },
-    visualMap: {
-      min: 0,
-      max: Math.max(...mapData.map((item: any) => Number(item.value || 0)), 10),
-      text: ['高', '低'],
-      realtime: false,
-      calculable: true,
-      left: 20,
-      bottom: 20,
-      textStyle: {
-        color: '#cfe1ff'
-      },
-      inRange: {
-        color: ['#102d5c', '#1f64ff', '#57b7ff']
-      }
+    label: { show: false },
+    itemStyle: {
+      areaColor: `rgba(4, ${36 + index * 4}, ${88 + index * 6}, ${0.42 - index * 0.025})`,
+      borderColor: `rgba(37, 154, 255, ${0.34 - index * 0.025})`,
+      borderWidth: 0.8,
+      shadowBlur: 0
     },
-    geo: {
-      map: mapName,
-      roam: true,
-      zoom: isNational ? 1.15 : 1.0,
-      label: {
-        show: true,
-        color: '#d9e8ff',
-        fontSize: 11
-      },
-      itemStyle: {
-        areaColor: '#0e2548',
-        borderColor: '#3a7bff',
-        borderWidth: 1
-      },
-      emphasis: {
-        label: {
-          color: '#ffffff'
+    emphasis: {
+      disabled: true,
+      label: { show: false }
+    },
+    data: []
+  }))
+
+  mapChart.setOption(
+    {
+      backgroundColor: 'transparent',
+      animation: true,
+      animationDurationUpdate: 800,
+      tooltip: {
+        trigger: 'item',
+        confine: true,
+        appendToBody: true,
+        backgroundColor: 'rgba(3, 13, 32, 0.94)',
+        borderColor: 'rgba(79, 214, 255, 0.58)',
+        borderWidth: 1,
+        padding: [10, 12],
+        textStyle: {
+          color: '#dff6ff',
+          fontSize: 12
         },
-        itemStyle: {
-          areaColor: '#2a63e6'
+        extraCssText: 'box-shadow:0 0 18px rgba(50,190,255,.28);border-radius:8px;',
+        formatter: formatMapTooltip
+      },
+      visualMap: {
+        show: false,
+        min: 0,
+        max: maxValue,
+        seriesIndex: MAP_SIDE_LAYER_COUNT,
+        inRange: {
+          color: ['#0b2d61', '#1555c8', '#1fa4ff', '#48f0ff']
         }
-      }
-    },
-    series: [
-      {
-        name: '岗位分布',
-        type: 'map',
-        geoIndex: 0,
-        data: mapData
       },
-      {
-        name: '城市散点',
-        type: 'effectScatter',
-        coordinateSystem: 'geo',
-        showEffectOn: 'render',
-        rippleEffect: {
-          scale: 4
+      geo: {
+        map: mapName,
+        silent: false,
+        roam: true,
+        zoom: mapZoom.value,
+        scaleLimit: {
+          min: MAP_ZOOM_MIN,
+          max: MAP_ZOOM_MAX
         },
-        symbolSize: (val: any) => {
-          const count = Number(val?.[2] || 0)
-          return Math.max(8, Math.min(26, count / 20))
-        },
-        itemStyle: {
-          color: '#67e8f9'
-        },
+        layoutCenter,
+        layoutSize,
+        aspectScale,
+        zlevel: 2,
         label: {
           show: true,
-          formatter: '{b}',
-          position: 'right',
-          color: '#dff4ff',
-          fontSize: 10
+          color: 'rgba(223, 244, 255, 0.9)',
+          fontSize: isNational ? 11 : 10,
+          fontWeight: 600,
+          textShadowColor: 'rgba(0, 20, 48, 0.95)',
+          textShadowBlur: 5
         },
-        data: scatterData
-      }
-    ]
-  })
+        itemStyle: {
+          areaColor: '#0c3470',
+          borderColor: '#46c6ff',
+          borderWidth: 1.15,
+          shadowBlur: 28,
+          shadowColor: 'rgba(30, 170, 255, 0.52)',
+          shadowOffsetY: 9
+        },
+        emphasis: {
+          label: {
+            show: true,
+            color: '#ffffff'
+          },
+          itemStyle: {
+            areaColor: '#2387ff',
+            borderColor: '#9ff4ff',
+            borderWidth: 1.5,
+            shadowBlur: 34,
+            shadowColor: 'rgba(70, 220, 255, 0.75)'
+          }
+        }
+      },
+      series: [
+        ...sideMapLayers,
+        {
+          id: 'job-map-main',
+          name: '岗位分布',
+          type: 'map',
+          map: mapName,
+          geoIndex: 0,
+          zlevel: 3,
+          zoom: mapZoom.value,
+          data: mapData,
+          selectedMode: false,
+          label: {
+            show: true,
+            color: '#dcefff',
+            fontSize: isNational ? 11 : 10,
+            fontWeight: 600,
+            textShadowColor: 'rgba(0, 16, 40, 0.95)',
+            textShadowBlur: 6
+          },
+          itemStyle: {
+            areaColor: '#113e82',
+            borderColor: 'rgba(96, 210, 255, 0.88)',
+            borderWidth: 1.05,
+            shadowBlur: 16,
+            shadowColor: 'rgba(45, 180, 255, 0.34)'
+          },
+          emphasis: {
+            label: {
+              show: true,
+              color: '#ffffff',
+              fontWeight: 800
+            },
+            itemStyle: {
+              areaColor: '#2d8cff',
+              borderColor: '#d4fbff',
+              borderWidth: 1.6,
+              shadowBlur: 30,
+              shadowColor: 'rgba(83, 231, 255, 0.72)'
+            }
+          }
+        },
+        {
+          id: 'job-map-lines',
+          name: '岗位联系流线',
+          type: 'lines',
+          coordinateSystem: 'geo',
+          zlevel: 5,
+          silent: true,
+          blendMode: 'lighter',
+          effect: {
+            show: true,
+            period: 4.6,
+            trailLength: 0.24,
+            symbol: 'circle',
+            symbolSize: 4,
+            color: '#ffd66b'
+          },
+          lineStyle: {
+            color: '#39e6ff',
+            width: 1,
+            opacity: 0.58,
+            curveness: 0.24,
+            type: 'dashed'
+          },
+          data: lineData
+        },
+        {
+          id: 'job-map-hotspot',
+          name: '城市热力光圈',
+          type: 'effectScatter',
+          coordinateSystem: 'geo',
+          zlevel: 6,
+          showEffectOn: 'render',
+          rippleEffect: {
+            brushType: 'stroke',
+            scale: 5.6,
+            period: 3.2
+          },
+          symbolSize: (val: any) => {
+            const count = Number(val?.[2] || 0)
+            return Math.max(8, Math.min(28, 8 + (count / maxValue) * 20))
+          },
+          itemStyle: {
+            color: '#49f3ff',
+            shadowBlur: 18,
+            shadowColor: '#48eaff'
+          },
+          label: {
+            show: !isNational,
+            formatter: '{b}',
+            position: 'right',
+            color: '#e9fbff',
+            fontSize: 10,
+            textShadowColor: 'rgba(0, 10, 28, 0.9)',
+            textShadowBlur: 5
+          },
+          emphasis: {
+            scale: 1.15
+          },
+          data: hotSpotData
+        },
+        {
+          id: 'job-map-pillars',
+          name: '重点区域立体柱',
+          type: 'custom',
+          coordinateSystem: 'geo',
+          zlevel: 7,
+          data: pillarData,
+          renderItem: (params: any, api: any) => {
+            const lng = api.value(0)
+            const lat = api.value(1)
+            const value = Number(api.value(2) || 0)
+            const name = String(api.value(3) || '')
+            const coord = api.coord([lng, lat])
+            const height = Math.max(
+              34,
+              Math.min(isNational ? 145 : 118, 32 + (value / maxValue) * 130)
+            )
+            const width = isNational ? 13 : 11
+            const x = coord[0]
+            const y = coord[1]
+
+            return {
+              type: 'group',
+              children: [
+                {
+                  type: 'ellipse',
+                  shape: { cx: x, cy: y + 2, rx: 26, ry: 10 },
+                  style: {
+                    fill: 'rgba(40, 152, 255, 0.18)',
+                    stroke: 'rgba(85, 225, 255, 0.85)',
+                    lineWidth: 1.2,
+                    shadowBlur: 18,
+                    shadowColor: 'rgba(64, 211, 255, 0.78)'
+                  }
+                },
+                {
+                  type: 'ellipse',
+                  shape: { cx: x, cy: y + 2, rx: 15, ry: 5.5 },
+                  style: {
+                    fill: 'rgba(112, 223, 255, 0.28)',
+                    stroke: 'rgba(180, 248, 255, 0.84)',
+                    lineWidth: 1
+                  }
+                },
+                {
+                  type: 'rect',
+                  shape: { x: x - width / 2, y: y - height, width, height, r: 5 },
+                  style: {
+                    fill: new echarts.graphic.LinearGradient(0, 1, 0, 0, [
+                      { offset: 0, color: 'rgba(255, 154, 58, 0.22)' },
+                      { offset: 0.45, color: 'rgba(255, 188, 91, 0.88)' },
+                      { offset: 1, color: 'rgba(255, 248, 203, 0.98)' }
+                    ]),
+                    shadowBlur: 18,
+                    shadowColor: 'rgba(255, 185, 86, 0.72)'
+                  }
+                },
+                {
+                  type: 'circle',
+                  shape: { cx: x, cy: y - height, r: 6.5 },
+                  style: {
+                    fill: '#fff4bb',
+                    shadowBlur: 18,
+                    shadowColor: '#fff2a6'
+                  }
+                },
+                {
+                  type: 'text',
+                  silent: true,
+                  style: {
+                    text: `${name}\n${formatLargeNumber(value)}`,
+                    x: x + 16,
+                    y: y - height - 8,
+                    fill: '#ffffff',
+                    font: '700 12px Microsoft YaHei',
+                    lineHeight: 16,
+                    textShadowBlur: 8,
+                    textShadowColor: 'rgba(0, 8, 28, 0.95)'
+                  }
+                }
+              ]
+            }
+          },
+          tooltip: {
+            formatter: formatMapTooltip
+          }
+        }
+      ]
+    },
+    true
+  )
 
   mapChart.off('click')
+  mapChart.off('georoam')
+
+  mapChart.on('georoam', (params: any) => {
+    if (syncingMapRoam) return
+
+    if (typeof params?.zoom === 'number') {
+      mapZoom.value = clampMapZoom(mapZoom.value * params.zoom)
+    }
+
+    if (typeof params?.dx === 'number') {
+      mapPanOffset.x += params.dx
+    }
+
+    if (typeof params?.dy === 'number') {
+      mapPanOffset.y += params.dy
+    }
+
+    syncSideLayerRoam()
+  })
 
   if (isNational) {
     mapChart.on('click', (params: any) => {
-      if (params?.name && provinceNameMap[params.name]) {
-        loadProvince(params.name)
+      const provinceName = getProvinceShortName(params?.name || '')
+      if (provinceName && provinceNameMap[provinceName]) {
+        loadProvince(provinceName)
       }
     })
   }
 }
-
 function renderLeftTop() {
   leftTopChart = initChart(leftTopRef.value, leftTopChart)
   if (!leftTopChart) return
@@ -1250,6 +1693,7 @@ function buildHorizontalBarOption(data: NameValueItem[], seriesName: string) {
 
 function handleResize() {
   mapChart?.resize()
+  window.setTimeout(syncSideLayerRoam, 0)
   leftTopChart?.resize()
   leftMiddleChart?.resize()
   leftBottomChart?.resize()
@@ -1733,7 +2177,28 @@ onBeforeUnmount(() => {
 }
 
 .map-card {
-  min-height: 710px;
+  min-height: 742px;
+  background: radial-gradient(ellipse at 50% 44%, rgba(16, 100, 205, 0.38), transparent 62%),
+    linear-gradient(180deg, rgba(8, 27, 56, 0.98), rgba(5, 15, 33, 0.96));
+}
+
+.map-card::after {
+  position: absolute;
+  inset: 58px 10px 44px;
+  z-index: 0;
+  pointer-events: none;
+  content: '';
+  opacity: 0.46;
+  background-image: linear-gradient(rgba(74, 169, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74, 169, 255, 0.09) 1px, transparent 1px),
+    radial-gradient(circle at 50% 52%, rgba(80, 221, 255, 0.14), transparent 35%);
+  background-size: 46px 46px, 46px 46px, 100% 100%;
+  mask-image: radial-gradient(
+    ellipse at center,
+    #000 34%,
+    rgba(0, 0, 0, 0.72) 56%,
+    transparent 78%
+  );
 }
 
 .map-actions {
@@ -1746,6 +2211,18 @@ onBeforeUnmount(() => {
   color: #7df0ff;
   border-color: rgba(111, 226, 255, 0.36);
   background: rgba(54, 211, 255, 0.08);
+}
+
+.map-open-btn {
+  border-color: rgba(90, 215, 255, 0.5);
+  color: #dffbff;
+  background: linear-gradient(90deg, rgba(31, 124, 255, 0.22), rgba(39, 221, 255, 0.14));
+}
+
+.map-open-btn:hover {
+  border-color: rgba(134, 238, 255, 0.8);
+  color: #ffffff;
+  background: linear-gradient(90deg, rgba(36, 143, 255, 0.34), rgba(45, 232, 255, 0.22));
 }
 
 .map-summary {
@@ -1815,9 +2292,58 @@ onBeforeUnmount(() => {
 .map-box {
   position: relative;
   z-index: 1;
-  width: 100%;
-  height: 610px;
+  width: calc(100% - 20px);
+  height: 648px;
+  margin: 0 10px;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at 50% 48%, rgba(44, 148, 255, 0.2), transparent 58%),
+    radial-gradient(circle at 18% 24%, rgba(51, 223, 255, 0.13), transparent 26%),
+    radial-gradient(circle at 80% 22%, rgba(42, 105, 255, 0.16), transparent 28%);
 }
+
+.map-box:active,
+.map-box canvas:active {
+  cursor: grabbing;
+}
+
+.map-box canvas {
+  cursor: grab;
+}
+
+.map-box::before {
+  position: absolute;
+  inset: 6% 5%;
+  z-index: 0;
+  pointer-events: none;
+  content: '';
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+      circle at center,
+      rgba(70, 207, 255, 0.16) 0 1px,
+      transparent 1px 42px
+    ),
+    radial-gradient(ellipse at center, rgba(26, 128, 255, 0.18), transparent 58%);
+  filter: blur(0.2px);
+  transform: perspective(760px) rotateX(64deg) scaleX(1.08);
+}
+
+// .map-box::after {
+//   position: absolute;
+//   right: 22px;
+//   bottom: 18px;
+//   z-index: 0;
+//   width: 150px;
+//   height: 88px;
+//   pointer-events: none;
+//   content: '';
+//   border: 1px solid rgba(72, 214, 255, 0.34);
+//   border-radius: 10px;
+//   background: radial-gradient(circle at 36% 42%, rgba(68, 217, 255, 0.18), transparent 56%);
+//   box-shadow: inset 0 0 18px rgba(62, 194, 255, 0.08), 0 0 18px rgba(44, 165, 255, 0.08);
+// }
 
 .map-footer {
   position: relative;
@@ -2027,7 +2553,9 @@ onBeforeUnmount(() => {
   }
 
   .map-box {
+    width: 100%;
     height: 520px;
+    margin: 0;
   }
 }
 </style>
