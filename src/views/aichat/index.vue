@@ -96,7 +96,7 @@
                 回答会优先结合平台岗位数据库统计结果。
               </p>
               <div class="welcome-actions">
-                <button v-for="item in quickPrompts.slice(0, 4)" :key="item.title" type="button" :disabled="loading" @click="sendPrompt(item.question)">
+                <button v-for="item in quickPrompts.slice(0, 4)" :key="item.title" type="button" :disabled="loading" @click="sendPrompt(item)">
                   <el-icon>
                     <component :is="item.icon" />
                   </el-icon>
@@ -240,7 +240,7 @@
       <aside class="right-panel">
         <section class="side-card quick-card">
           <h3>快捷功能</h3>
-          <button v-for="item in rightActions" :key="item.title" type="button" :disabled="loading" @click="sendPrompt(item.question)">
+          <button v-for="item in rightActions" :key="item.title" type="button" :disabled="loading" @click="sendPrompt(item)">
             <el-icon>
               <component :is="item.icon" />
             </el-icon>
@@ -281,7 +281,7 @@
               </span>
             </div>
           </div>
-          <button class="text-link" type="button" @click="sendPrompt('请帮我制定一份软件开发岗位求职计划，包含简历、技能、投递和面试准备。')">
+          <button class="text-link" type="button" @click="sendPrompt(jobPlanAction)">
             生成完整计划
             <el-icon>
               <ArrowRight />
@@ -329,7 +329,13 @@ import {
   UserFilled
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/modules/user'
-import { askJobChat, type JobChatResponse } from '@/api/job-chat'
+import {
+  jobChatActionApiMap,
+  jobChatActionEndpointMap,
+  type JobChatAction,
+  type JobChatRequest,
+  type JobChatResponse
+} from '@/api/job-chat'
 
 interface ChatMessage {
   id: string
@@ -358,6 +364,8 @@ interface PromptAction {
   title: string
   question: string
   icon: any
+  /** 指定快捷功能对应的独立接口，不传则默认走用户输入接口 */
+  action?: JobChatAction
 }
 
 interface NavItem extends PromptAction {
@@ -419,6 +427,7 @@ const navItems: NavItem[] = [
     label: '历史记录',
     title: '历史记录',
     icon: Files,
+    action: 'history-summary',
     question: '请根据我的历史提问，帮我整理一份近期求职关注点总结。'
   },
   {
@@ -426,6 +435,7 @@ const navItems: NavItem[] = [
     label: '常用问题',
     title: '常用问题',
     icon: Guide,
+    action: 'common-questions',
     question: '请列出软件开发求职中最值得关注的 10 个问题，并说明应该如何提问。'
   },
   {
@@ -433,6 +443,7 @@ const navItems: NavItem[] = [
     label: '使用说明',
     title: '使用说明',
     icon: Setting,
+    action: 'usage-guide',
     question: '请说明如何使用AI就业助手进行岗位分析、简历优化和面试准备。'
   }
 ]
@@ -441,21 +452,25 @@ const quickPrompts: PromptAction[] = [
   {
     title: '优化简历',
     icon: Document,
+    action: 'resume-optimize',
     question: '请从招聘岗位要求角度，告诉我软件开发简历应该重点优化哪些内容？'
   },
   {
     title: '面试准备',
     icon: UserFilled,
+    action: 'interview-prepare',
     question: '请帮我整理一份 Java 后端岗位的面试准备清单，包含基础知识、项目问题和常见追问。'
   },
   {
     title: '职业规划',
     icon: Guide,
+    action: 'job-plan',
     question: '我想从应届生进入软件开发岗位，请给我一份三个月求职准备规划。'
   },
   {
     title: '岗位推荐',
     icon: Briefcase,
+    action: 'job-recommend',
     question: '请根据当前岗位数据库，推荐适合应届生关注的软件开发相关岗位方向。'
   }
 ]
@@ -465,9 +480,17 @@ const rightActions: PromptAction[] = [
   {
     title: '岗位趋势分析',
     icon: DataAnalysis,
+    action: 'trend-analysis',
     question: '请分析当前软件开发岗位的就业趋势、热门城市、热门技能和薪资情况。'
   }
 ]
+
+const jobPlanAction: PromptAction = {
+  title: '生成完整计划',
+  icon: Calendar,
+  action: 'job-plan',
+  question: '请帮我制定一份软件开发岗位求职计划，包含简历、技能、投递和面试准备。'
+}
 
 const recentChats = ref<RecentChat[]>([
   {
@@ -508,7 +531,7 @@ onMounted(() => {
 
 const handleNavClick = (item: NavItem) => {
   activeNav.value = item.key
-  if (item.question) sendPrompt(item.question)
+  if (item.question) sendPrompt(item)
 }
 
 const handleUserCardClick = () => {
@@ -528,15 +551,17 @@ const handleEnter = () => {
 }
 
 const handleSubmit = () => {
-  sendQuestion(inputValue.value)
+  sendQuestion(inputValue.value, 'user-ask')
 }
 
-const sendPrompt = (question: string) => {
+const sendPrompt = (prompt: string | PromptAction, fallbackAction: JobChatAction = 'user-ask') => {
+  const question = typeof prompt === 'string' ? prompt : prompt.question
+  const action = typeof prompt === 'string' ? fallbackAction : prompt.action || fallbackAction
   if (!question) return
-  sendQuestion(question)
+  sendQuestion(question, action)
 }
 
-const sendQuestion = async (question: string) => {
+const sendQuestion = async (question: string, action: JobChatAction = 'user-ask') => {
   if (!isLogin.value) {
     ElMessage.warning('请先登录后再使用就业智能聊天功能')
     router.push({ name: 'Login', query: { redirect: route.fullPath } })
@@ -563,11 +588,12 @@ const sendQuestion = async (question: string) => {
   await scrollToBottom()
 
   try {
-    const payloadQuestion = buildPayloadQuestion(displayQuestion)
-    const res = await askJobChat({
-      question: payloadQuestion,
+    const payload: JobChatRequest = {
+      question: buildPayloadQuestion(displayQuestion),
       limit: 8
-    })
+    }
+    const requestApi = jobChatActionApiMap[action] || jobChatActionApiMap['user-ask']
+    const res = await requestApi(payload)
 
     messages.value.push({
       id: buildId(),
@@ -577,11 +603,11 @@ const sendQuestion = async (question: string) => {
       result: res
     })
   } catch (error) {
+    const endpoint = jobChatActionEndpointMap[action] || jobChatActionEndpointMap['user-ask']
     messages.value.push({
       id: buildId(),
       role: 'assistant',
-      content:
-        '当前就业咨询接口请求失败，请检查后端服务是否启动，以及 /api/common/job-chat/ask 接口是否已经添加。',
+      content: `当前就业咨询接口请求失败，请检查后端服务是否启动，以及 ${endpoint} 接口是否已经添加。`,
       time: getTime()
     })
   } finally {
@@ -770,7 +796,7 @@ const buildId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`
   /* 页面在系统布局内自适应视口高度，避免整页滚动导致输入框被顶出可视区 */
   height: calc(100vh);
   min-height: 560px;
-  padding: 8px;
+  //  padding: 8px;
   box-sizing: border-box;
   overflow: hidden;
   color: #1f2937;
@@ -1954,7 +1980,7 @@ const buildId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`
 
 /* ===== 页面舒适度与 Markdown 回复优化 ===== */
 .career-chat-page {
-  padding: 12px;
+  // padding: 12px;
   background: var(--el-bg-color-page, #f5f7fa);
 }
 
