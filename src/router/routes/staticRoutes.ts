@@ -46,6 +46,12 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     meta: { title: '首页' }
   },
   {
+    path: '/exhibition',
+    name: 'DigitalExhibition',
+    component: () => import('@/views/exhibition/index.vue'),
+    meta: { title: 'AI创业就业助手数字展厅' }
+  },
+  {
     path: '/jobscreen',
     name: 'jobscreen',
     component: () => import('@/views/jobscreen/index.vue'),

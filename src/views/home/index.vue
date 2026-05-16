@@ -18,6 +18,7 @@
 
         <div class="top-actions">
           <el-button type="primary" text class="ghost-btn" @click="goLogin">登录</el-button>
+          <el-button type="primary" text class="ghost-btn" @click="goPage('/exhibition')">数字展厅</el-button>
           <!-- <el-button type="primary" text class="ghost-btn" @click="goPage('/aichat')">AI就业</el-button> -->
           <el-button type="primary" class="solid-btn" @click="goPage('/toolbox/jobanalysis')">
             立即体验
@@ -43,6 +44,7 @@
             </el-button>
             <el-button size="large" @click="goPage('/study/business')"> 体验商业计划书 </el-button>
             <el-button size="large" @click="goPage('/aichat')"> AI就业助手 </el-button>
+            <el-button size="large" @click="goPage('/exhibition')"> 数字展厅 </el-button>
             <el-button type="primary" size="large" @click="goBiganalysis" plain>大屏数据分析 </el-button>
           </div>
 
@@ -341,6 +343,12 @@ const quickPaths = [
 ]
 
 const newsList = [
+  {
+    date: '00',
+    title: '数字展厅入口新增',
+    desc: '以沉浸式展厅方式串联就业分析、AI问答、技能图谱与创业生成模块。',
+    path: '/exhibition'
+  },
   {
     date: '01',
     title: 'AI就业入口新增',
