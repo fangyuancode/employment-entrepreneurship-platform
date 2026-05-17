@@ -2,29 +2,20 @@
   <div class="scene-shell">
     <div ref="sceneHost" class="three-host"></div>
 
-    <div class="scene-topbar">
-      <div class="current-hall-card">
-        <span class="scene-label">当前展馆</span>
-        <strong>{{ activeHall.title }}</strong>
-        <em>{{ activeHall.sceneRole }}</em>
-      </div>
-      <div class="scene-tip">
-        拖拽旋转 · 滚轮缩放 · 点击聚焦 · 双击进入 · 鼠标悬浮查看功能说明
-      </div>
+    <!-- <div class="scene-title-badge">
+      <span>{{ activeHall.code }}</span>
+      <strong>{{ activeHall.title }}</strong>
+      <em>{{ activeHall.sceneRole }}</em>
+    </div> -->
+
+    <div class="scene-guide-line">
+      拖拽旋转 · 滚轮缩放 · 点击聚焦 · 双击进入展馆
     </div>
 
     <!-- <div v-if="judgeMode" class="judge-ribbon">
       <span>评委视角</span>
       <strong>{{ activeHall.userValue }}</strong>
     </div> -->
-
-    <div class="scene-value-bar">
-      <div v-for="item in activeHall.kpis" :key="item.label" class="value-chip">
-        <span>{{ item.label }}</span>
-        <strong>{{ item.value }}</strong>
-        <em>{{ item.trend }}</em>
-      </div>
-    </div>
 
     <div v-if="hoverTooltip.visible && hoverTooltip.hall" class="hall-tooltip rich-tooltip" :style="tooltipStyle">
       <div class="tooltip-head">
@@ -48,14 +39,6 @@
         </span>
       </div>
       <button type="button">双击进入{{ hoverTooltip.hall.short }}模块</button>
-    </div>
-
-    <div class="module-dock">
-      <button v-for="item in halls" :key="item.key" type="button" :class="['dock-item', { active: activeKey === item.key }]" @click="focusHall(item.key)" @dblclick="emit('enter-hall', item.path)">
-        <i>{{ item.icon }}</i>
-        <span>{{ item.short }}</span>
-        <strong>{{ item.title }}</strong>
-      </button>
     </div>
   </div>
 </template>
@@ -1754,5 +1737,60 @@ defineExpose({
     top: 194px;
     right: 18px;
   }
+}
+
+.scene-title-badge {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  z-index: 3;
+  min-width: 220px;
+  padding: 12px 20px;
+  text-align: center;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(8, 28, 50, 0.76), rgba(8, 18, 34, 0.46));
+  border: 1px solid rgba(93, 200, 255, 0.34);
+  border-radius: 14px;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24), inset 0 0 26px rgba(59, 170, 255, 0.08);
+  transform: translateX(-50%);
+  backdrop-filter: blur(12px);
+}
+
+.scene-title-badge span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: rgba(145, 229, 255, 0.82);
+  letter-spacing: 0.18em;
+}
+
+.scene-title-badge strong {
+  display: block;
+  font-size: 18px;
+  color: #f7fcff;
+  letter-spacing: 0.05em;
+}
+
+.scene-title-badge em {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  font-style: normal;
+  color: rgba(216, 240, 255, 0.66);
+}
+
+.scene-guide-line {
+  position: absolute;
+  right: 28px;
+  bottom: 116px;
+  z-index: 3;
+  padding: 9px 14px;
+  font-size: 12px;
+  color: rgba(226, 242, 255, 0.66);
+  pointer-events: none;
+  background: rgba(6, 20, 37, 0.52);
+  border: 1px solid rgba(117, 197, 255, 0.16);
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
 }
 </style>

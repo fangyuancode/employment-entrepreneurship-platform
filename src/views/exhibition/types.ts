@@ -55,3 +55,16 @@ export interface RuntimeStatus {
   name: string
   value: string
 }
+
+
+export interface ExhibitionOverviewPayload {
+  halls: HallItem[]
+  overviewStats: OverviewStat[]
+  runtimeStatus: RuntimeStatus[]
+}
+
+export interface VisitRecord {
+  key: HallKey
+  title: string
+  time: string
+}
