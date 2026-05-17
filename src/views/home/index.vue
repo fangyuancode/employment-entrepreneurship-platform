@@ -53,7 +53,7 @@
             <el-button type="primary" size="large" @click="goPage('/toolbox/jobanalysis')">
               查看岗位分析
             </el-button>
-            <el-button size="large" @click="goPage('/study/business')"> 体验商业计划书 </el-button>
+            <el-button size="large" @click="goPage('/jobmap')"> 3D技能图谱 </el-button>
             <el-button size="large" @click="goPage('/aichat')"> AI就业助手 </el-button>
             <el-button size="large" @click="goPage('/exhibition')"> 数字展厅 </el-button>
             <el-button type="primary" size="large" @click="goBiganalysis" plain>大屏数据分析 </el-button>

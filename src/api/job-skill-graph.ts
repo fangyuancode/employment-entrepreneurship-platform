@@ -1,7 +1,5 @@
 import request from '@/utils/http'
 
-
-
 export interface NameValueItem {
   name: string
   value: number
@@ -12,6 +10,9 @@ export interface GraphNodeItem {
   name: string
   category: string
   symbolSize: number
+  count?: number
+  weight?: number
+  type?: string
 }
 
 export interface GraphLinkItem {
@@ -31,10 +32,15 @@ export interface GraphData {
   nodes: GraphNodeItem[]
   links: GraphLinkItem[]
   topSkills: NameValueItem[]
+  topJobs?: NameValueItem[]
+  topCompanies?: NameValueItem[]
+  topCities?: NameValueItem[]
   categoryDistribution: NameValueItem[]
   jobCount: number
   skillCount: number
   companyCount: number
+  cityCount?: number
+  relationCount?: number
 }
 
 export interface GraphQueryParams {
