@@ -61,9 +61,14 @@
               <el-option v-for="item in provinceOptions" :key="item" :label="item" :value="item" />
             </el-select>
           </el-form-item>
-          <el-form-item>
+          <el-form-item class="filter-action-item">
             <el-button class="screen-btn" @click="resetQuery">重置</el-button>
-            <el-button class="screen-btn screen-btn--primary" :loading="loading" @click="searchByFilter">查询</el-button>
+            <div class="cache-mode-switch">
+              <span>数据模式</span>
+              <!-- :disabled="true" -->
+              <el-switch v-model="useLatestData" inline-prompt active-text="最新" inactive-text="默认" :loading="loading" @change="handleDataModeChange" :disabled="true" />
+            </div>
+            <el-button class="screen-btn screen-btn--primary" :loading="loading" @click="searchByFilter" title="为减轻服务器压力，查询功能不建议使用">查询</el-button>
           </el-form-item>
         </el-form>
       </section>
@@ -268,6 +273,7 @@ import {
   getJobScreenCity,
   getJobScreenInsight,
   getJobScreenHighSalary,
+  type ScreenQuery,
   type NameValueItem,
   type NationalScreenData,
   type ProvinceScreenData,
@@ -289,6 +295,17 @@ const introVisible = ref(true)
 const introLeaving = ref(false)
 const introTimers: number[] = []
 const router = useRouter()
+const LATEST_DATA_MODE_KEY = 'job_screen_latest_data_mode'
+
+function getInitialLatestDataMode() {
+  try {
+    return window.localStorage.getItem(LATEST_DATA_MODE_KEY) === '1'
+  } catch (error) {
+    return false
+  }
+}
+
+const useLatestData = ref(getInitialLatestDataMode())
 
 const queryForm = reactive({
   keyword: '',
@@ -310,6 +327,33 @@ const provinceData = ref<ProvinceScreenData | null>(null)
 const cityData = ref<CityScreenData | null>(null)
 const insightData = ref<InsightData | null>(null)
 const highSalaryData = ref<HighSalaryData | null>(null)
+
+function buildScreenParams(extra: Partial<ScreenQuery> = {}): ScreenQuery {
+  return {
+    keyword: queryForm.keyword,
+    categoryMain: queryForm.categoryMain,
+    degree: queryForm.degree,
+    experience: queryForm.experience,
+    refresh: useLatestData.value,
+    ...extra
+  }
+}
+
+function handleDataModeChange(value: string | number | boolean) {
+  const enabled = Boolean(value)
+  try {
+    window.localStorage.setItem(LATEST_DATA_MODE_KEY, enabled ? '1' : '0')
+  } catch (error) {
+    console.warn('岗位大屏数据模式保存失败', error)
+  }
+
+  ElMessage.success(
+    enabled
+      ? '已切换为最新数据模式，本次将重新统计并更新数据库缓存'
+      : '已切换为默认缓存模式，优先读取数据库中的已缓存结果'
+  )
+  refreshCurrentScreen()
+}
 
 const mapRef = ref<HTMLDivElement | null>(null)
 const leftTopRef = ref<HTMLDivElement | null>(null)
@@ -519,7 +563,12 @@ const modeLabel = computed(() => {
 const kpiCards = computed(() => [
   {
     icon: '岗',
-    label: currentMode.value === 'national' ? '全国岗位总数' : currentMode.value === 'city' ? '城市岗位总数' : '省内岗位总数',
+    label:
+      currentMode.value === 'national'
+        ? '全国岗位总数'
+        : currentMode.value === 'city'
+        ? '城市岗位总数'
+        : '省内岗位总数',
     value: formatLargeNumber(summary.value.jobCount),
     sub: 'Job Volume'
   },
@@ -550,18 +599,30 @@ const jobRunCards = computed(() => [
       currentMode.value === 'national'
         ? '全国岗位分布地图'
         : currentMode.value === 'city'
-          ? `${currentCity.value} 区县分布地图`
-          : `${currentProvince.value} 城市分布地图`,
+        ? `${currentCity.value} 区县分布地图`
+        : `${currentProvince.value} 城市分布地图`,
     subtitle:
       currentMode.value === 'national'
         ? 'china_job_distribution'
         : currentMode.value === 'city'
-          ? 'city_district_distribution'
-          : 'province_city_distribution',
+        ? 'city_district_distribution'
+        : 'province_city_distribution',
     status: '正常',
     metrics: [
-      { label: '地图层级', value: currentMode.value === 'national' ? '全国' : currentMode.value === 'city' ? '城市' : '省级' },
-      { label: '下钻能力', value: currentMode.value === 'national' ? '省份' : currentMode.value === 'province' ? '城市' : '区县' },
+      {
+        label: '地图层级',
+        value:
+          currentMode.value === 'national' ? '全国' : currentMode.value === 'city' ? '城市' : '省级'
+      },
+      {
+        label: '下钻能力',
+        value:
+          currentMode.value === 'national'
+            ? '省份'
+            : currentMode.value === 'province'
+            ? '城市'
+            : '区县'
+      },
       { label: '交互状态', value: '可用' }
     ]
   },
@@ -642,12 +703,7 @@ async function searchByFilter() {
 
 async function loadOptions() {
   try {
-    const res = await getJobScreenOptions({
-      keyword: queryForm.keyword,
-      categoryMain: queryForm.categoryMain,
-      degree: queryForm.degree,
-      experience: queryForm.experience
-    })
+    const res = await getJobScreenOptions(buildScreenParams())
     provinceOptions.value = res?.provinces || []
   } catch (error) {
     provinceOptions.value = []
@@ -655,14 +711,10 @@ async function loadOptions() {
 }
 
 async function loadInsightAndHighSalary() {
-  const params = {
-    keyword: queryForm.keyword,
-    categoryMain: queryForm.categoryMain,
-    degree: queryForm.degree,
-    experience: queryForm.experience,
+  const params = buildScreenParams({
     province: currentMode.value !== 'national' ? currentProvince.value : queryForm.province,
     city: currentMode.value === 'city' ? currentCity.value : undefined
-  }
+  })
 
   const [insightRes, highSalaryRes] = await Promise.all([
     getJobScreenInsight(params),
@@ -685,12 +737,7 @@ async function loadNational() {
 
     await registerChinaMap()
 
-    const res = await getJobScreenNational({
-      keyword: queryForm.keyword,
-      categoryMain: queryForm.categoryMain,
-      degree: queryForm.degree,
-      experience: queryForm.experience
-    })
+    const res = await getJobScreenNational(buildScreenParams())
 
     nationalData.value = res
     provinceData.value = null
@@ -726,13 +773,11 @@ async function loadProvince(provinceName?: string) {
 
     await registerProvinceMap(targetProvince)
 
-    const res = await getJobScreenProvince({
-      keyword: queryForm.keyword,
-      categoryMain: queryForm.categoryMain,
-      degree: queryForm.degree,
-      experience: queryForm.experience,
-      province: targetProvince
-    })
+    const res = await getJobScreenProvince(
+      buildScreenParams({
+        province: targetProvince
+      })
+    )
 
     provinceData.value = res
     cityData.value = null
@@ -748,7 +793,6 @@ async function loadProvince(provinceName?: string) {
     loading.value = false
   }
 }
-
 
 function parseFeatureCenter(center: any): [number, number] | null {
   if (Array.isArray(center) && center.length >= 2) {
@@ -831,14 +875,12 @@ async function loadCity(cityName: string, cityAdcode: string) {
     currentMapName.value = cityMapName
 
     try {
-      const res = await getJobScreenCity({
-        keyword: queryForm.keyword,
-        categoryMain: queryForm.categoryMain,
-        degree: queryForm.degree,
-        experience: queryForm.experience,
-        province: currentProvince.value,
-        city: targetCity
-      })
+      const res = await getJobScreenCity(
+        buildScreenParams({
+          province: currentProvince.value,
+          city: targetCity
+        })
+      )
       cityData.value = res
     } catch (error) {
       console.warn('城市区县岗位数据接口不可用，先展示城市区县地图。', error)
@@ -1145,8 +1187,8 @@ function renderMap() {
   const rawMapData = isNational
     ? nationalData.value?.mapData || []
     : isCity
-      ? cityData.value?.mapData || []
-      : provinceData.value?.mapData || []
+    ? cityData.value?.mapData || []
+    : provinceData.value?.mapData || []
 
   const mapData = rawMapData.map((item: any) => ({
     ...item,
@@ -1529,8 +1571,8 @@ function renderLeftTop() {
     currentMode.value === 'national'
       ? nationalData.value?.provinceTop10 || []
       : currentMode.value === 'city'
-        ? cityData.value?.cityJobTop10 || []
-        : provinceData.value?.cityJobTop10 || []
+      ? cityData.value?.cityJobTop10 || []
+      : provinceData.value?.cityJobTop10 || []
 
   leftTopChart.setOption(buildHorizontalBarOption(data, '岗位数量'))
 }
@@ -1543,8 +1585,8 @@ function renderLeftMiddle() {
     currentMode.value === 'national'
       ? nationalData.value?.categoryMainTop || []
       : currentMode.value === 'city'
-        ? cityData.value?.categoryTop10 || []
-        : provinceData.value?.categoryTop10 || []
+      ? cityData.value?.categoryTop10 || []
+      : provinceData.value?.categoryTop10 || []
 
   const data = mergeOtherData(rawData, 10).slice(0, 10).reverse()
 
@@ -1623,15 +1665,15 @@ function renderLeftBottom() {
     currentMode.value === 'national'
       ? nationalData.value?.degreeDistribution || []
       : currentMode.value === 'city'
-        ? cityData.value?.degreeDistribution || []
-        : provinceData.value?.degreeDistribution || []
+      ? cityData.value?.degreeDistribution || []
+      : provinceData.value?.degreeDistribution || []
 
   const expData =
     currentMode.value === 'national'
       ? nationalData.value?.experienceDistribution || []
       : currentMode.value === 'city'
-        ? cityData.value?.experienceDistribution || []
-        : provinceData.value?.experienceDistribution || []
+      ? cityData.value?.experienceDistribution || []
+      : provinceData.value?.experienceDistribution || []
 
   const names = Array.from(
     new Set([...degreeData.map((i) => i.name), ...expData.map((i) => i.name)])
@@ -1687,8 +1729,8 @@ function renderRightTop() {
     currentMode.value === 'national'
       ? nationalData.value?.avgSalaryProvinceTop10 || []
       : currentMode.value === 'city'
-        ? cityData.value?.citySalaryTop10 || []
-        : provinceData.value?.citySalaryTop10 || []
+      ? cityData.value?.citySalaryTop10 || []
+      : provinceData.value?.citySalaryTop10 || []
 
   rightTopChart.setOption({
     backgroundColor: 'transparent',
@@ -1727,8 +1769,8 @@ function renderRightMiddle() {
     currentMode.value === 'national'
       ? nationalData.value?.skillTop20 || []
       : currentMode.value === 'city'
-        ? cityData.value?.skillTop15 || []
-        : provinceData.value?.skillTop15 || []
+      ? cityData.value?.skillTop15 || []
+      : provinceData.value?.skillTop15 || []
 
   const data = rawData.filter((item: any) => {
     const name = String(item.name || '').trim()
@@ -2058,7 +2100,12 @@ onBeforeUnmount(() => {
   height: 320px;
   text-align: center;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(33, 168, 255, 0.14), rgba(7, 20, 42, 0.18) 48%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(33, 168, 255, 0.14),
+    rgba(7, 20, 42, 0.18) 48%,
+    transparent 70%
+  );
   animation: introCoreRise 0.82s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -2205,21 +2252,51 @@ onBeforeUnmount(() => {
   animation: screenCardRise 0.76s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.job-screen-page.is-enter-ready .stat-card:nth-child(1) { animation-delay: 0.08s; }
-.job-screen-page.is-enter-ready .stat-card:nth-child(2) { animation-delay: 0.14s; }
-.job-screen-page.is-enter-ready .stat-card:nth-child(3) { animation-delay: 0.2s; }
-.job-screen-page.is-enter-ready .stat-card:nth-child(4) { animation-delay: 0.26s; }
-.job-screen-page.is-enter-ready .left-panel .panel-card:nth-child(1) { animation-delay: 0.22s; }
-.job-screen-page.is-enter-ready .left-panel .panel-card:nth-child(2) { animation-delay: 0.28s; }
-.job-screen-page.is-enter-ready .left-panel .panel-card:nth-child(3) { animation-delay: 0.34s; }
-.job-screen-page.is-enter-ready .center-panel .panel-card:nth-child(1) { animation-delay: 0.3s; }
-.job-screen-page.is-enter-ready .center-panel .panel-card:nth-child(2) { animation-delay: 0.42s; }
-.job-screen-page.is-enter-ready .right-panel .panel-card:nth-child(1) { animation-delay: 0.36s; }
-.job-screen-page.is-enter-ready .right-panel .panel-card:nth-child(2) { animation-delay: 0.42s; }
-.job-screen-page.is-enter-ready .right-panel .panel-card:nth-child(3) { animation-delay: 0.48s; }
-.job-screen-page.is-enter-ready .bottom-grid .panel-card:nth-child(1) { animation-delay: 0.5s; }
-.job-screen-page.is-enter-ready .bottom-grid .panel-card:nth-child(2) { animation-delay: 0.56s; }
-.job-screen-page.is-enter-ready .bottom-grid .panel-card:nth-child(3) { animation-delay: 0.62s; }
+.job-screen-page.is-enter-ready .stat-card:nth-child(1) {
+  animation-delay: 0.08s;
+}
+.job-screen-page.is-enter-ready .stat-card:nth-child(2) {
+  animation-delay: 0.14s;
+}
+.job-screen-page.is-enter-ready .stat-card:nth-child(3) {
+  animation-delay: 0.2s;
+}
+.job-screen-page.is-enter-ready .stat-card:nth-child(4) {
+  animation-delay: 0.26s;
+}
+.job-screen-page.is-enter-ready .left-panel .panel-card:nth-child(1) {
+  animation-delay: 0.22s;
+}
+.job-screen-page.is-enter-ready .left-panel .panel-card:nth-child(2) {
+  animation-delay: 0.28s;
+}
+.job-screen-page.is-enter-ready .left-panel .panel-card:nth-child(3) {
+  animation-delay: 0.34s;
+}
+.job-screen-page.is-enter-ready .center-panel .panel-card:nth-child(1) {
+  animation-delay: 0.3s;
+}
+.job-screen-page.is-enter-ready .center-panel .panel-card:nth-child(2) {
+  animation-delay: 0.42s;
+}
+.job-screen-page.is-enter-ready .right-panel .panel-card:nth-child(1) {
+  animation-delay: 0.36s;
+}
+.job-screen-page.is-enter-ready .right-panel .panel-card:nth-child(2) {
+  animation-delay: 0.42s;
+}
+.job-screen-page.is-enter-ready .right-panel .panel-card:nth-child(3) {
+  animation-delay: 0.48s;
+}
+.job-screen-page.is-enter-ready .bottom-grid .panel-card:nth-child(1) {
+  animation-delay: 0.5s;
+}
+.job-screen-page.is-enter-ready .bottom-grid .panel-card:nth-child(2) {
+  animation-delay: 0.56s;
+}
+.job-screen-page.is-enter-ready .bottom-grid .panel-card:nth-child(3) {
+  animation-delay: 0.62s;
+}
 
 .is-enter-ready .map-card::after,
 .is-enter-ready .map-box::before {
@@ -2408,11 +2485,47 @@ onBeforeUnmount(() => {
   color: #ffffff;
 }
 
+.filter-action-item {
+  :deep(.el-form-item__content) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+}
+
+.cache-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(76, 181, 255, 0.3);
+  border-radius: 6px;
+  background: rgba(5, 22, 44, 0.62);
+  color: #b8d6ef;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+
+  :deep(.el-switch__core) {
+    min-width: 52px;
+    border-color: rgba(86, 190, 255, 0.45);
+    background: rgba(15, 49, 82, 0.88);
+  }
+
+  :deep(.el-switch.is-checked .el-switch__core) {
+    border-color: rgba(107, 226, 255, 0.9);
+    background: rgba(26, 137, 207, 0.92);
+  }
+}
+
 .screen-body {
   padding-top: 18px;
 }
 
 .filter-bar {
+  // width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2426,7 +2539,7 @@ onBeforeUnmount(() => {
 }
 
 .filter-title {
-  min-width: 270px;
+  min-width: 220px;
 
   strong {
     display: block;
@@ -2445,9 +2558,9 @@ onBeforeUnmount(() => {
 .filter-form {
   display: flex;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  // flex-wrap: wrap;
   gap: 2px 6px;
-
+  width: 100%;
   :deep(.el-form-item) {
     margin-right: 0;
     margin-bottom: 0;

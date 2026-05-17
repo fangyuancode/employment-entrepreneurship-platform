@@ -416,7 +416,7 @@ const heroTags = [
 
 const heroMetrics = [
   { value: '13+', label: '核心功能模块' },
-  { value: '15W+', label: '岗位数据规模' },
+  { value: '30W+', label: '岗位数据规模' },
   { value: 'AI', label: '多场景智能驱动' }
 ]
 

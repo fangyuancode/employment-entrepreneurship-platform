@@ -9,6 +9,8 @@ export interface ScreenQuery {
   experience?: string
   province?: string
   city?: string
+  /** true：强制从 job_post 重新统计并覆盖数据库缓存；false/不传：优先读取数据库缓存 */
+  refresh?: boolean
 }
 
 export interface NameValueItem {
