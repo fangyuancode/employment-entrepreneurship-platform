@@ -1,5 +1,17 @@
 <template>
-  <div ref="screenRef" :class="['digital-expo-page', { 'judge-mode': judgeMode, 'is-touring': isTouring }]">
+  <div
+    ref="screenRef"
+    :class="[
+      'digital-expo-page',
+      {
+        'judge-mode': judgeMode,
+        'is-touring': isTouring,
+        'page-mounted': pageMounted,
+        'panel-entered': panelEntered,
+        'intro-running': !panelEntered
+      }
+    ]"
+  >
     <header class="expo-header">
       <div class="brand-area" @click="goPage('/home')">
         <div class="brand-mark">AI</div>
@@ -26,7 +38,7 @@
 
     <main class="expo-main">
       <section class="scene-layer">
-        <ThreeExhibitionScene ref="sceneRef" :halls="halls" :active-key="activeKey" :is-touring="isTouring" :quality-mode="qualityMode" :judge-mode="judgeMode" @update:active-key="focusHall" @enter-hall="goPage" @model-state="modelState = $event" />
+        <ThreeExhibitionScene ref="sceneRef" :halls="halls" :active-key="activeKey" :is-touring="isTouring" :quality-mode="qualityMode" :judge-mode="judgeMode" @update:active-key="focusHall" @enter-hall="goPage" @model-state="modelState = $event" @intro-complete="handleSceneIntroComplete" />
       </section>
 
       <ExhibitionNavPanel class="expo-aside nav-panel" :halls="halls" :active-key="activeKey" :model-state="modelState" :runtime-status="runtimeStatus" :is-touring="isTouring" :quality-mode="qualityMode" :quality-label="qualityLabel" :judge-mode="judgeMode" @focus-hall="focusHall" @enter-hall="goPage" @toggle-tour="toggleTour" @reset-camera="resetCamera" @toggle-quality="toggleQualityMode" @toggle-judge="toggleJudgeMode" />
@@ -67,6 +79,15 @@
         <button type="button" class="center" @click="focusHall(activeHall.key)">{{ activeHall.short }}</button>
         <button type="button" @click="nextHall">›</button>
       </div>
+
+      <div v-if="showIntroCurtain" class="intro-curtain" aria-hidden="true">
+        <div class="intro-orbit"></div>
+        <div class="intro-card">
+          <span>Digital Exhibition Initializing</span>
+          <strong>数字展馆正在载入</strong>
+          <em>场景构建 · 光效同步 · 模块就绪</em>
+        </div>
+      </div>
     </main>
   </div>
 </template>
@@ -106,9 +127,15 @@ const isTouring = ref(false)
 const isFullscreen = ref(false)
 const judgeMode = ref(true)
 const qualityMode = ref<QualityMode>('high')
+const pageMounted = ref(false)
+const panelEntered = ref(false)
+const showIntroCurtain = ref(true)
 const favoriteKeys = ref<HallKey[]>(readStorage<HallKey[]>('exhibition:favorites', []))
 const footprintList = ref<VisitRecord[]>(readStorage<VisitRecord[]>('exhibition:footprint', []))
 let tourTimer: number | null = null
+let pageMountTimer: number | null = null
+let panelFallbackTimer: number | null = null
+let curtainTimer: number | null = null
 
 const activeHall = computed(
   () => halls.value.find((item) => item.key === activeKey.value) ?? halls.value[0] ?? LOCAL_HALLS[0]
@@ -124,13 +151,55 @@ onMounted(() => {
   document.addEventListener('fullscreenchange', handleFullscreenChange)
   window.addEventListener('keydown', handleShortcutKeys)
   addFootprint(activeKey.value)
+  playPageEntrance()
 })
 
 onBeforeUnmount(() => {
   stopTour(false)
+  clearEntranceTimers()
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
   window.removeEventListener('keydown', handleShortcutKeys)
 })
+
+function playPageEntrance() {
+  pageMounted.value = false
+  panelEntered.value = false
+  showIntroCurtain.value = true
+  clearEntranceTimers()
+  pageMountTimer = window.setTimeout(() => {
+    pageMounted.value = true
+  }, 80)
+  panelFallbackTimer = window.setTimeout(() => {
+    handleSceneIntroComplete()
+  }, 2100)
+}
+
+function handleSceneIntroComplete() {
+  if (panelEntered.value) return
+  panelEntered.value = true
+  if (panelFallbackTimer) {
+    window.clearTimeout(panelFallbackTimer)
+    panelFallbackTimer = null
+  }
+  curtainTimer = window.setTimeout(() => {
+    showIntroCurtain.value = false
+  }, 520)
+}
+
+function clearEntranceTimers() {
+  if (pageMountTimer) {
+    window.clearTimeout(pageMountTimer)
+    pageMountTimer = null
+  }
+  if (panelFallbackTimer) {
+    window.clearTimeout(panelFallbackTimer)
+    panelFallbackTimer = null
+  }
+  if (curtainTimer) {
+    window.clearTimeout(curtainTimer)
+    curtainTimer = null
+  }
+}
 
 function focusHall(key: HallKey) {
   if (!halls.value.some((item) => item.key === key)) return
@@ -303,6 +372,10 @@ function writeStorage<T>(key: string, value: T) {
   box-sizing: border-box;
 }
 
+.digital-expo-page :where(.expo-header, .scene-layer, .expo-aside, .overview-strip, .bottom-dock, .control-pad) {
+  will-change: transform, opacity, filter;
+}
+
 .digital-expo-page:fullscreen {
   height: 100dvh;
   min-height: 100dvh;
@@ -467,6 +540,81 @@ function writeStorage<T>(key: string, value: T) {
   inset: 0;
 }
 
+.expo-header {
+  opacity: 0;
+  transform: translate3d(0, -78px, 0);
+  transition: opacity 0.68s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.68s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.scene-layer {
+  opacity: 0;
+  filter: blur(10px) saturate(0.88);
+  transform: scale(1.045);
+  transform-origin: center center;
+  transition: opacity 0.72s ease, filter 0.88s ease, transform 0.88s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.digital-expo-page.page-mounted .expo-header,
+.digital-expo-page.page-mounted .scene-layer {
+  opacity: 1;
+  filter: none;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.expo-aside,
+.overview-strip,
+.bottom-dock,
+.control-pad {
+  opacity: 0;
+  transition-property: opacity, transform, filter;
+  transition-duration: 0.78s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nav-panel {
+  transform: translate3d(-118%, 0, 0);
+}
+
+.info-panel {
+  transform: translate3d(118%, 0, 0);
+}
+
+.overview-strip {
+  filter: blur(8px);
+  transform: translate3d(0, 34px, 0) scale(0.98);
+  transition-delay: 0.16s;
+}
+
+.bottom-dock {
+  transform: translate3d(-50%, 88px, 0) scale(0.96);
+  transition-delay: 0.24s;
+}
+
+.control-pad {
+  transform: translate3d(34px, 18px, 0) scale(0.9);
+  transition-delay: 0.32s;
+}
+
+.digital-expo-page.panel-entered .expo-aside,
+.digital-expo-page.panel-entered .overview-strip,
+.digital-expo-page.panel-entered .bottom-dock,
+.digital-expo-page.panel-entered .control-pad {
+  opacity: 1;
+  filter: none;
+}
+
+.digital-expo-page.panel-entered .nav-panel,
+.digital-expo-page.panel-entered .info-panel,
+.digital-expo-page.panel-entered .overview-strip,
+.digital-expo-page.panel-entered .control-pad {
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.digital-expo-page.panel-entered .bottom-dock {
+  transform: translate3d(-50%, 0, 0) scale(1);
+}
+
 .expo-aside {
   position: absolute;
   top: 4px;
@@ -542,6 +690,10 @@ function writeStorage<T>(key: string, value: T) {
   backdrop-filter: blur(16px);
 }
 
+.digital-expo-page:not(.panel-entered) .bottom-dock {
+  transform: translate3d(-50%, 88px, 0) scale(0.96);
+}
+
 .bottom-dock button {
   position: relative;
   display: grid;
@@ -597,6 +749,174 @@ function writeStorage<T>(key: string, value: T) {
   font-weight: 800;
   background: radial-gradient(circle, #8ff0ff, #2f8cff);
   box-shadow: 0 0 24px rgba(94, 211, 255, 0.38);
+}
+
+.intro-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  pointer-events: none;
+  place-items: center;
+  background: radial-gradient(circle at 50% 42%, rgba(49, 167, 255, 0.18), transparent 34%),
+    linear-gradient(90deg, rgba(2, 10, 21, 0.48), transparent 24%, transparent 76%, rgba(2, 10, 21, 0.48));
+  animation: curtainFade 2.15s ease forwards;
+}
+
+.intro-curtain::before,
+.intro-curtain::after {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  content: '';
+  background: linear-gradient(90deg, transparent, rgba(111, 225, 255, 0.82), transparent);
+  box-shadow: 0 0 22px rgba(92, 216, 255, 0.38);
+}
+
+.intro-curtain::before {
+  top: 34%;
+  animation: scanLineDown 1.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.intro-curtain::after {
+  bottom: 30%;
+  animation: scanLineUp 1.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.intro-orbit {
+  position: absolute;
+  width: min(42vw, 520px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(118, 224, 255, 0.16);
+  border-radius: 50%;
+  box-shadow: inset 0 0 40px rgba(55, 173, 255, 0.08), 0 0 60px rgba(55, 173, 255, 0.1);
+  animation: introOrbit 1.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.intro-orbit::before,
+.intro-orbit::after {
+  position: absolute;
+  inset: 14%;
+  content: '';
+  border: 1px dashed rgba(118, 224, 255, 0.22);
+  border-radius: inherit;
+}
+
+.intro-orbit::after {
+  inset: 32%;
+  border-style: solid;
+  opacity: 0.62;
+}
+
+.intro-card {
+  position: relative;
+  z-index: 1;
+  min-width: 280px;
+  padding: 18px 24px;
+  text-align: center;
+  background: rgba(6, 20, 38, 0.68);
+  border: 1px solid rgba(107, 216, 255, 0.2);
+  border-radius: 18px;
+  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.28), inset 0 0 22px rgba(96, 213, 255, 0.045);
+  backdrop-filter: blur(14px);
+  animation: introCardIn 1.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.intro-card span,
+.intro-card em {
+  display: block;
+  font-size: 11px;
+  font-style: normal;
+  color: rgba(219, 243, 255, 0.52);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.intro-card strong {
+  display: block;
+  margin: 7px 0 8px;
+  font-size: 24px;
+  letter-spacing: 0.08em;
+  color: #f2fbff;
+}
+
+@keyframes curtainFade {
+  0%, 66% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes scanLineDown {
+  from {
+    transform: translateY(-76px) scaleX(0.32);
+    opacity: 0;
+  }
+  28% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(118px) scaleX(1);
+    opacity: 0;
+  }
+}
+
+@keyframes scanLineUp {
+  from {
+    transform: translateY(76px) scaleX(0.32);
+    opacity: 0;
+  }
+  28% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-118px) scaleX(1);
+    opacity: 0;
+  }
+}
+
+@keyframes introOrbit {
+  from {
+    opacity: 0;
+    transform: rotateX(68deg) rotateZ(-36deg) scale(0.58);
+  }
+  44% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: rotateX(68deg) rotateZ(36deg) scale(1.18);
+  }
+}
+
+@keyframes introCardIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0) scale(0.94);
+  }
+  38% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -8px, 0) scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .digital-expo-page :where(.expo-header, .scene-layer, .expo-aside, .overview-strip, .bottom-dock, .control-pad) {
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+
+  .intro-curtain {
+    display: none;
+  }
 }
 
 @media (max-height: 780px) and (min-width: 921px) {

@@ -1,7 +1,19 @@
 <template>
-  <div class="job-bigmap-page" v-loading="loading" element-loading-text="岗位地图数据加载中..." element-loading-background="rgba(3, 12, 30, 0.72)">
+  <div class="job-bigmap-page" :class="{ 'is-enter-ready': enterReady }" v-loading="loading" element-loading-text="岗位地图数据加载中..." element-loading-background="rgba(3, 12, 30, 0.72)">
     <div class="screen-bg screen-bg--left"></div>
     <div class="screen-bg screen-bg--right"></div>
+
+    <div v-if="introVisible" class="screen-intro-mask" :class="{ 'is-leaving': introLeaving }">
+      <div class="intro-scan"></div>
+      <div class="intro-core">
+        <span class="intro-ring intro-ring--outer"></span>
+        <span class="intro-ring intro-ring--middle"></span>
+        <span class="intro-ring intro-ring--inner"></span>
+        <strong>详细地图载入</strong>
+        <p>正在同步岗位空间分布数据</p>
+        <em>JOB DISTRIBUTION MAP</em>
+      </div>
+    </div>
 
     <header class="bigmap-header">
       <div class="header-left">
@@ -98,6 +110,10 @@ const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
+const enterReady = ref(false)
+const introVisible = ref(true)
+const introLeaving = ref(false)
+const introTimers: number[] = []
 const mapRef = ref<HTMLDivElement | null>(null)
 const currentMode = ref<'national' | 'province' | 'city'>('national')
 const currentProvince = ref('')
@@ -111,6 +127,45 @@ const cityData = ref<CityScreenData | null>(null)
 
 let mapChart: echarts.ECharts | null = null
 let clockTimer: number | null = null
+
+function clearEntranceTimers() {
+  while (introTimers.length) {
+    const timer = introTimers.pop()
+    if (timer) window.clearTimeout(timer)
+  }
+}
+
+function playBigMapEntrance() {
+  clearEntranceTimers()
+  enterReady.value = false
+  introVisible.value = true
+  introLeaving.value = false
+
+  nextTick(() => {
+    // 先让载入层完成扫描，再触发主体卡片和地图入场，避免动画被遮罩覆盖。
+    introTimers.push(
+      window.setTimeout(() => {
+        introLeaving.value = true
+      }, 720)
+    )
+    introTimers.push(
+      window.setTimeout(() => {
+        introVisible.value = false
+      }, 1040)
+    )
+    introTimers.push(
+      window.setTimeout(() => {
+        enterReady.value = true
+        handleResize()
+      }, 1120)
+    )
+    introTimers.push(
+      window.setTimeout(() => {
+        handleResize()
+      }, 1640)
+    )
+  })
+}
 
 const MAP_SIDE_LAYER_COUNT = 7
 const MAP_ZOOM_MIN = 0.82
@@ -1163,13 +1218,18 @@ async function initPage() {
 }
 
 onMounted(() => {
-  initPage().catch((error) => {
-    console.error(error)
-    ElMessage.error('岗位地图初始化失败')
-  })
+  initPage()
+    .catch((error) => {
+      console.error(error)
+      ElMessage.error('岗位地图初始化失败')
+    })
+    .finally(() => {
+      playBigMapEntrance()
+    })
 })
 
 onBeforeUnmount(() => {
+  clearEntranceTimers()
   window.removeEventListener('resize', handleResize)
   if (clockTimer) window.clearInterval(clockTimer)
   mapChart?.dispose()
@@ -1184,6 +1244,262 @@ onBeforeUnmount(() => {
   color: #e7f6ff;
   background: radial-gradient(circle at 50% 30%, rgba(20, 88, 178, 0.32), transparent 44%),
     linear-gradient(180deg, #06152d 0%, #030a17 100%);
+}
+
+.screen-intro-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, rgba(34, 168, 255, 0.2), transparent 30%),
+    linear-gradient(180deg, rgba(3, 12, 30, 0.98), rgba(3, 9, 22, 0.94));
+  backdrop-filter: blur(8px);
+  transition: opacity 0.46s ease, transform 0.46s ease, visibility 0.46s ease;
+}
+
+.screen-intro-mask.is-leaving {
+  opacity: 0;
+  transform: scale(1.04);
+  visibility: hidden;
+}
+
+.intro-scan {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background-image: linear-gradient(rgba(80, 216, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 216, 255, 0.08) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(circle at center, #000 0%, rgba(0, 0, 0, 0.7) 44%, transparent 78%);
+  animation: bigmapGridMove 1.8s linear infinite;
+}
+
+.intro-core {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 320px;
+  height: 320px;
+  text-align: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(33, 168, 255, 0.14), rgba(7, 20, 42, 0.18) 48%, transparent 70%);
+  animation: bigmapIntroCoreRise 0.82s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.intro-core strong {
+  position: relative;
+  z-index: 2;
+  color: #ffffff;
+  font-size: 25px;
+  letter-spacing: 4px;
+  text-shadow: 0 0 22px rgba(83, 220, 255, 0.46);
+}
+
+.intro-core p {
+  position: relative;
+  z-index: 2;
+  margin: 14px 0 0;
+  color: #87dafb;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.intro-core em {
+  position: relative;
+  z-index: 2;
+  margin-top: 16px;
+  color: rgba(177, 230, 255, 0.62);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 2.5px;
+}
+
+.intro-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(88, 221, 255, 0.36);
+  box-shadow: 0 0 28px rgba(48, 184, 255, 0.16), inset 0 0 22px rgba(83, 220, 255, 0.08);
+}
+
+.intro-ring--outer {
+  inset: 0;
+  border-style: dashed;
+  animation: bigmapRingRotate 8s linear infinite;
+}
+
+.intro-ring--middle {
+  inset: 46px;
+  border-color: rgba(90, 158, 255, 0.42);
+  animation: bigmapRingRotate 6s linear infinite reverse;
+}
+
+.intro-ring--inner {
+  inset: 92px;
+  background: radial-gradient(circle, rgba(92, 229, 255, 0.12), transparent 64%);
+  animation: bigmapIntroPulse 1.7s ease-in-out infinite;
+}
+
+.bigmap-header,
+.bigmap-card,
+.map-topbar,
+.big-map-box,
+.map-footer {
+  transition-property: opacity, transform, filter;
+  transition-duration: 0.78s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.bigmap-card {
+  transition-delay: 0.16s;
+}
+
+.map-topbar {
+  transition-delay: 0.28s;
+}
+
+.big-map-box {
+  transition-delay: 0.38s;
+}
+
+.map-footer {
+  transition-delay: 0.48s;
+}
+
+.job-bigmap-page:not(.is-enter-ready) .bigmap-header {
+  opacity: 0;
+  transform: translateY(-28px);
+  filter: blur(8px);
+}
+
+.job-bigmap-page:not(.is-enter-ready) .bigmap-card {
+  opacity: 0;
+  transform: translateY(38px) scale(0.96);
+  filter: blur(10px);
+}
+
+.job-bigmap-page:not(.is-enter-ready) .map-topbar {
+  opacity: 0;
+  transform: translateY(-18px);
+  filter: blur(6px);
+}
+
+.job-bigmap-page:not(.is-enter-ready) .big-map-box {
+  opacity: 0;
+  transform: perspective(1000px) rotateX(8deg) translateY(32px) scale(0.96);
+  filter: blur(8px);
+}
+
+.job-bigmap-page:not(.is-enter-ready) .map-footer {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.job-bigmap-page.is-enter-ready .bigmap-header,
+.job-bigmap-page.is-enter-ready .bigmap-card,
+.job-bigmap-page.is-enter-ready .map-topbar,
+.job-bigmap-page.is-enter-ready .big-map-box,
+.job-bigmap-page.is-enter-ready .map-footer {
+  opacity: 1;
+  filter: blur(0);
+}
+
+.job-bigmap-page.is-enter-ready .bigmap-card {
+  animation: bigmapCardRise 0.78s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.14s;
+}
+
+.job-bigmap-page.is-enter-ready .map-kpis > div {
+  animation: bigmapMiniRise 0.68s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.job-bigmap-page.is-enter-ready .map-kpis > div:nth-child(1) { animation-delay: 0.26s; }
+.job-bigmap-page.is-enter-ready .map-kpis > div:nth-child(2) { animation-delay: 0.32s; }
+.job-bigmap-page.is-enter-ready .map-kpis > div:nth-child(3) { animation-delay: 0.38s; }
+.job-bigmap-page.is-enter-ready .map-kpis > div:nth-child(4) { animation-delay: 0.44s; }
+
+.is-enter-ready .bigmap-card::after,
+.is-enter-ready .big-map-box::before {
+  animation: bigmapHaloIn 1.4s ease both;
+}
+
+@keyframes bigmapGridMove {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 56px 56px, 56px 56px;
+  }
+}
+
+@keyframes bigmapIntroCoreRise {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bigmapRingRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bigmapIntroPulse {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes bigmapCardRise {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bigmapMiniRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bigmapHaloIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 0.48;
+    transform: scale(1);
+  }
 }
 
 .screen-bg {

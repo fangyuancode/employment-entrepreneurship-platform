@@ -94,6 +94,7 @@ const emit = defineEmits<{
   (event: 'update:activeKey', value: HallKey): void
   (event: 'enter-hall', path: string): void
   (event: 'model-state', value: string): void
+  (event: 'intro-complete'): void
 }>()
 
 const sceneHost = ref<HTMLDivElement | null>(null)
@@ -142,6 +143,7 @@ const scenePointer = new THREE.Vector2(0, 0)
 const introScaleVector = new THREE.Vector3(1, 1, 1)
 const INTRO_DURATION = 1650
 let introStart = 0
+let introCompleteEmitted = false
 let pointerInsideScene = false
 let isCameraTransitioning = false
 
@@ -187,7 +189,7 @@ function initThreeScene() {
   const height = container.clientHeight || 640
 
   camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 360)
-  camera.position.copy(cameraTarget)
+  camera.position.set(6, 38, 32)
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true })
   renderer.setSize(width, height)
@@ -220,6 +222,7 @@ function initThreeScene() {
   applyTourSettings()
 
   introStart = performance.now()
+  introCompleteEmitted = false
   createLights()
   createDigitalExhibition()
   loadGltfExhibitionModel()
@@ -1184,6 +1187,10 @@ function animateScene() {
   const delta = clock.getDelta()
   const introProgress = Math.min((performance.now() - introStart) / INTRO_DURATION, 1)
   const introEase = easeOutCubic(introProgress)
+  if (introProgress >= 1 && !introCompleteEmitted) {
+    introCompleteEmitted = true
+    emit('intro-complete')
+  }
 
   if (cityGroup) {
     const targetScale = THREE.MathUtils.lerp(0.78, 1, introEase)

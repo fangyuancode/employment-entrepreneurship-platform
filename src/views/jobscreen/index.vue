@@ -1,7 +1,19 @@
 <template>
-  <div class="job-screen-page">
+  <div class="job-screen-page" :class="{ 'is-enter-ready': enterReady }">
     <div class="screen-bg screen-bg--left"></div>
     <div class="screen-bg screen-bg--right"></div>
+
+    <div v-if="introVisible" class="screen-intro-mask" :class="{ 'is-leaving': introLeaving }">
+      <div class="intro-scan"></div>
+      <div class="intro-core">
+        <span class="intro-ring intro-ring--outer"></span>
+        <span class="intro-ring intro-ring--middle"></span>
+        <span class="intro-ring intro-ring--inner"></span>
+        <strong>岗位大屏初始化</strong>
+        <p>正在构建就业岗位分析视图</p>
+        <em>EMPLOYMENT DATA SCREEN</em>
+      </div>
+    </div>
 
     <header class="screen-header">
       <div class="header-left">
@@ -272,6 +284,10 @@ import {
 } from '@/utils/echarts-map'
 
 const loading = ref(false)
+const enterReady = ref(false)
+const introVisible = ref(true)
+const introLeaving = ref(false)
+const introTimers: number[] = []
 const router = useRouter()
 
 const queryForm = reactive({
@@ -312,6 +328,45 @@ let rightTopChart: echarts.ECharts | null = null
 let rightMiddleChart: echarts.ECharts | null = null
 let rightBottomChart: echarts.ECharts | null = null
 let bottomLeftChart: echarts.ECharts | null = null
+
+function clearEntranceTimers() {
+  while (introTimers.length) {
+    const timer = introTimers.pop()
+    if (timer) window.clearTimeout(timer)
+  }
+}
+
+function playScreenEntrance() {
+  clearEntranceTimers()
+  enterReady.value = false
+  introVisible.value = true
+  introLeaving.value = false
+
+  nextTick(() => {
+    // 先展示载入层，随后淡出；等遮罩基本离开后再触发页面主体入场，避免动画被遮罩挡住。
+    introTimers.push(
+      window.setTimeout(() => {
+        introLeaving.value = true
+      }, 760)
+    )
+    introTimers.push(
+      window.setTimeout(() => {
+        introVisible.value = false
+      }, 1080)
+    )
+    introTimers.push(
+      window.setTimeout(() => {
+        enterReady.value = true
+        handleResize()
+      }, 1160)
+    )
+    introTimers.push(
+      window.setTimeout(() => {
+        handleResize()
+      }, 1680)
+    )
+  })
+}
 
 const MAP_SIDE_LAYER_COUNT = 7
 const MAP_ZOOM_MIN = 0.82
@@ -1930,10 +1985,13 @@ onMounted(async () => {
   } catch (error) {
     console.error(error)
     ElMessage.error('地图初始化失败')
+  } finally {
+    playScreenEntrance()
   }
 })
 
 onBeforeUnmount(() => {
+  clearEntranceTimers()
   window.removeEventListener('resize', handleResize)
   if (clockTimer) window.clearInterval(clockTimer)
   mapChart?.dispose()
@@ -1957,6 +2015,278 @@ onBeforeUnmount(() => {
   background: radial-gradient(circle at 7% 12%, rgba(18, 205, 255, 0.18), transparent 24%),
     radial-gradient(circle at 92% 8%, rgba(61, 117, 255, 0.2), transparent 26%),
     linear-gradient(180deg, #061426 0%, #07162b 48%, #081021 100%);
+}
+
+.screen-intro-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, rgba(34, 168, 255, 0.2), transparent 30%),
+    linear-gradient(180deg, rgba(3, 12, 30, 0.98), rgba(3, 9, 22, 0.94));
+  backdrop-filter: blur(8px);
+  transition: opacity 0.46s ease, transform 0.46s ease, visibility 0.46s ease;
+}
+
+.screen-intro-mask.is-leaving {
+  opacity: 0;
+  transform: scale(1.04);
+  visibility: hidden;
+}
+
+.intro-scan {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background-image: linear-gradient(rgba(80, 216, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 216, 255, 0.08) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(circle at center, #000 0%, rgba(0, 0, 0, 0.7) 44%, transparent 78%);
+  animation: screenGridMove 1.8s linear infinite;
+}
+
+.intro-core {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 320px;
+  height: 320px;
+  text-align: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(33, 168, 255, 0.14), rgba(7, 20, 42, 0.18) 48%, transparent 70%);
+  animation: introCoreRise 0.82s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.intro-core strong {
+  position: relative;
+  z-index: 2;
+  color: #ffffff;
+  font-size: 25px;
+  letter-spacing: 4px;
+  text-shadow: 0 0 22px rgba(83, 220, 255, 0.46);
+}
+
+.intro-core p {
+  position: relative;
+  z-index: 2;
+  margin: 14px 0 0;
+  color: #87dafb;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.intro-core em {
+  position: relative;
+  z-index: 2;
+  margin-top: 16px;
+  color: rgba(177, 230, 255, 0.62);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 2.5px;
+}
+
+.intro-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(88, 221, 255, 0.36);
+  box-shadow: 0 0 28px rgba(48, 184, 255, 0.16), inset 0 0 22px rgba(83, 220, 255, 0.08);
+}
+
+.intro-ring--outer {
+  inset: 0;
+  border-style: dashed;
+  animation: introRingRotate 8s linear infinite;
+}
+
+.intro-ring--middle {
+  inset: 46px;
+  border-color: rgba(90, 158, 255, 0.42);
+  animation: introRingRotate 6s linear infinite reverse;
+}
+
+.intro-ring--inner {
+  inset: 92px;
+  background: radial-gradient(circle, rgba(92, 229, 255, 0.12), transparent 64%);
+  animation: introPulse 1.7s ease-in-out infinite;
+}
+
+.screen-header,
+.filter-bar,
+.kpi-grid,
+.left-panel,
+.center-panel,
+.right-panel,
+.bottom-grid {
+  transition-property: opacity, transform, filter;
+  transition-duration: 0.72s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.filter-bar {
+  transition-delay: 0.08s;
+}
+
+.kpi-grid {
+  transition-delay: 0.16s;
+}
+
+.left-panel {
+  transition-delay: 0.24s;
+}
+
+.center-panel {
+  transition-delay: 0.32s;
+}
+
+.right-panel {
+  transition-delay: 0.4s;
+}
+
+.bottom-grid {
+  transition-delay: 0.5s;
+}
+
+.job-screen-page:not(.is-enter-ready) .screen-header {
+  opacity: 0;
+  transform: translateY(-28px);
+  filter: blur(8px);
+}
+
+.job-screen-page:not(.is-enter-ready) .filter-bar,
+.job-screen-page:not(.is-enter-ready) .kpi-grid {
+  opacity: 0;
+  transform: translateY(22px) scale(0.98);
+  filter: blur(8px);
+}
+
+.job-screen-page:not(.is-enter-ready) .left-panel {
+  opacity: 0;
+  transform: translateX(-38px) scale(0.97);
+  filter: blur(8px);
+}
+
+.job-screen-page:not(.is-enter-ready) .center-panel {
+  opacity: 0;
+  transform: translateY(36px) scale(0.95);
+  filter: blur(10px);
+}
+
+.job-screen-page:not(.is-enter-ready) .right-panel {
+  opacity: 0;
+  transform: translateX(38px) scale(0.97);
+  filter: blur(8px);
+}
+
+.job-screen-page:not(.is-enter-ready) .bottom-grid {
+  opacity: 0;
+  transform: translateY(36px) scale(0.98);
+  filter: blur(8px);
+}
+
+.job-screen-page.is-enter-ready .screen-header,
+.job-screen-page.is-enter-ready .filter-bar,
+.job-screen-page.is-enter-ready .kpi-grid,
+.job-screen-page.is-enter-ready .left-panel,
+.job-screen-page.is-enter-ready .center-panel,
+.job-screen-page.is-enter-ready .right-panel,
+.job-screen-page.is-enter-ready .bottom-grid {
+  opacity: 1;
+  filter: blur(0);
+}
+
+.job-screen-page.is-enter-ready .stat-card,
+.job-screen-page.is-enter-ready .panel-card {
+  animation: screenCardRise 0.76s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.job-screen-page.is-enter-ready .stat-card:nth-child(1) { animation-delay: 0.08s; }
+.job-screen-page.is-enter-ready .stat-card:nth-child(2) { animation-delay: 0.14s; }
+.job-screen-page.is-enter-ready .stat-card:nth-child(3) { animation-delay: 0.2s; }
+.job-screen-page.is-enter-ready .stat-card:nth-child(4) { animation-delay: 0.26s; }
+.job-screen-page.is-enter-ready .left-panel .panel-card:nth-child(1) { animation-delay: 0.22s; }
+.job-screen-page.is-enter-ready .left-panel .panel-card:nth-child(2) { animation-delay: 0.28s; }
+.job-screen-page.is-enter-ready .left-panel .panel-card:nth-child(3) { animation-delay: 0.34s; }
+.job-screen-page.is-enter-ready .center-panel .panel-card:nth-child(1) { animation-delay: 0.3s; }
+.job-screen-page.is-enter-ready .center-panel .panel-card:nth-child(2) { animation-delay: 0.42s; }
+.job-screen-page.is-enter-ready .right-panel .panel-card:nth-child(1) { animation-delay: 0.36s; }
+.job-screen-page.is-enter-ready .right-panel .panel-card:nth-child(2) { animation-delay: 0.42s; }
+.job-screen-page.is-enter-ready .right-panel .panel-card:nth-child(3) { animation-delay: 0.48s; }
+.job-screen-page.is-enter-ready .bottom-grid .panel-card:nth-child(1) { animation-delay: 0.5s; }
+.job-screen-page.is-enter-ready .bottom-grid .panel-card:nth-child(2) { animation-delay: 0.56s; }
+.job-screen-page.is-enter-ready .bottom-grid .panel-card:nth-child(3) { animation-delay: 0.62s; }
+
+.is-enter-ready .map-card::after,
+.is-enter-ready .map-box::before {
+  animation: screenHaloIn 1.4s ease both;
+}
+
+@keyframes screenGridMove {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 56px 56px, 56px 56px;
+  }
+}
+
+@keyframes introCoreRise {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes introRingRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes introPulse {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes screenCardRise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes screenHaloIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 0.46;
+    transform: scale(1);
+  }
 }
 
 .screen-bg {
