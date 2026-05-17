@@ -13,17 +13,17 @@
       </div>
     </div>
 
+    <!-- <div v-if="judgeMode" class="judge-ribbon">
+      <span>评委视角</span>
+      <strong>{{ activeHall.userValue }}</strong>
+    </div> -->
+
     <div class="scene-value-bar">
       <div v-for="item in activeHall.kpis" :key="item.label" class="value-chip">
         <span>{{ item.label }}</span>
         <strong>{{ item.value }}</strong>
         <em>{{ item.trend }}</em>
       </div>
-    </div>
-
-    <div v-if="judgeMode" class="judge-ribbon">
-      <!-- <span>评委视角</span>
-      <strong>{{ activeHall.userValue }}</strong> -->
     </div>
 
     <div v-if="hoverTooltip.visible && hoverTooltip.hall" class="hall-tooltip rich-tooltip" :style="tooltipStyle">
@@ -155,6 +155,11 @@ const flowMarkers: FlowMarker[] = []
 const cameraTarget = new THREE.Vector3(30, 23, 35)
 const controlsTarget = new THREE.Vector3(0, 3.6, 0)
 const clock = new THREE.Clock()
+const scenePointer = new THREE.Vector2(0, 0)
+const introScaleVector = new THREE.Vector3(1, 1, 1)
+const INTRO_DURATION = 1650
+let introStart = 0
+let pointerInsideScene = false
 let isCameraTransitioning = false
 
 onMounted(async () => {
@@ -180,6 +185,13 @@ watch(
   }
 )
 
+watch(
+  () => props.isTouring,
+  () => {
+    applyTourSettings()
+  }
+)
+
 function initThreeScene() {
   const container = sceneHost.value
   if (!container) return
@@ -199,7 +211,7 @@ function initThreeScene() {
   renderer.setPixelRatio(getPixelRatio())
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.03
+  renderer.toneMappingExposure = 0.96
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = THREE.PCFSoftShadowMap
   container.innerHTML = ''
@@ -220,8 +232,11 @@ function initThreeScene() {
   controls.maxDistance = 118
   controls.maxPolarAngle = Math.PI * 0.49
   controls.target.copy(controlsTarget)
+  controls.autoRotateSpeed = 0.36
   controls.addEventListener('start', stopCameraTransition)
+  applyTourSettings()
 
+  introStart = performance.now()
   createLights()
   createDigitalExhibition()
   loadGltfExhibitionModel()
@@ -299,6 +314,9 @@ function createDigitalExhibition() {
 
   cityGroup = new THREE.Group()
   cityGroup.name = 'ComfortDigitalExhibition'
+  cityGroup.scale.setScalar(0.78)
+  cityGroup.position.y = -1.35
+  cityGroup.rotation.set(-0.08, -0.72, 0)
   scene.add(cityGroup)
 
   createAtriumFloor()
@@ -566,13 +584,15 @@ function createRoundedPavilion(
   glowMaterial: THREE.MeshBasicMaterial,
   index: number
 ) {
-  const variant = index % 3
-  const widthScale = 1.18 + (index % 2) * 0.08
-  const depthScale = 0.78 + (variant === 2 ? 0.08 : 0)
-  const bodyHeight = 2.15 + variant * 0.28
   const color = new THREE.Color(hall.color)
-
+  const widthScale = 1.12 + (index % 2) * 0.08
+  const depthScale = 1.02 + (index % 3) * 0.04
+  const unit = 1.55
   const decor: Partial<HallDecor> = {}
+  const trackedShellMaterials: THREE.MeshStandardMaterial[] = []
+  const trackedBodyMaterials: THREE.MeshStandardMaterial[] = []
+  const trackedGlassMaterials: THREE.MeshBasicMaterial[] = []
+  const trackedGlowMaterials: THREE.MeshBasicMaterial[] = []
 
   const pickable = (mesh: THREE.Mesh) => {
     mesh.userData.hallKey = hall.key
@@ -580,199 +600,262 @@ function createRoundedPavilion(
     return mesh
   }
 
-  const plinthMaterial = bodyMaterial.clone()
-  plinthMaterial.color.copy(color).multiplyScalar(0.3)
-  plinthMaterial.emissive.copy(color).multiplyScalar(0.12)
-  plinthMaterial.emissiveIntensity = 0.36
-
-  const foundation = pickable(
-    new THREE.Mesh(new THREE.CylinderGeometry(5.25, 5.85, 0.42, 88), plinthMaterial)
-  )
-  foundation.name = `${hall.short}-展馆基座`
-  foundation.scale.set(widthScale + 0.14, 1, depthScale + 0.12)
-  foundation.position.y = 0.22
-  foundation.castShadow = true
-  foundation.receiveShadow = true
-  group.add(foundation)
-
-  const lowerDeck = pickable(
-    new THREE.Mesh(new THREE.CylinderGeometry(4.62, 5.08, 0.5, 88), bodyMaterial.clone())
-  )
-  lowerDeck.name = `${hall.short}-环形平台`
-  lowerDeck.scale.set(widthScale + 0.08, 1, depthScale + 0.06)
-  lowerDeck.position.y = 0.66
-  lowerDeck.castShadow = true
-  lowerDeck.receiveShadow = true
-  group.add(lowerDeck)
-
-  const hallBody = pickable(
-    new THREE.Mesh(new THREE.CylinderGeometry(3.58, 3.9, bodyHeight, 88), bodyMaterial.clone())
-  )
-  hallBody.name = `${hall.short}-主体展馆`
-  hallBody.scale.set(widthScale, 1, depthScale)
-  hallBody.position.y = 0.9 + bodyHeight / 2
-  hallBody.castShadow = true
-  hallBody.receiveShadow = true
-  group.add(hallBody)
-
-  const glassWall = pickable(
-    new THREE.Mesh(
-      new THREE.CylinderGeometry(3.72, 4.02, bodyHeight * 0.82, 96, 1, true),
-      glassMaterial.clone()
-    )
-  )
-  glassWall.name = `${hall.short}-通透玻璃幕墙`
-  glassWall.scale.set(widthScale + 0.015, 1, depthScale + 0.015)
-  glassWall.position.y = 1.06 + bodyHeight / 2
-  group.add(glassWall)
-
-  const midSlab = pickable(
-    new THREE.Mesh(new THREE.CylinderGeometry(4.18, 4.36, 0.28, 88), shellMaterial.clone())
-  )
-  midSlab.name = `${hall.short}-中层挑檐`
-  midSlab.scale.set(widthScale + 0.08, 1, depthScale + 0.08)
-  midSlab.position.y = 1.55 + bodyHeight
-  midSlab.castShadow = true
-  midSlab.receiveShadow = true
-  group.add(midSlab)
-
-  const roofBase = pickable(
-    new THREE.Mesh(new THREE.CylinderGeometry(4.55, 4.15, 0.42, 96), shellMaterial.clone())
-  )
-  roofBase.name = `${hall.short}-流线屋顶`
-  roofBase.scale.set(widthScale + 0.12, 1, depthScale + 0.1)
-  roofBase.position.y = 1.93 + bodyHeight
-  roofBase.castShadow = true
-  roofBase.receiveShadow = true
-  group.add(roofBase)
-
-  const roofDome = pickable(
-    new THREE.Mesh(
-      new THREE.SphereGeometry(3.72, 72, 20, 0, Math.PI * 2, 0, Math.PI * 0.5),
-      shellMaterial.clone()
-    )
-  )
-  roofDome.name = `${hall.short}-圆润穹顶`
-  roofDome.scale.set(widthScale + 0.18, 0.2, depthScale + 0.13)
-  roofDome.position.y = 2.12 + bodyHeight
-  roofDome.castShadow = true
-  roofDome.receiveShadow = true
-  group.add(roofDome)
-
-  const facadeGlow = pickable(
-    new THREE.Mesh(new THREE.PlaneGeometry(3.45, 1.46), glassMaterial.clone())
-  )
-  facadeGlow.name = `${hall.short}-入口数字屏`
-  facadeGlow.position.set(0, 1.82, -3.18 * depthScale)
-  facadeGlow.userData.hallKey = hall.key
-  group.add(facadeGlow)
-
-  const entranceFrameMaterial = glowMaterial.clone()
-  entranceFrameMaterial.opacity = 0.34
-  const entranceFrame = new THREE.Mesh(
-    new THREE.TorusGeometry(1.92, 0.035, 10, 96),
-    entranceFrameMaterial
-  )
-  entranceFrame.name = `${hall.short}-入口导光环`
-  entranceFrame.scale.set(1.16, 0.36, 1)
-  entranceFrame.position.set(0, 1.82, -3.22 * depthScale)
-  group.add(entranceFrame)
-  animatedObjects.push(entranceFrame)
-  decor.entranceGlow = facadeGlow
-
-  const stepMaterial = shellMaterial.clone()
-  stepMaterial.color.set(0xd6e2e8)
-  for (let i = 0; i < 3; i += 1) {
-    const step = new THREE.Mesh(new THREE.BoxGeometry(3.2 + i * 0.65, 0.12, 0.32), stepMaterial)
-    step.name = `${hall.short}-入口台阶-${i + 1}`
-    step.position.set(0, 0.18 + i * 0.035, -4.15 * depthScale - i * 0.28)
-    step.castShadow = true
-    step.receiveShadow = true
-    group.add(step)
+  const createShellMaterial = (tone = 0xe8f0f4) => {
+    const material = shellMaterial.clone()
+    material.color.set(tone)
+    material.emissive.copy(color).multiplyScalar(0.035)
+    material.emissiveIntensity = 0.34
+    material.roughness = 0.4
+    material.metalness = 0.42
+    material.userData.role = 'shell'
+    material.userData.baseTone = tone
+    trackedShellMaterials.push(material)
+    return material
   }
 
-  const displayMaterial = new THREE.MeshBasicMaterial({
-    color,
-    transparent: true,
-    opacity: 0.22,
-    depthWrite: false
-  })
-  ;[-1.65, 1.65].forEach((x, i) => {
-    const display = new THREE.Mesh(new THREE.PlaneGeometry(1.16, 0.74), displayMaterial.clone())
-    display.name = `${hall.short}-室内数据屏-${i + 1}`
-    display.position.set(x, 1.92, -2.86 * depthScale)
-    display.rotation.y = x < 0 ? 0.08 : -0.08
-    group.add(display)
+  const createBodyMaterial = (factor = 0.42, emissiveFactor = 0.14) => {
+    const material = bodyMaterial.clone()
+    material.color.copy(color).multiplyScalar(factor)
+    material.emissive.copy(color).multiplyScalar(emissiveFactor)
+    material.emissiveIntensity = 0.42
+    material.roughness = 0.34
+    material.metalness = 0.58
+    material.userData.role = 'body'
+    material.userData.factor = factor
+    material.userData.emissiveFactor = emissiveFactor
+    trackedBodyMaterials.push(material)
+    return material
+  }
+
+  const createGlassMaterial = (opacity = 0.2) => {
+    const material = glassMaterial.clone()
+    material.color.copy(color).lerp(new THREE.Color(0xdff8ff), 0.34)
+    material.opacity = opacity
+    material.depthWrite = false
+    trackedGlassMaterials.push(material)
+    return material
+  }
+
+  const createGlowMaterial = (opacity = 0.32) => {
+    const material = glowMaterial.clone()
+    material.color.copy(color).lerp(new THREE.Color(0x88efff), 0.24)
+    material.opacity = opacity
+    material.depthWrite = false
+    trackedGlowMaterials.push(material)
+    return material
+  }
+
+  const createBox = (
+    name: string,
+    width: number,
+    height: number,
+    depth: number,
+    radius: number,
+    material: THREE.Material,
+    position: [number, number, number],
+    selectable = true
+  ) => {
+    const mesh = new THREE.Mesh(
+      roundedBoxGeometry(
+        width * unit * widthScale,
+        height * unit,
+        depth * unit * depthScale,
+        radius * unit
+      ),
+      material
+    )
+    mesh.name = `${hall.short}-${name}`
+    mesh.position.set(
+      position[0] * unit * widthScale,
+      position[1] * unit,
+      position[2] * unit * depthScale
+    )
+    mesh.castShadow = true
+    mesh.receiveShadow = true
+    group.add(selectable ? pickable(mesh) : mesh)
+    return mesh
+  }
+
+  const baseMaterial = createShellMaterial(0xd7e2e8)
+  const platformMaterial = createBodyMaterial(0.31, 0.1)
+  const mainMaterial = createBodyMaterial(0.46, 0.17)
+  const sideMaterial = createBodyMaterial(0.38, 0.14)
+  const roofMaterial = createShellMaterial(0xeaf2f5)
+  const stepMaterial = createShellMaterial(0xdde8ee)
+  const glass = createGlassMaterial(0.22)
+  const glow = createGlowMaterial(0.34)
+
+  const foundation = createBox('展馆基座', 5.15, 0.34, 3.62, 0.22, baseMaterial, [0, 0.17, 0])
+  foundation.name = `${hall.short}-盒体式展馆基座`
+
+  const platform = createBox('下沉平台', 4.62, 0.28, 3.18, 0.2, platformMaterial, [0, 0.48, 0])
+  platform.name = `${hall.short}-功能展示平台`
+
+  const mainBody = createBox('主体展厅', 3.18, 1.72, 2.18, 0.24, mainMaterial, [0, 1.28, 0])
+  mainBody.name = `${hall.short}-主体展馆空间`
+  ;[-1, 1].forEach((side) => {
+    const wing = createBox(
+      side > 0 ? '右侧展陈厅' : '左侧展陈厅',
+      0.92,
+      1.26,
+      1.72,
+      0.18,
+      sideMaterial.clone(),
+      [side * 1.88, 1.05, 0.08]
+    )
+    wing.rotation.y = side * 0.045
+
+    const sideWindow = createBox(
+      side > 0 ? '右侧展示窗' : '左侧展示窗',
+      0.58,
+      0.48,
+      0.05,
+      0.07,
+      createGlassMaterial(0.24),
+      [side * 1.88, 1.14, -0.86],
+      false
+    )
+    sideWindow.rotation.y = side * 0.045
   })
 
-  const sidePodMaterial = bodyMaterial.clone()
-  sidePodMaterial.color.copy(color).multiplyScalar(0.28)
-  ;[-1, 1].forEach((side) => {
-    const wing = pickable(
-      new THREE.Mesh(new THREE.CylinderGeometry(0.92, 1.06, 1.12, 32), sidePodMaterial.clone())
+  const roof = createBox('屋顶压檐', 3.68, 0.38, 2.58, 0.2, roofMaterial, [0, 2.42, 0])
+  roof.name = `${hall.short}-现代展馆屋顶`
+
+  const skylight = createBox(
+    '屋顶采光舱',
+    2.25,
+    0.14,
+    0.92,
+    0.12,
+    createGlassMaterial(0.2),
+    [0, 2.76, -0.02],
+    false
+  )
+  skylight.castShadow = false
+
+  const facadeGlass = createBox(
+    '正面玻璃幕墙',
+    1.42,
+    1.06,
+    0.055,
+    0.1,
+    createGlassMaterial(0.25),
+    [0, 1.32, -1.13]
+  )
+  facadeGlass.name = `${hall.short}-入口玻璃幕墙`
+  decor.entranceGlow = facadeGlass
+
+  const doorMaterial = createBodyMaterial(0.58, 0.19)
+  const door = createBox('入口门厅', 0.7, 0.78, 0.08, 0.07, doorMaterial, [0, 0.78, -1.22])
+  door.name = `${hall.short}-入口门厅`
+
+  const canopy = createBox(
+    '入口悬挑雨棚',
+    2.35,
+    0.16,
+    0.48,
+    0.1,
+    createShellMaterial(0xf0f6f8),
+    [0, 2.02, -1.43]
+  )
+  canopy.name = `${hall.short}-入口悬挑雨棚`
+  ;[0, 1, 2].forEach((stepIndex) => {
+    createBox(
+      `入口台阶-${stepIndex + 1}`,
+      2.22 + stepIndex * 0.42,
+      0.08,
+      0.32,
+      0.05,
+      stepMaterial.clone(),
+      [0, 0.14 + stepIndex * 0.055, -1.55 - stepIndex * 0.19]
     )
-    wing.name = `${hall.short}-侧向服务舱-${side > 0 ? '右' : '左'}`
-    wing.scale.set(1.18, 1, 0.82)
-    wing.rotation.z = Math.PI / 2
-    wing.position.set(side * 3.95 * widthScale, 1.24, -0.35)
-    wing.castShadow = true
-    wing.receiveShadow = true
-    group.add(wing)
   })
+
+  const displayMaterial = createGlassMaterial(0.23)
+  ;[-0.86, 0.86].forEach((x, displayIndex) => {
+    const display = createBox(
+      `室内数字屏-${displayIndex + 1}`,
+      0.58,
+      0.44,
+      0.045,
+      0.06,
+      displayMaterial.clone(),
+      [x, 1.46, -1.2],
+      false
+    )
+    display.castShadow = false
+  })
+
+  const badge = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.24, 0.24, 0.04, 36),
+    createGlowMaterial(0.48)
+  )
+  badge.name = `${hall.short}-屋顶识别徽章`
+  badge.rotation.x = Math.PI / 2
+  badge.position.set(0, 2.61 * unit, -1.28 * unit * depthScale)
+  group.add(badge)
+  animatedObjects.push(badge)
 
   const baseRing = new THREE.Mesh(
-    new THREE.TorusGeometry(4.84, 0.042, 12, 180),
-    glowMaterial.clone()
+    new THREE.TorusGeometry(3.08 * unit, 0.032 * unit, 12, 180),
+    createGlowMaterial(0.24)
   )
   baseRing.name = `${hall.short}-底部光环`
-  baseRing.scale.set(widthScale + 0.13, 1, depthScale + 0.11)
+  baseRing.scale.set(widthScale * 0.86, depthScale * 0.74, 1)
   baseRing.rotation.x = Math.PI / 2
-  baseRing.position.y = 0.92
+  baseRing.position.y = 0.62 * unit
   group.add(baseRing)
 
   const roofRing = new THREE.Mesh(
-    new THREE.TorusGeometry(4.02, 0.032, 12, 180),
-    glowMaterial.clone()
+    new THREE.TorusGeometry(2.14 * unit, 0.024 * unit, 12, 160),
+    createGlowMaterial(0.2)
   )
   roofRing.name = `${hall.short}-屋顶光环`
-  roofRing.scale.set(widthScale + 0.14, 1, depthScale + 0.12)
+  roofRing.scale.set(widthScale * 0.86, depthScale * 0.72, 1)
   roofRing.rotation.x = Math.PI / 2
-  roofRing.position.y = 2.33 + bodyHeight
+  roofRing.position.y = 2.88 * unit
   group.add(roofRing)
 
-  const hoverHaloMaterial = new THREE.MeshBasicMaterial({
-    color,
-    transparent: true,
-    opacity: 0.06,
-    depthWrite: false,
-    side: THREE.DoubleSide
-  })
-  const hoverHalo = new THREE.Mesh(new THREE.RingGeometry(4.95, 6.1, 128), hoverHaloMaterial)
+  const entranceFrame = new THREE.Mesh(
+    new THREE.TorusGeometry(0.82 * unit, 0.024 * unit, 10, 96),
+    createGlowMaterial(0.34)
+  )
+  entranceFrame.name = `${hall.short}-入口导光框`
+  entranceFrame.scale.set(1.42 * widthScale, 0.42, 1)
+  entranceFrame.position.set(0, 1.32 * unit, -1.28 * unit * depthScale)
+  group.add(entranceFrame)
+  animatedObjects.push(entranceFrame)
+
+  const hoverHaloMaterial = createGlowMaterial(0.08)
+  hoverHaloMaterial.side = THREE.DoubleSide
+  const hoverHalo = new THREE.Mesh(
+    new THREE.RingGeometry(3.0 * unit, 3.78 * unit, 128),
+    hoverHaloMaterial
+  )
   hoverHalo.name = `${hall.short}-选中投影光环`
-  hoverHalo.scale.set(widthScale + 0.14, depthScale + 0.12, 1)
   hoverHalo.rotation.x = -Math.PI / 2
-  hoverHalo.position.y = 0.18
+  hoverHalo.position.y = 0.12 * unit
   group.add(hoverHalo)
   decor.halo = hoverHalo
 
   const nameBoard = createTextSprite(hall.title, '#f7fcff', 'rgba(12, 31, 50, 0.62)', 58, 640, 176)
   nameBoard.name = `${hall.short}-顶部展馆名`
-  nameBoard.position.set(0, 3.45 + bodyHeight, -0.18)
+  nameBoard.position.set(0, 3.3 * unit, -0.04)
   nameBoard.scale.set(3.9, 1.06, 1)
   group.add(nameBoard)
   decor.nameBoard = nameBoard
 
-  const facadeBoard = createTextSprite(hall.short, '#ffffff', 'rgba(8, 24, 42, 0.52)', 68, 512, 170)
+  const facadeBoard = createTextSprite(hall.short, '#ffffff', 'rgba(8, 24, 42, 0.52)', 66, 512, 170)
   facadeBoard.name = `${hall.short}-正面馆名`
-  facadeBoard.position.set(0, 2.66, -3.32 * depthScale)
-  facadeBoard.scale.set(2.55, 0.66, 1)
+  facadeBoard.position.set(0, 2.08 * unit, -1.42 * unit * depthScale)
+  facadeBoard.scale.set(2.4, 0.62, 1)
   group.add(facadeBoard)
   decor.facadeBoard = facadeBoard
 
   const icon = createTextSprite(hall.icon, '#ffffff', 'rgba(20, 58, 92, 0.36)', 88, 360, 160)
   icon.name = `${hall.short}-展馆图标`
-  icon.position.set(-2.58 * widthScale, 3.22, -3.18 * depthScale)
-  icon.scale.set(0.86, 0.55, 1)
+  icon.position.set(-1.68 * unit * widthScale, 2.16 * unit, -1.32 * unit * depthScale)
+  icon.scale.set(0.82, 0.52, 1)
   group.add(icon)
 
   const code = createTextSprite(
@@ -784,18 +867,25 @@ function createRoundedPavilion(
     150
   )
   code.name = `${hall.short}-编号`
-  code.position.set(2.62 * widthScale, 1.18, -3.08 * depthScale)
-  code.scale.set(0.72, 0.38, 1)
+  code.position.set(1.72 * unit * widthScale, 0.9 * unit, -1.24 * unit * depthScale)
+  code.scale.set(0.7, 0.36, 1)
   group.add(code)
 
   const ctaBoard = createTextSprite('双击进入', '#effcff', 'rgba(22, 74, 112, 0.55)', 50, 400, 142)
   ctaBoard.name = `${hall.short}-进入提示`
-  ctaBoard.position.set(0, 0.95, -4.55 * depthScale)
-  ctaBoard.scale.set(1.72, 0.46, 1)
+  ctaBoard.position.set(0, 0.54 * unit, -1.92 * unit * depthScale)
+  ctaBoard.scale.set(1.68, 0.44, 1)
   ctaBoard.visible = false
   group.add(ctaBoard)
   decor.ctaBoard = ctaBoard
 
+  hallMaterials.set(hall.key, [
+    trackedShellMaterials[0],
+    ...trackedBodyMaterials,
+    ...trackedShellMaterials.slice(1)
+  ])
+  hallGlassMaterials.set(hall.key, trackedGlassMaterials)
+  hallGlowMaterials.set(hall.key, trackedGlowMaterials)
   hallRings.set(hall.key, [baseRing, roofRing, entranceFrame, hoverHalo])
   animatedObjects.push(baseRing, roofRing)
   hallDecor.set(hall.key, decor as HallDecor)
@@ -947,7 +1037,7 @@ function bindRendererEvents() {
   canvas.addEventListener('click', handleCanvasClick)
   canvas.addEventListener('dblclick', handleCanvasDoubleClick)
   canvas.addEventListener('pointermove', handlePointerMove)
-  canvas.addEventListener('pointerleave', clearHover)
+  canvas.addEventListener('pointerleave', handlePointerLeave)
 }
 
 function handleCanvasClick(event: MouseEvent) {
@@ -961,14 +1051,19 @@ function handleCanvasDoubleClick(event: MouseEvent) {
 }
 
 function handlePointerMove(event: PointerEvent) {
+  if (!sceneHost.value) return
+  const rect = sceneHost.value.getBoundingClientRect()
+  pointerInsideScene = true
+  scenePointer.x = ((event.clientX - rect.left) / rect.width - 0.5) * 2
+  scenePointer.y = ((event.clientY - rect.top) / rect.height - 0.5) * 2
+
   const hall = pickHallFromPointer(event)
-  if (!hall || !sceneHost.value) {
+  if (!hall) {
     clearHover()
     return
   }
 
   if (renderer) renderer.domElement.style.cursor = 'pointer'
-  const rect = sceneHost.value.getBoundingClientRect()
   hoveredKey = hall.key
   hoverTooltip.value = {
     visible: true,
@@ -977,6 +1072,12 @@ function handlePointerMove(event: PointerEvent) {
     hall
   }
   updateHallMaterials()
+}
+
+function handlePointerLeave() {
+  pointerInsideScene = false
+  scenePointer.set(0, 0)
+  clearHover()
 }
 
 function clearHover() {
@@ -1036,12 +1137,20 @@ function updateHallMaterials() {
     const color = new THREE.Color(hall.color)
 
     hallMaterials.get(hall.key)?.forEach((material, index) => {
-      if (index === 0) {
-        material.color.set(isActive || isHover ? 0xf6fbfd : 0xe2edf3)
+      const role = material.userData?.role ?? (index === 0 ? 'shell' : 'body')
+      if (role === 'shell') {
+        material.color.set(
+          isActive || isHover ? 0xf6fbfd : Number(material.userData?.baseTone ?? 0xe2edf3)
+        )
         material.emissive.copy(color).multiplyScalar(isActive ? 0.048 : isHover ? 0.038 : 0.026)
         material.emissiveIntensity = isActive ? 0.44 : isHover ? 0.38 : 0.3
       } else {
-        material.color.copy(color).multiplyScalar(isActive ? 0.52 : isHover ? 0.48 : 0.4)
+        const baseFactor = Number(material.userData?.factor ?? 0.4)
+        const activeFactor = Math.min(baseFactor + 0.12, 0.62)
+        const hoverFactor = Math.min(baseFactor + 0.08, 0.58)
+        material.color
+          .copy(color)
+          .multiplyScalar(isActive ? activeFactor : isHover ? hoverFactor : baseFactor)
         material.emissive.copy(color).multiplyScalar(isActive ? 0.2 : isHover ? 0.18 : 0.15)
         material.emissiveIntensity = isActive ? 0.58 : isHover ? 0.5 : 0.42
       }
@@ -1090,6 +1199,25 @@ function animateScene() {
   if (!scene || !camera || !renderer || !controls) return
   const elapsed = clock.getElapsedTime()
   const delta = clock.getDelta()
+  const introProgress = Math.min((performance.now() - introStart) / INTRO_DURATION, 1)
+  const introEase = easeOutCubic(introProgress)
+
+  if (cityGroup) {
+    const targetScale = THREE.MathUtils.lerp(0.78, 1, introEase)
+    introScaleVector.set(targetScale, targetScale, targetScale)
+    cityGroup.scale.lerp(introScaleVector, 0.18)
+    cityGroup.position.y +=
+      (THREE.MathUtils.lerp(-1.35, 0, introEase) - cityGroup.position.y) * 0.16
+
+    const pointerYaw = pointerInsideScene ? scenePointer.x * 0.032 : 0
+    const pointerTilt = pointerInsideScene ? -scenePointer.y * 0.014 : 0
+    const targetYaw = THREE.MathUtils.lerp(-0.72, 0, introEase) + pointerYaw
+    const targetPitch = THREE.MathUtils.lerp(-0.08, 0, introEase) + pointerTilt
+    cityGroup.rotation.y += (targetYaw - cityGroup.rotation.y) * 0.075
+    cityGroup.rotation.x += (targetPitch - cityGroup.rotation.x) * 0.075
+    cityGroup.rotation.z +=
+      ((pointerInsideScene ? -scenePointer.x * 0.006 : 0) - cityGroup.rotation.z) * 0.06
+  }
 
   animatedObjects.forEach((object, index) => {
     object.rotation.y += (index % 2 === 0 ? 1 : -1) * delta * (0.045 + (index % 4) * 0.012)
@@ -1149,7 +1277,7 @@ function destroyThreeScene() {
     canvas.removeEventListener('click', handleCanvasClick)
     canvas.removeEventListener('dblclick', handleCanvasDoubleClick)
     canvas.removeEventListener('pointermove', handlePointerMove)
-    canvas.removeEventListener('pointerleave', clearHover)
+    canvas.removeEventListener('pointerleave', handlePointerLeave)
   }
   controls?.dispose()
   composer?.dispose()
@@ -1162,6 +1290,36 @@ function destroyThreeScene() {
     else material?.dispose?.()
   })
   sceneHost.value?.replaceChildren()
+}
+
+function roundedBoxGeometry(width: number, height: number, depth: number, radius: number) {
+  const r = Math.min(radius, width / 2, height / 2)
+  const x = -width / 2
+  const y = -height / 2
+  const shape = new THREE.Shape()
+
+  shape.moveTo(x + r, y)
+  shape.lineTo(x + width - r, y)
+  shape.quadraticCurveTo(x + width, y, x + width, y + r)
+  shape.lineTo(x + width, y + height - r)
+  shape.quadraticCurveTo(x + width, y + height, x + width - r, y + height)
+  shape.lineTo(x + r, y + height)
+  shape.quadraticCurveTo(x, y + height, x, y + height - r)
+  shape.lineTo(x, y + r)
+  shape.quadraticCurveTo(x, y, x + r, y)
+  shape.closePath()
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth,
+    bevelEnabled: false,
+    curveSegments: 8
+  })
+  geometry.center()
+  return geometry
+}
+
+function easeOutCubic(value: number) {
+  return 1 - Math.pow(1 - value, 3)
 }
 
 function createTextSprite(
@@ -1237,7 +1395,13 @@ function getPixelRatio() {
 }
 
 function getBloomStrength() {
-  return props.qualityMode === 'high' ? 0.31 : 0.12
+  return props.qualityMode === 'high' ? 0.22 : 0.1
+}
+
+function applyTourSettings() {
+  if (!controls) return
+  controls.autoRotate = props.isTouring
+  controls.autoRotateSpeed = props.isTouring ? 0.36 : 0
 }
 
 function applyQualitySettings() {
@@ -1274,7 +1438,8 @@ defineExpose({
 
 .scene-shell {
   overflow: hidden;
-  background: radial-gradient(circle at 50% 22%, rgba(92, 190, 245, 0.16), transparent 36%),
+  background: radial-gradient(circle at 50% 20%, rgba(92, 190, 245, 0.14), transparent 34%),
+    radial-gradient(circle at 18% 82%, rgba(79, 140, 255, 0.1), transparent 30%),
     linear-gradient(180deg, #0a1a2d 0%, #081523 100%);
 }
 
@@ -1349,11 +1514,12 @@ defineExpose({
 
 .scene-value-bar {
   position: absolute;
-  top: 100px;
+  bottom: 104px;
   left: 18px;
   z-index: 2;
   display: flex;
   gap: 10px;
+  max-width: min(54vw, 620px);
   pointer-events: none;
 }
 
@@ -1579,7 +1745,9 @@ defineExpose({
 @media (max-width: 980px) {
   .scene-value-bar {
     right: 18px;
+    bottom: 120px;
     flex-wrap: wrap;
+    max-width: none;
   }
 
   .judge-ribbon {
