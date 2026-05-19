@@ -182,36 +182,36 @@ export interface Account {
   roles: string[]
 }
 
-const accounts = computed<Account[]>(() => [
-  // {
-  //   key: 'super',
-  //   label: t('login.roles.super'),
-  //   userName: 'Super',
-  //   password: '123456',
-  //   roles: ['R_SUPER']
-  // },
-  {
-    key: 'super',
-    label: t('login.roles.super'),
-    userName: 'admin',
-    password: '123456',
-    roles: ['R_SUPER']
-  },
-  {
-    key: 'admin',
-    label: t('login.roles.admin'),
-    userName: 'Admin',
-    password: '123456',
-    roles: ['R_ADMIN']
-  },
-  {
-    key: 'user',
-    label: t('login.roles.user'),
-    userName: 'User',
-    password: '123456',
-    roles: ['R_USER']
-  }
-])
+// const accounts = computed<Account[]>(() => [
+//   // {
+//   //   key: 'super',
+//   //   label: t('login.roles.super'),
+//   //   userName: 'Super',
+//   //   password: '123456',
+//   //   roles: ['R_SUPER']
+//   // },
+//   {
+//     key: 'super',
+//     label: t('login.roles.super'),
+//     userName: 'admin',
+//     password: '123456',
+//     roles: ['R_SUPER']
+//   },
+//   {
+//     key: 'admin',
+//     label: t('login.roles.admin'),
+//     userName: 'Admin',
+//     password: '123456',
+//     roles: ['R_ADMIN']
+//   },
+//   {
+//     key: 'user',
+//     label: t('login.roles.user'),
+//     userName: 'User',
+//     password: '123456',
+//     roles: ['R_USER']
+//   }
+// ])
 
 const dragVerify = ref()
 const userStore = useUserStore()
@@ -224,7 +224,7 @@ const formRef = ref<FormInstance>()
 
 const formData = reactive({
   account: '',
-  username: 'admin',
+  username: 'Visitor_users',
   password: '123456',
   rememberPassword: true
 })
@@ -236,13 +236,12 @@ const rules = computed<FormRules>(() => ({
 
 const loading = ref(false)
 
-const setupAccount = (key: AccountKey) => {
-  const selectedAccount = accounts.value.find((account: Account) => account.key === key)
-  formData.account = key
-  formData.username = selectedAccount?.userName ?? ''
-  formData.password = selectedAccount?.password ?? ''
-}
-
+// const setupAccount = (key: AccountKey) => {
+//   const selectedAccount = accounts.value.find((account: Account) => account.key === key)
+//   formData.account = key
+//   formData.username = selectedAccount?.userName ?? ''
+//   formData.password = selectedAccount?.password ?? ''
+// }
 
 const collectLoginClientInfo = () => {
   const nav = window.navigator

@@ -289,7 +289,7 @@
     },
     "seting": {
       "title": "System Settings",
-      "usermanage": "User login management"
+      "usermanger": "User login management"
     }
   },
   "table": {
@@ -335,7 +335,8 @@
       "brandCopy": "Brand Copywriting",
       "meeting": "Meeting Notes",
       "jobAnalysis": "Job Analysis",
-      "vehicle": "Vehicle Recognition"
+      "vehicle": "Vehicle Recognition",
+      "home": "Home"
     },
     "overview": {
       "totalContent": {

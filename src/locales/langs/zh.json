@@ -273,7 +273,7 @@
     },
     "seting": {
       "title": "系统设置",
-      "usermanage": "用户登陆管理"
+      "usermanger": "用户登陆管理"
     },
     "result": {
       "title": "结果页面",
@@ -337,7 +337,8 @@
       "brandCopy": "品牌文案",
       "meeting": "会议纪要",
       "jobAnalysis": "岗位分析",
-      "vehicle": "车辆识别"
+      "vehicle": "车辆识别",
+      "home": "系统主页"
     },
     "overview": {
       "totalContent": {

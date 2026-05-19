@@ -36,7 +36,7 @@ export const setingRoutes: AppRouteRecord = {
       name: 'UserLoginManager',
       component: '/seting/usermanger',
       meta: {
-        title: 'menus.seting.usermanage',
+        title: 'menus.seting.usermanger',
         roles: ['R_SUPER'],
         keepAlive: false,
         fixedTab: false
