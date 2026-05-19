@@ -9,7 +9,7 @@ export const setingRoutes: AppRouteRecord = {
   name: 'Setting',
   component: '/index/index',
   meta: {
-    title: '系统设置',
+    title: 'menus.seting.title',
     icon: 'ri-user-settings-line',
     roles: ['R_SUPER']
   },
@@ -36,7 +36,7 @@ export const setingRoutes: AppRouteRecord = {
       name: 'UserLoginManager',
       component: '/seting/usermanger',
       meta: {
-        title: '用户登录管理',
+        title: 'menus.seting.usermanage',
         roles: ['R_SUPER'],
         keepAlive: false,
         fixedTab: false

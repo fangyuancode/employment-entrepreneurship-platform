@@ -278,12 +278,18 @@
       "jobcollection": "Job Collection",
       "joblist": "Job List",
       "jobanalysis": "Job Analysis",
-      "careercenter": "AI Career Planning",
-      "jobskillgraph": "Graph Analysis"
+      "jobskillgraph": "Graph Analysis",
+      "careercenter": "AI Career Planning"
     },
     "help": {
       "title": "Visual aids",
-      "vehicle": "Vehicle recognition"
+      "vehicle": "Vehicle recognition",
+      "vision": "Universal object detection",
+      "detect": "Visual Analysis Assistant"
+    },
+    "seting": {
+      "title": "System Settings",
+      "usermanage": "User login management"
     }
   },
   "table": {

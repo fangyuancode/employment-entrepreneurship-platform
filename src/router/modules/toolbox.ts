@@ -87,6 +87,7 @@ export const toolboxRoutes: AppRouteRecord = {
         fixedTab: true,
         roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
       }
-    }
+    },
+
   ]
 }

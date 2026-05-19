@@ -26,7 +26,7 @@ export const helpRoutes: AppRouteRecord = {
       name: 'detect',
       component: '/help/detect',
       meta: {
-        title: '通用目标检测',
+        title: 'menus.help.detect',
         keepAlive: false,
         fixedTab: false,
         roles: ['R_SUPER', 'R_ADMIN', 'R_USER']
@@ -37,7 +37,7 @@ export const helpRoutes: AppRouteRecord = {
       name: 'vision',
       component: '/help/vision',
       meta: {
-        title: '视觉分析助手',
+        title: 'menus.help.vision',
         keepAlive: false,
         fixedTab: true,
         roles: ['R_SUPER', 'R_ADMIN', 'R_USER']

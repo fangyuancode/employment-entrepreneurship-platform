@@ -268,8 +268,8 @@
     "help": {
       "title": "视觉辅助工具",
       "vehicle": "车辆识别",
-      "vision": "图像识别",
-      "detect": "物体检测"
+      "vision": "视觉分析助手",
+      "detect": "通用目标检测 "
     },
     "seting": {
       "title": "系统设置",
