@@ -56,7 +56,7 @@
           <el-form-item label="经验">
             <el-input v-model="queryForm.experience" clearable placeholder="如：1-3年" />
           </el-form-item>
-          <el-form-item label="快速切省">
+          <el-form-item label="切换省份">
             <el-select v-model="queryForm.province" filterable clearable placeholder="选择省份" @change="handleProvinceSelect">
               <el-option v-for="item in provinceOptions" :key="item" :label="item" :value="item" />
             </el-select>
@@ -691,6 +691,8 @@ async function refreshCurrentScreen() {
 }
 
 async function searchByFilter() {
+  ElMessage.info('数据量太大，为减轻服务器压力，查询功能已经关闭')
+  return
   await loadOptions()
   if (currentMode.value === 'city' && currentCity.value && currentCityAdcode.value) {
     await loadCity(currentCity.value, currentCityAdcode.value)
@@ -1529,7 +1531,9 @@ function renderMap() {
     syncSideLayerRoam()
   })
 
-  mapChart.on('click', handleMapClick)
+  mapChart.on('click', (params: any) => {
+    void handleMapClick(params)
+  })
 }
 
 function getFeaturePropertiesFromClick(params: any) {

@@ -307,6 +307,7 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { isHttpError } from '@/utils/http/error'
 import {
   ArrowDown,
   ArrowRight,
@@ -330,6 +331,7 @@ import {
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/modules/user'
 import {
+  askJobChat,
   jobChatActionApiMap,
   jobChatActionEndpointMap,
   type JobChatAction,
@@ -593,7 +595,16 @@ const sendQuestion = async (question: string, action: JobChatAction = 'user-ask'
       limit: 8
     }
     const requestApi = jobChatActionApiMap[action] || jobChatActionApiMap['user-ask']
-    const res = await requestApi(payload)
+    let res: JobChatResponse
+
+    try {
+      res = await requestApi(payload)
+    } catch (sceneError) {
+      // 兼容旧版后端：如果新版场景接口还没有同步到 Java 后端，先回退到历史 /ask 接口，避免页面直接中断。
+      const canFallbackToLegacyAsk = action !== 'user-ask' && isHttpError(sceneError) && [404, 405].includes(sceneError.code)
+      if (!canFallbackToLegacyAsk) throw sceneError
+      res = await askJobChat(payload)
+    }
 
     messages.value.push({
       id: buildId(),
@@ -604,10 +615,11 @@ const sendQuestion = async (question: string, action: JobChatAction = 'user-ask'
     })
   } catch (error) {
     const endpoint = jobChatActionEndpointMap[action] || jobChatActionEndpointMap['user-ask']
+    const detail = isHttpError(error) ? `错误码：${error.code}；${error.message}` : '网络请求未成功返回'
     messages.value.push({
       id: buildId(),
       role: 'assistant',
-      content: `当前就业咨询接口请求失败，请检查后端服务是否启动，以及 ${endpoint} 接口是否已经添加。`,
+      content: `当前就业咨询接口请求失败。请确认后端服务 9091 已启动，且 ${endpoint} 接口已经添加。${detail}`,
       time: getTime()
     })
   } finally {

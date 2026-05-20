@@ -1,6 +1,13 @@
 import * as echarts from 'echarts'
 
-type GeoJsonType = Record<string, any>
+type GeoJsonFeature = Record<string, any>
+
+interface GeoJsonType {
+  type: 'FeatureCollection'
+  features: GeoJsonFeature[]
+  [key: string]: any
+}
+
 type MapLevel = 'china' | 'province' | 'city'
 
 const geoModules = import.meta.glob('/src/echarts/geo/**/*.json')
@@ -37,10 +44,11 @@ function stripRegionSuffix (name: string) {
     .trim()
 }
 
-function normalizeGeoJson (geoJson: GeoJsonType): GeoJsonType {
+function normalizeGeoJson (geoJson: Partial<GeoJsonType> | null | undefined): GeoJsonType {
   const features = Array.isArray(geoJson?.features) ? geoJson.features : []
   return {
-    ...geoJson,
+    ...(geoJson || {}),
+    type: 'FeatureCollection',
     features: features
       .filter((feature: any) => {
         const properties = feature?.properties || {}
@@ -95,7 +103,9 @@ function getProvinceShortName (provinceName: string) {
 
 function registerMapOnce (mapName: string, geoJson: GeoJsonType) {
   if (registeredMap.has(mapName)) return
-  echarts.registerMap(mapName, geoJson)
+  // ECharts 的 GeoJSON 类型定义较严格，运行时只需要标准 FeatureCollection。
+  // 这里在统一 normalize 后做一次局部类型适配，避免打包阶段 TS2345。
+  echarts.registerMap(mapName, geoJson as any)
   registeredMap.add(mapName)
 }
 

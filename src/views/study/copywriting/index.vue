@@ -266,7 +266,7 @@
           </div>
 
           <div class="result-actions">
-            <el-button :loading="generatingImages" @click="handleGenerateImages">重新生成配图</el-button>
+            <el-button :loading="generatingImages" @click="() => handleGenerateImages()">重新生成配图</el-button>
             <el-button @click="copyAllContent">复制全部文案</el-button>
           </div>
         </template>

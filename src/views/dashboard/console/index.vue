@@ -212,6 +212,33 @@ defineOptions({ name: 'Console' })
 const router = useRouter()
 const { t } = useI18n()
 
+type ElTagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+interface TaskItem {
+  titleKey: string
+  timeKey: string
+  ownerKey: string
+  levelKey: string
+  statusKey: string
+  tagType: ElTagType
+  done: boolean
+}
+
+interface TaskView extends TaskItem {
+  title: string
+  time: string
+  owner: string
+  level: string
+  status: string
+}
+
+interface NoticeItem {
+  title: string
+  desc: string
+  tag: string
+  type: ElTagType
+}
+
 const bannerTags = computed(() => [
   t('console.tags.businessPlan'),
   t('console.tags.productDesign'),
@@ -334,7 +361,7 @@ const progressList = computed(() => [
   }
 ])
 
-const taskList = reactive([
+const taskList = reactive<TaskItem[]>([
   {
     titleKey: 'console.task.items.item1.title',
     timeKey: 'console.task.items.item1.time',
@@ -382,7 +409,7 @@ const taskList = reactive([
   }
 ])
 
-const taskListView = computed(() =>
+const taskListView = computed<TaskView[]>(() =>
   taskList.map((item) => ({
     ...item,
     title: t(item.titleKey),
@@ -392,10 +419,10 @@ const taskListView = computed(() =>
     status: t(item.statusKey)
   }))
 )
-const backHome = () => {
+const backHome = (_tag?: string) => {
   router.push({ path: '/home' })
 }
-const noticeList = computed(() => [
+const noticeList = computed<NoticeItem[]>(() => [
   {
     title: t('console.noticePanel.items.item1.title'),
     desc: t('console.noticePanel.items.item1.desc'),

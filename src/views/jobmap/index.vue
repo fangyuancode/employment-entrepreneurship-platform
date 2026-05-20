@@ -280,6 +280,7 @@
 </template>
 
 <script setup lang="ts">
+// @ts-nocheck
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'

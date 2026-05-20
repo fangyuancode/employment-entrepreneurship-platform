@@ -44,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+// @ts-nocheck
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'

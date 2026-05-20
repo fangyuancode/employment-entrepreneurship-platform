@@ -236,7 +236,7 @@
             </div>
 
             <div class="result-actions">
-              <el-button :loading="generatingImages" @click="handleGenerateImages">重新生成配图</el-button>
+              <el-button :loading="generatingImages" @click="() => handleGenerateImages()">重新生成配图</el-button>
               <el-button :loading="exportingPdf" @click="handleExportPdf">导出 PDF</el-button>
               <el-button @click="copyFullText">复制完整计划书</el-button>
             </div>

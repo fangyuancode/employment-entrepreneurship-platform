@@ -29,9 +29,9 @@
 
         <div class="top-actions">
           <el-button type="primary" text class="ghost-btn" @click="goLogin">登录</el-button>
-          <el-button type="primary" text class="ghost-btn" @click="goPage('/exhibition')">数字展厅</el-button>
+          <!-- <el-button type="primary" text class="ghost-btn" @click="goPage('/exhibition')">数字展厅</el-button> -->
           <!-- <el-button type="primary" text class="ghost-btn" @click="goPage('/aichat')">AI就业</el-button> -->
-          <el-button type="primary" class="solid-btn" @click="goPage('/toolbox/jobanalysis')">
+          <el-button type="primary" class="solid-btn" @click="goPage('/aichat')">
             立即体验
           </el-button>
         </div>

@@ -1154,7 +1154,9 @@ function renderMap() {
     syncSideLayerRoam()
   })
 
-  mapChart.on('click', handleMapClick)
+  mapChart.on('click', (params: any) => {
+    void handleMapClick(params)
+  })
 }
 
 function getFeaturePropertiesFromClick(params: any) {

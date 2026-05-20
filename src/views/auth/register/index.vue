@@ -215,6 +215,7 @@
 
   const formData = reactive<RegisterForm>({
     username: '',
+    email: '',
     password: '',
     confirmPassword: '',
     agreement: false
