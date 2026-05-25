@@ -37,9 +37,9 @@
       </div>
 
       <el-form :inline="true" :model="queryForm" class="filter-form">
-        <el-form-item label="关键词">
+        <!-- <el-form-item label="关键词">
           <el-input v-model="queryForm.keyword" clearable placeholder="岗位 / 技能 / 公司" @keyup.enter="handleSearch" />
-        </el-form-item>
+        </el-form-item> -->
 
         <el-form-item label="城市">
           <el-select v-model="queryForm.city" clearable filterable placeholder="全部城市">
@@ -1896,6 +1896,9 @@ onBeforeUnmount(() => {
   border-radius: 16px;
   background: rgba(8, 31, 58, 0.76);
 }
+// .filter-bar::-webkit-scrollbar {
+//   display: none;
+// }
 
 .filter-title strong {
   display: block;
@@ -1976,7 +1979,7 @@ onBeforeUnmount(() => {
 .side-panel--right::-webkit-scrollbar,
 .relation-list::-webkit-scrollbar,
 .enhance-list::-webkit-scrollbar {
-  width: 6px;
+  display: none;
 }
 
 .side-panel--right::-webkit-scrollbar-thumb,
@@ -2073,7 +2076,7 @@ onBeforeUnmount(() => {
 }
 
 .rank-list::-webkit-scrollbar {
-  width: 0;
+  display: none;
 }
 
 .rank-item {

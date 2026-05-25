@@ -252,8 +252,8 @@ function resetForm() {
 }
 
 async function handleCrawl() {
-  ElMessage('为了保证服务安全，采集功能已经关闭')
-  return
+  // ElMessage('为了保证服务安全，采集功能已经关闭')
+  // return
   if (!form.searchCode || !form.jobName) {
     ElMessage.warning('请先选择岗位')
     return

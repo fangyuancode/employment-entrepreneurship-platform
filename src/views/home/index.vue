@@ -45,18 +45,18 @@
             <span>AI 智能应用平台</span>
           </h1>
           <p class="hero-desc">
-            融合岗位数据分析、技能图谱、商业计划生成、品牌文案创作、会议纪要、
-            实体关系抽取与智能识别等能力,打造一站式 AI+Web 实践平台。
+            本项目是一个融合大模型技术、数据挖掘、多模态识别与Web工程的综合智能平台，旨在为用户提供从创业辅助到职业规划到的一站式智能服务。
           </p>
 
           <div class="hero-action-row" data-stagger>
-            <el-button type="primary" size="large" @click="goPage('/toolbox/jobanalysis')">
+            <!-- <el-button type="primary" size="large" @click="goPage('/toolbox/jobanalysis')">
               查看岗位分析
-            </el-button>
+            </el-button> -->
+            <el-button type="primary" size="large" @click="goBiganalysis">大屏数据分析 </el-button>
             <el-button size="large" @click="goPage('/jobmap')"> 3D技能图谱 </el-button>
             <el-button size="large" @click="goPage('/aichat')"> AI就业助手 </el-button>
-            <el-button size="large" @click="goPage('/exhibition')"> 数字展厅 </el-button>
-            <el-button type="primary" size="large" @click="goBiganalysis" plain>大屏数据分析 </el-button>
+            <el-button size="large" @click="goPage('/exhibition')"> 数字展馆 </el-button>
+
           </div>
 
           <div class="hero-tags" data-stagger>

@@ -56,7 +56,7 @@ export function generateBrandCopywriting (data: BrandCopywritingForm) {
   return request.post<BrandCopywritingResult>({
     url: `${API_PREFIX}/generate`,
     data,
-    timeout: 120000
+    timeout: 360000
   })
 }
 
@@ -64,7 +64,7 @@ export function generateBrandImages (data: GenerateImagesRequest) {
   return request.post<GenerateImagesResponse>({
     url: `${API_PREFIX}/generate-images`,
     data,
-    timeout: 180000
+    timeout: 360000
   })
 }
 
