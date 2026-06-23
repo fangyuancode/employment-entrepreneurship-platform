@@ -93,7 +93,7 @@ function createModernBanner () {
     fmt.gradient('  ║                                                                  ║')
   )
   console.log(
-    `  ║               ${icons.rocket} ${fmt.title('AI 创业就业助手')} ${fmt.subtitle('· 代码精简程序')} ${icons.magic}                ║`
+    `  ║               ${icons.rocket} ${fmt.title('创业就业数字化平台')} ${fmt.subtitle('· 代码精简程序')} ${icons.magic}                ║`
   )
   console.log(
     `  ║               ${fmt.dim('为项目移除演示数据，快速切换至开发模式')}             ║`

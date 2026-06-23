@@ -5,7 +5,7 @@
         <div class="loading-card">
           <span class="loading-orbit"></span>
           <div>
-            <div class="loading-title">AI 创业就业助手</div>
+            <div class="loading-title">创业就业数字化平台</div>
             <div class="loading-text">正在整理首页内容...</div>
           </div>
         </div>
@@ -16,7 +16,7 @@
         <div class="brand-area">
           <div class="brand-mark">AI</div>
           <div class="brand-text">
-            <div class="brand-name">AI 创业就业助手</div>
+            <div class="brand-name">创业就业数字化平台</div>
             <div class="brand-sub">AI + Web 智能应用平台</div>
           </div>
         </div>
@@ -281,7 +281,7 @@
     <footer class="footer-shell">
       <div class="footer-top">
         <div>
-          <div class="footer-brand">AI 创业就业助手平台</div>
+          <div class="footer-brand">创业就业数字化平台</div>
           <div class="footer-text">
             基于 Vue3 + Element Plus + Spring Boot + Python + MySQL 构建, 聚焦 AI
             创业辅助、岗位分析、数据图谱与智能办公场景。
@@ -296,7 +296,7 @@
         </div>
       </div>
 
-      <div class="footer-bottom">© 2026 AI 创业就业助手平台 · 智能引擎 · 网启新生</div>
+      <div class="footer-bottom">© 2026 创业就业数字化平台 · 智能引擎 · 网启新生</div>
     </footer>
   </div>
 </template>

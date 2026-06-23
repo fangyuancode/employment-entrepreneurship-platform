@@ -5,10 +5,7 @@
       <div class="w-112 mr-5 max-md:w-full max-md:mr-0">
         <div class="art-card-sm relative p-9 pb-6 overflow-hidden text-center">
           <img class="absolute top-0 left-0 w-full h-50 object-cover" src="@imgs/user/bg.webp" />
-          <img
-            class="relative z-10 w-20 h-20 mt-30 mx-auto object-cover border-2 border-white rounded-full"
-            src="@imgs/user/avatar_me.jpg"
-          />
+          <img class="relative z-10 w-20 h-20 mt-30 mx-auto object-cover border-2 border-white rounded-full" src="@imgs/user/avatar_me.jpg" />
           <h2 class="mt-5 text-xl font-normal">{{ userInfo.userName }}</h2>
           <p class="mt-5 text-sm">专注于用户体验跟视觉设计</p>
 
@@ -34,11 +31,7 @@
           <div class="mt-10">
             <h3 class="text-sm font-medium">标签</h3>
             <div class="flex flex-wrap justify-center mt-3.5">
-              <div
-                v-for="item in lableList"
-                :key="item"
-                class="py-1 px-1.5 mr-2.5 mb-2.5 text-xs border border-g-300 rounded"
-              >
+              <div v-for="item in lableList" :key="item" class="py-1 px-1.5 mr-2.5 mb-2.5 text-xs border border-g-300 rounded">
                 {{ item }}
               </div>
             </div>
@@ -49,26 +42,14 @@
         <div class="art-card-sm">
           <h1 class="p-4 text-xl font-normal border-b border-g-300">基本设置</h1>
 
-          <ElForm
-            :model="form"
-            class="box-border p-5 [&>.el-row_.el-form-item]:w-[calc(50%-10px)] [&>.el-row_.el-input]:w-full [&>.el-row_.el-select]:w-full"
-            ref="ruleFormRef"
-            :rules="rules"
-            label-width="86px"
-            label-position="top"
-          >
+          <ElForm :model="form" class="box-border p-5 [&>.el-row_.el-form-item]:w-[calc(50%-10px)] [&>.el-row_.el-input]:w-full [&>.el-row_.el-select]:w-full" ref="ruleFormRef" :rules="rules" label-width="86px" label-position="top">
             <ElRow>
               <ElFormItem label="姓名" prop="realName">
                 <ElInput v-model="form.realName" :disabled="!isEdit" />
               </ElFormItem>
               <ElFormItem label="性别" prop="sex" class="ml-5">
                 <ElSelect v-model="form.sex" placeholder="Select" :disabled="!isEdit">
-                  <ElOption
-                    v-for="item in options"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                  />
+                  <ElOption v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
                 </ElSelect>
               </ElFormItem>
             </ElRow>
@@ -108,30 +89,15 @@
 
           <ElForm :model="pwdForm" class="box-border p-5" label-width="86px" label-position="top">
             <ElFormItem label="当前密码" prop="password">
-              <ElInput
-                v-model="pwdForm.password"
-                type="password"
-                :disabled="!isEditPwd"
-                show-password
-              />
+              <ElInput v-model="pwdForm.password" type="password" :disabled="!isEditPwd" show-password />
             </ElFormItem>
 
             <ElFormItem label="新密码" prop="newPassword">
-              <ElInput
-                v-model="pwdForm.newPassword"
-                type="password"
-                :disabled="!isEditPwd"
-                show-password
-              />
+              <ElInput v-model="pwdForm.newPassword" type="password" :disabled="!isEditPwd" show-password />
             </ElFormItem>
 
             <ElFormItem label="确认新密码" prop="confirmPassword">
-              <ElInput
-                v-model="pwdForm.confirmPassword"
-                type="password"
-                :disabled="!isEditPwd"
-                show-password
-              />
+              <ElInput v-model="pwdForm.confirmPassword" type="password" :disabled="!isEditPwd" show-password />
             </ElFormItem>
 
             <div class="flex-c justify-end [&_.el-button]:!w-27.5">
@@ -147,101 +113,101 @@
 </template>
 
 <script setup lang="ts">
-  import { useUserStore } from '@/store/modules/user'
-  import type { FormInstance, FormRules } from 'element-plus'
+import { useUserStore } from '@/store/modules/user'
+import type { FormInstance, FormRules } from 'element-plus'
 
-  defineOptions({ name: 'UserCenter' })
+defineOptions({ name: 'UserCenter' })
 
-  const userStore = useUserStore()
-  const userInfo = computed(() => userStore.getUserInfo)
+const userStore = useUserStore()
+const userInfo = computed(() => userStore.getUserInfo)
 
-  const isEdit = ref(false)
-  const isEditPwd = ref(false)
-  const date = ref('')
-  const ruleFormRef = ref<FormInstance>()
+const isEdit = ref(false)
+const isEditPwd = ref(false)
+const date = ref('')
+const ruleFormRef = ref<FormInstance>()
 
-  /**
-   * 用户信息表单
-   */
-  const form = reactive({
-    realName: 'John Snow',
-    nikeName: '测试',
-    email: '5930w1283@mall.com',
-    mobile: '18888888888',
-    address: '甘肃省兰州市城关区西乡街道101栋201  ',
-    sex: '2',
-    des: 'AI 创业就业助手 是一款结合大模型的AI就业创业助手.'
-  })
+/**
+ * 用户信息表单
+ */
+const form = reactive({
+  realName: 'John Snow',
+  nikeName: '测试',
+  email: '5930w1283@mall.com',
+  mobile: '18888888888',
+  address: '甘肃省兰州市城关区西乡街道101栋201  ',
+  sex: '2',
+  des: '创业就业数字化平台 是一款结合大模型的AI就业创业助手.'
+})
 
-  /**
-   * 密码修改表单
-   */
-  const pwdForm = reactive({
-    password: '123456',
-    newPassword: '123456',
-    confirmPassword: '123456'
-  })
+/**
+ * 密码修改表单
+ */
+const pwdForm = reactive({
+  password: '123456',
+  newPassword: '123456',
+  confirmPassword: '123456'
+})
 
-  /**
-   * 表单验证规则
-   */
-  const rules = reactive<FormRules>({
-    realName: [
-      { required: true, message: '请输入姓名', trigger: 'blur' },
-      { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
-    ],
-    nikeName: [
-      { required: true, message: '请输入昵称', trigger: 'blur' },
-      { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
-    ],
-    email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
-    mobile: [{ required: true, message: '请输入手机号码', trigger: 'blur' }],
-    address: [{ required: true, message: '请输入地址', trigger: 'blur' }],
-    sex: [{ required: true, message: '请选择性别', trigger: 'blur' }]
-  })
+/**
+ * 表单验证规则
+ */
+const rules = reactive<FormRules>({
+  realName: [
+    { required: true, message: '请输入姓名', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  nikeName: [
+    { required: true, message: '请输入昵称', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
+  mobile: [{ required: true, message: '请输入手机号码', trigger: 'blur' }],
+  address: [{ required: true, message: '请输入地址', trigger: 'blur' }],
+  sex: [{ required: true, message: '请选择性别', trigger: 'blur' }]
+})
 
-  /**
-   * 性别选项
-   */
-  const options = [
-    { value: '1', label: '男' },
-    { value: '2', label: '女' }
-  ]
+/**
+ * 性别选项
+ */
+const options = [
+  { value: '1', label: '男' },
+  { value: '2', label: '女' }
+]
 
-  /**
-   * 用户标签列表
-   */
-  const lableList: Array<string> = ['专注设计', '很有想法', '辣~', '大长腿', '川妹子', '海纳百川']
+/**
+ * 用户标签列表
+ */
+const lableList: Array<string> = ['专注设计', '很有想法', '辣~', '大长腿', '川妹子', '海纳百川']
 
-  onMounted(() => {
-    getDate()
-  })
+onMounted(() => {
+  getDate()
+})
 
-  /**
-   * 根据当前时间获取问候语
-   */
-  const getDate = () => {
-    const h = new Date().getHours()
+/**
+ * 根据当前时间获取问候语
+ */
+const getDate = () => {
+  const h = new Date().getHours()
 
-    if (h >= 6 && h < 9) date.value = '早上好'
-    else if (h >= 9 && h < 11) date.value = '上午好'
-    else if (h >= 11 && h < 13) date.value = '中午好'
-    else if (h >= 13 && h < 18) date.value = '下午好'
-    else if (h >= 18 && h < 24) date.value = '晚上好'
-    else date.value = '很晚了，早点睡'
-  }
+  if (h >= 6 && h < 9) date.value = '早上好'
+  else if (h >= 9 && h < 11) date.value = '上午好'
+  else if (h >= 11 && h < 13) date.value = '中午好'
+  else if (h >= 13 && h < 18) date.value = '下午好'
+  else if (h >= 18 && h < 24) date.value = '晚上好'
+  else date.value = '很晚了，早点睡'
+}
 
-  /**
-   * 切换用户信息编辑状态
-   */
-  const edit = () => {
-    isEdit.value = !isEdit.value
-  }
+/**
+ * 切换用户信息编辑状态
+ */
+const edit = () => {
+  isEdit.value = !isEdit.value
+}
 
-  /**
-   * 切换密码编辑状态
-   */
-  const editPwd = () => {
-    isEditPwd.value = !isEditPwd.value
-  }
+/**
+ * 切换密码编辑状态
+ */
+const editPwd = () => {
+  isEditPwd.value = !isEditPwd.value
+}
 </script>
