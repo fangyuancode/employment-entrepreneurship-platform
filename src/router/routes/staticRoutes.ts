@@ -52,6 +52,12 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     meta: { title: 'AI创业就业助手数字展厅' }
   },
   {
+    path: '/gesture',
+    name: 'GestureStar',
+    component: () => import('@/views/gesture/index.vue'),
+    meta: { title: '手势星空' }
+  },
+  {
     path: '/jobscreen',
     name: 'jobscreen',
     component: () => import('@/views/jobscreen/index.vue'),
@@ -69,7 +75,7 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     component: () => import('@/views/jobscreen/bigmap.vue'),
     // component: '/jobscreen/bigmap',
     meta: {
-      title: '岗位分布大地图',
+      title: '岗位分布大地图'
       // keepAlive: false,
       // fixedTab: false,
       // hideMenu: true

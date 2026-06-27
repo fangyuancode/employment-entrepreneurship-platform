@@ -7,7 +7,7 @@ import { headerBarConfig } from './modules/headerBar'
 const appConfig: SystemConfig = {
   // 系统信息
   systemInfo: {
-    name: '创业就业数字化平台' // 系统名称
+    name: '数字化平台' // 系统名称
   },
   // 系统主题
   systemThemeStyles: {
