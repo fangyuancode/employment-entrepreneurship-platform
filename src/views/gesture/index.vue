@@ -7,7 +7,9 @@
       'rotation-paused': rotationPaused,
       'mouse-dragging': mouseDragging,
       'page-entering': pageEntering,
-      'post-load-spinning': postLoadSpinActive
+      'post-load-spinning': postLoadSpinActive,
+      'mobile-panel-open': mobilePanelOpen,
+      'is-mobile-view': isMobileView
     }"
   >
     <div ref="threeContainerRef" class="three-container"></div>
@@ -96,11 +98,12 @@
       >
     </div>
 
-    <div class="control-panel">
+    <div class="control-panel" :class="{ open: mobilePanelOpen }">
       <div class="panel-header">
         <span class="status-dot" :class="{ active: cameraStarted }"></span>
         <span>{{ statusText }}</span>
       </div>
+      <button class="mobile-panel-close" @click.stop="mobilePanelOpen = false">×</button>
 
       <div class="gesture-card">
         <div class="gesture-label">当前手势</div>
@@ -129,9 +132,7 @@
 
       <div class="current-target">
         <div class="target-label">当前指向</div>
-        <div class="target-name">{{
-          hoveredJob?.job.jobName || selectedJob?.job.jobName || '移动食指指向岗位星点'
-        }}</div>
+        <div class="target-name">{{ currentTargetName }}</div>
       </div>
 
       <div class="tips">
@@ -144,6 +145,7 @@
         <div>按住鼠标左键左右拖动：自由旋转岗位星球</div>
         <div>鼠标滚轮：放大或缩小岗位星球</div>
         <div>双击星空空白区域：恢复缓慢旋转</div>
+        <div>移动端：单指拖动旋转，点击星点打开岗位卡片，双指捏合缩放</div>
       </div>
     </div>
 
@@ -153,6 +155,7 @@
         :key="`${selectedJob.id}-${selectedJobVersion}`"
         class="job-detail-panel"
       >
+        <div class="detail-sheet-handle"></div>
         <button class="panel-close" @click.stop="clearSelection">×</button>
         <div class="detail-kicker">已选中岗位星点</div>
         <div class="detail-title">{{ selectedJob.job.jobName }}</div>
@@ -204,7 +207,7 @@
       </div>
     </transition>
 
-    <div class="camera-card">
+    <div class="camera-card" :class="{ 'camera-active': cameraStarted }">
       <video ref="videoRef" class="camera-video" autoplay muted playsinline></video>
       <canvas ref="handCanvasRef" class="hand-canvas"></canvas>
 
@@ -216,6 +219,19 @@
 
     <div class="bottom-hint">
       localhost 或 HTTPS 环境下开启摄像头；未开启时可用鼠标点击星点、滚轮缩放、拖拽旋转
+    </div>
+
+    <div v-show="!isCleanMode" class="mobile-quick-bar">
+      <button class="mobile-chip" @click.stop="mobilePanelOpen = !mobilePanelOpen">
+        <span class="chip-dot" :class="{ active: cameraStarted }"></span>
+        {{ mobilePanelOpen ? '收起状态' : '状态' }}
+      </button>
+      <button class="mobile-chip" @click.stop="goBack">返回</button>
+      <button class="mobile-chip" @click.stop="toggleCleanMode">清屏</button>
+      <button v-if="rotationPaused" class="mobile-chip" @click.stop="resumeRotation">继续</button>
+      <button class="mobile-chip primary" @click.stop="toggleCamera">
+        {{ cameraStarted ? '关闭手势' : '开启手势' }}
+      </button>
     </div>
   </div>
 </template>
@@ -290,6 +306,8 @@
   const mouseDragging = ref(false)
   const pageEntering = ref(true)
   const postLoadSpinActive = ref(false)
+  const mobilePanelOpen = ref(false)
+  const isMobileView = ref(window.innerWidth <= 640)
   const entryOverlayVisible = ref(true)
   const entryProgressPercent = ref(0)
   const visibleLabels = ref<VisibleLabel[]>([])
@@ -353,6 +371,9 @@
   // hover 与 selected 都使用快照，避免动画帧中反复按 id 查找，造成控制台刷屏与无意义计算
   const hoveredJob = computed(() => hoveredJobSnapshot.value)
   const selectedJob = computed(() => selectedJobSnapshot.value)
+  const currentTargetName = computed(
+    () => hoveredJob.value?.job.jobName || selectedJob.value?.job.jobName || '移动食指指向岗位星点'
+  )
 
   let scene: THREE.Scene | null = null
   let camera: THREE.PerspectiveCamera | null = null
@@ -395,6 +416,17 @@
   let mouseDragStartRotX = 0
   let mouseDragStartRotY = 0
   let suppressNextClick = false
+  let touchDragging = false
+  let touchDragStarted = false
+  let touchZooming = false
+  let touchStartX = 0
+  let touchStartY = 0
+  let touchLastX = 0
+  let touchLastY = 0
+  let touchStartRotX = 0
+  let touchStartRotY = 0
+  let touchStartDistance = 0
+  let touchStartCameraDistance = DEFAULT_CAMERA_DISTANCE
   let entryStartAt = 0
   let entryProgress = 0
   let entryHideTimer = 0
@@ -419,6 +451,10 @@
     window.addEventListener('wheel', handleMouseWheel, { passive: false })
     window.addEventListener('click', handleMouseClick)
     window.addEventListener('dblclick', handleMouseDoubleClick)
+    window.addEventListener('touchstart', handleTouchStart, { passive: false })
+    window.addEventListener('touchmove', handleTouchMove, { passive: false })
+    window.addEventListener('touchend', handleTouchEnd, { passive: false })
+    window.addEventListener('touchcancel', handleTouchEnd, { passive: false })
     document.addEventListener('fullscreenchange', handleFullscreenChange)
   })
 
@@ -436,6 +472,10 @@
     window.removeEventListener('wheel', handleMouseWheel)
     window.removeEventListener('click', handleMouseClick)
     window.removeEventListener('dblclick', handleMouseDoubleClick)
+    window.removeEventListener('touchstart', handleTouchStart)
+    window.removeEventListener('touchmove', handleTouchMove)
+    window.removeEventListener('touchend', handleTouchEnd)
+    window.removeEventListener('touchcancel', handleTouchEnd)
     document.removeEventListener('fullscreenchange', handleFullscreenChange)
 
     disposeThree()
@@ -1083,8 +1123,18 @@
       depth: number
     }> = []
     const rect = renderer.domElement.getBoundingClientRect()
-    const maxCenterLabels = handState.currentDistance < LABEL_CLOSE_DISTANCE ? 14 : 7
-    const canShowNearbyLabels = handState.currentDistance < LABEL_NEAR_DISTANCE
+    const isMobile = isMobileView.value
+    const maxCenterLabels = isMobile
+      ? handState.currentDistance < LABEL_CLOSE_DISTANCE
+        ? 5
+        : 0
+      : handState.currentDistance < LABEL_CLOSE_DISTANCE
+        ? 14
+        : 7
+    const centerLabelRadius = isMobile ? 150 : 280
+    const canShowNearbyLabels = isMobile
+      ? handState.currentDistance < LABEL_CLOSE_DISTANCE && selectedJobId.value === null
+      : handState.currentDistance < LABEL_NEAR_DISTANCE
 
     jobStarsData.forEach((star) => {
       const screen = projectJobStar(star, rect)
@@ -1110,7 +1160,7 @@
       const centerDistance = Math.hypot(screen.x - cx, screen.y - cy)
       const depthScore = 1 - Math.abs(screen.depth)
 
-      if (centerDistance < 280 && depthScore > 0.18) {
+      if (centerDistance < centerLabelRadius && depthScore > 0.18) {
         centerCandidates.push({
           star,
           x: screen.x,
@@ -1146,7 +1196,14 @@
       hover,
       style: {
         left: `${x}px`,
-        top: `${y - (selected ? 30 : 22)}px`,
+        top: `${y - (isMobileView.value ? (selected ? 42 : 28) : selected ? 30 : 22)}px`,
+        maxWidth: isMobileView.value
+          ? selected
+            ? '220px'
+            : '132px'
+          : selected
+            ? '260px'
+            : '168px',
         opacity: `${clamp(opacity, 0, 1)}`
       }
     }
@@ -1315,7 +1372,8 @@
     gestureDesc.value = `当前查看：${
       star.job.jobName || '未知岗位'
     }，星空旋转已暂停，双击星空空白处可恢复旋转`
-    handState.targetDistance = Math.min(handState.currentDistance, 228)
+    if (isMobileView.value) mobilePanelOpen.value = false
+    handState.targetDistance = Math.min(handState.currentDistance, isMobileView.value ? 252 : 228)
   }
 
   const clearSelection = () => {
@@ -1326,6 +1384,7 @@
     selectedJobSnapshot.value = null
     selectedJobVersion.value += 1
     selectedScreen.visible = false
+    mobilePanelOpen.value = false
     rotationPaused.value = false
     handState.targetDistance = DEFAULT_CAMERA_DISTANCE
   }
@@ -1751,6 +1810,9 @@
   }
 
   const handleResize = () => {
+    isMobileView.value = window.innerWidth <= 640
+    if (!isMobileView.value) mobilePanelOpen.value = false
+
     const container = threeContainerRef.value
 
     if (!container || !renderer || !camera) return
@@ -1851,13 +1913,16 @@
     isMouseDragging = false
     mouseDragging.value = false
     mouseDragStarted = false
+    touchDragging = false
+    touchDragStarted = false
+    touchZooming = false
   }
 
   const isInteractiveTarget = (target: EventTarget | null) => {
     const element = target as HTMLElement | null
     return Boolean(
       element?.closest(
-        '.top-panel, .clean-mode-toolbar, .control-panel, .job-detail-panel, .camera-card, .bottom-hint, .el-popper, .el-overlay, button, a, input, textarea, select, .el-button'
+        '.top-panel, .clean-mode-toolbar, .control-panel, .job-detail-panel, .camera-card, .bottom-hint, .mobile-quick-bar, .mobile-panel-close, .el-popper, .el-overlay, button, a, input, textarea, select, .el-button'
       )
     )
   }
@@ -1918,6 +1983,136 @@
     }
 
     resumeRotation()
+  }
+
+  const getTouchDistance = (touches: TouchList) => {
+    if (touches.length < 2) return 0
+    const a = touches[0]
+    const b = touches[1]
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+  }
+
+  const handleTouchStart = (event: TouchEvent) => {
+    stopPostLoadSpin(false)
+    if (event.defaultPrevented || isInteractiveTarget(event.target)) return
+    if (cameraStarted.value && handState.visible) return
+
+    if (event.touches.length === 2) {
+      event.preventDefault()
+      touchZooming = true
+      touchDragging = false
+      touchDragStarted = false
+      touchStartDistance = getTouchDistance(event.touches)
+      touchStartCameraDistance = handState.targetDistance
+      wheelZoomActive = true
+      return
+    }
+
+    if (event.touches.length !== 1) return
+
+    const touch = event.touches[0]
+    touchDragging = true
+    touchDragStarted = false
+    touchZooming = false
+    touchStartX = touch.clientX
+    touchStartY = touch.clientY
+    touchLastX = touch.clientX
+    touchLastY = touch.clientY
+    touchStartRotX = handState.currentRotX
+    touchStartRotY = handState.currentRotY
+
+    virtualCursor.visible = true
+    virtualCursor.x = touch.clientX
+    virtualCursor.y = touch.clientY
+  }
+
+  const handleTouchMove = (event: TouchEvent) => {
+    if (event.defaultPrevented || isInteractiveTarget(event.target)) return
+    if (cameraStarted.value && handState.visible) return
+
+    if (event.touches.length === 2) {
+      event.preventDefault()
+      if (!touchZooming) {
+        touchZooming = true
+        touchStartDistance = getTouchDistance(event.touches)
+        touchStartCameraDistance = handState.targetDistance
+      }
+
+      const currentDistance = getTouchDistance(event.touches)
+      const distanceDelta = currentDistance - touchStartDistance
+      const nextDistance = clamp(
+        touchStartCameraDistance - distanceDelta * 0.72,
+        MIN_CAMERA_DISTANCE,
+        MAX_CAMERA_DISTANCE
+      )
+      handState.targetDistance = nextDistance
+      wheelZoomActive = true
+      gestureName.value = distanceDelta > 0 ? '双指放大' : '双指缩小'
+      gestureDesc.value = `当前镜头距离：${Math.round(nextDistance)}，双指张开放大，双指收拢缩小`
+      return
+    }
+
+    if (!touchDragging || event.touches.length !== 1) return
+
+    event.preventDefault()
+
+    const touch = event.touches[0]
+    touchLastX = touch.clientX
+    touchLastY = touch.clientY
+
+    handState.visible = false
+    virtualCursor.visible = true
+    virtualCursor.x = touch.clientX
+    virtualCursor.y = touch.clientY
+
+    const dx = touch.clientX - touchStartX
+    const dy = touch.clientY - touchStartY
+    const distance = Math.hypot(dx, dy)
+
+    if (!touchDragStarted && distance > MOUSE_DRAG_THRESHOLD) {
+      touchDragStarted = true
+      suppressNextClick = true
+      manualRotationActive = true
+    }
+
+    if (touchDragStarted) {
+      handState.targetRotY = touchStartRotY + dx * MOUSE_ROTATE_SPEED_X
+      handState.targetRotX = clamp(touchStartRotX + dy * MOUSE_ROTATE_SPEED_Y, -1.25, 1.25)
+      handState.targetRotZ += (0 - handState.targetRotZ) * 0.12
+      gestureName.value = '触屏拖动旋转'
+      gestureDesc.value = '单指拖动可自由旋转岗位星球，点击星点可打开岗位详情'
+    }
+  }
+
+  const handleTouchEnd = (event: TouchEvent) => {
+    if (touchZooming && event.touches.length < 2) {
+      touchZooming = false
+      suppressNextClick = true
+      return
+    }
+
+    if (!touchDragging) return
+
+    const hadDrag = touchDragStarted
+    touchDragging = false
+    touchDragStarted = false
+
+    if (hadDrag) {
+      suppressNextClick = true
+      gestureName.value = '视角已固定'
+      gestureDesc.value = '已保留当前星球视角；双击空白区域或点击继续旋转可恢复缓慢旋转'
+      return
+    }
+
+    if (event.defaultPrevented || isInteractiveTarget(event.target)) return
+
+    suppressNextClick = true
+    virtualCursor.visible = true
+    virtualCursor.x = touchLastX
+    virtualCursor.y = touchLastY
+
+    const candidate = findSelectableJobByScreen(touchLastX, touchLastY, 92)
+    if (candidate) selectJob(candidate.id)
   }
 
   const normalizeJobList = (list: JobItem[], targetCount: number) => {
@@ -2044,1459 +2239,4 @@
   }
 </script>
 
-<style scoped lang="scss">
-  /* stylelint-disable no-duplicate-selectors */
-  .gesture-star-page {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    overflow: hidden;
-    color: #fff7ed;
-    user-select: none;
-    background:
-      radial-gradient(circle at 50% 42%, rgb(249 115 22 / 22%), transparent 30%),
-      radial-gradient(circle at 18% 22%, rgb(251 146 60 / 14%), transparent 25%),
-      linear-gradient(180deg, #020617 0%, #0b1020 48%, #020617 100%);
-  }
-
-  .three-container {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    cursor: grab;
-  }
-
-  .gesture-star-page.mouse-dragging .three-container {
-    cursor: grabbing;
-  }
-
-  .gesture-star-page.mouse-dragging .gesture-cursor {
-    opacity: 0.78;
-  }
-
-  .page-mask {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    pointer-events: none;
-    background:
-      linear-gradient(90deg, rgb(2 6 23 / 64%), transparent 42%, rgb(2 6 23 / 38%)),
-      radial-gradient(circle at 50% 50%, transparent 0%, rgb(2 6 23 / 28%) 74%);
-  }
-
-  .label-layer {
-    position: absolute;
-    inset: 0;
-    z-index: 7;
-    pointer-events: none;
-  }
-
-  .job-label {
-    position: absolute;
-    max-width: 168px;
-    padding: 5px 9px;
-    overflow: hidden;
-    font-size: 12px;
-    line-height: 1;
-    color: rgb(255 247 237 / 86%);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    background: rgb(24 11 4 / 54%);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgb(251 146 60 / 26%);
-    border-radius: 999px;
-    box-shadow: 0 0 18px rgb(251 146 60 / 12%);
-    transition:
-      opacity 0.22s ease,
-      transform 0.22s ease,
-      border-color 0.22s ease;
-    transform: translate(-50%, -50%) scale(0.94);
-  }
-
-  .job-label.hover {
-    color: #ecfeff;
-    background: rgb(8 47 73 / 64%);
-    border-color: rgb(103 232 249 / 68%);
-    box-shadow: 0 0 24px rgb(103 232 249 / 32%);
-    transform: translate(-50%, -50%) scale(1.04);
-  }
-
-  .job-label.selected {
-    max-width: 260px;
-    padding: 8px 13px;
-    font-size: 14px;
-    font-weight: 800;
-    color: #fff;
-    background: linear-gradient(135deg, rgb(154 52 18 / 82%), rgb(251 146 60 / 46%));
-    border-color: rgb(255 255 255 / 72%);
-    box-shadow: 0 0 36px rgb(251 146 60 / 45%);
-    transform: translate(-50%, -50%) scale(1.08);
-  }
-
-  .gesture-cursor {
-    position: absolute;
-    z-index: 12;
-    width: 42px;
-    height: 42px;
-    pointer-events: none;
-    border: 1px solid rgb(255 255 255 / 36%);
-    border-radius: 50%;
-    box-shadow: 0 0 20px rgb(251 146 60 / 25%);
-    transition:
-      width 0.18s ease,
-      height 0.18s ease,
-      border-color 0.18s ease;
-    transform: translate(-50%, -50%);
-  }
-
-  .gesture-cursor span {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 6px;
-    height: 6px;
-    background: #fff7ed;
-    border-radius: 50%;
-    box-shadow: 0 0 14px rgb(255 255 255 / 80%);
-    transform: translate(-50%, -50%);
-  }
-
-  .gesture-cursor.active {
-    width: 54px;
-    height: 54px;
-    border-color: rgb(103 232 249 / 88%);
-    box-shadow: 0 0 28px rgb(103 232 249 / 38%);
-  }
-
-  .gesture-cursor.pinch {
-    width: 28px;
-    height: 28px;
-    border-color: rgb(255 255 255 / 92%);
-    box-shadow: 0 0 30px rgb(255 255 255 / 42%);
-  }
-
-  .selection-line {
-    position: absolute;
-    z-index: 6;
-    height: 1px;
-    pointer-events: none;
-    background: linear-gradient(90deg, rgb(255 255 255 / 85%), rgb(251 146 60 / 25%), transparent);
-    box-shadow: 0 0 18px rgb(251 146 60 / 42%);
-    transition: opacity 0.2s ease;
-    transform-origin: 0 0;
-  }
-
-  .top-panel {
-    position: absolute;
-    top: 24px;
-    right: 28px;
-    left: 28px;
-    z-index: 10;
-    display: flex;
-    gap: 18px;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 20px;
-    background: rgb(15 23 42 / 48%);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgb(251 146 60 / 22%);
-    border-radius: 20px;
-    box-shadow: 0 18px 60px rgb(0 0 0 / 25%);
-  }
-
-  .title-area {
-    display: flex;
-    gap: 14px;
-    align-items: center;
-  }
-
-  .title-icon {
-    display: grid;
-    place-items: center;
-    width: 46px;
-    height: 46px;
-    font-size: 24px;
-    color: #fff;
-    background: linear-gradient(135deg, rgb(251 146 60 / 96%), rgb(249 115 22 / 92%));
-    border-radius: 16px;
-    box-shadow: 0 14px 32px rgb(251 146 60 / 28%);
-  }
-
-  .page-title {
-    font-size: 23px;
-    font-weight: 800;
-    letter-spacing: 1px;
-  }
-
-  .page-subtitle {
-    margin-top: 4px;
-    font-size: 13px;
-    color: rgb(255 247 237 / 66%);
-  }
-
-  .top-actions {
-    display: flex;
-    gap: 12px;
-  }
-
-  .plain-btn {
-    color: #ffedd5;
-    background: rgb(255 255 255 / 6%);
-    border-color: rgb(251 146 60 / 24%);
-  }
-
-  .plain-btn:hover {
-    color: #fff;
-    background: rgb(251 146 60 / 12%);
-    border-color: rgb(251 146 60 / 50%);
-  }
-
-  .start-btn {
-    font-weight: 800;
-    color: #fff;
-    background: #2563eb;
-    background-image: none;
-    border: 1px solid rgb(96 165 250 / 42%);
-    box-shadow: 0 10px 24px rgb(37 99 235 / 20%);
-  }
-
-  .control-panel {
-    position: absolute;
-    top: 132px;
-    left: 28px;
-    z-index: 10;
-    width: 350px;
-    padding: 20px;
-    background: rgb(15 23 42 / 54%);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgb(251 146 60 / 22%);
-    border-radius: 22px;
-    box-shadow: 0 18px 60px rgb(0 0 0 / 24%);
-  }
-
-  .panel-header {
-    display: flex;
-    gap: 9px;
-    align-items: center;
-    font-size: 14px;
-    color: rgb(255 247 237 / 78%);
-  }
-
-  .status-dot {
-    width: 9px;
-    height: 9px;
-    background: #64748b;
-    border-radius: 50%;
-  }
-
-  .status-dot.active {
-    background: #fb923c;
-    box-shadow: 0 0 16px rgb(251 146 60 / 90%);
-  }
-
-  .gesture-card {
-    padding: 16px;
-    margin-top: 18px;
-    background: rgb(154 52 18 / 14%);
-    border: 1px solid rgb(251 146 60 / 16%);
-    border-radius: 16px;
-  }
-
-  .gesture-label,
-  .target-label {
-    font-size: 12px;
-    color: rgb(255 247 237 / 56%);
-  }
-
-  .gesture-name {
-    margin-top: 7px;
-    font-size: 22px;
-    font-weight: 800;
-    color: #fff;
-  }
-
-  .gesture-desc {
-    min-height: 44px;
-    margin-top: 8px;
-    font-size: 13px;
-    line-height: 1.65;
-    color: rgb(255 247 237 / 72%);
-  }
-
-  .data-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-    margin-top: 16px;
-  }
-
-  .data-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 11px 12px;
-    color: rgb(255 247 237 / 68%);
-    background: rgb(255 255 255 / 6%);
-    border-radius: 12px;
-  }
-
-  .data-item strong {
-    max-width: 150px;
-    overflow: hidden;
-    color: #fff;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .current-target {
-    padding: 13px;
-    margin-top: 14px;
-    background: rgb(255 255 255 / 5%);
-    border: 1px solid rgb(255 255 255 / 9%);
-    border-radius: 14px;
-  }
-
-  .target-name {
-    margin-top: 7px;
-    overflow: hidden;
-    font-weight: 700;
-    color: #fff7ed;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    user-select: none;
-  }
-
-  .tips {
-    display: grid;
-    gap: 8px;
-    padding-top: 14px;
-    margin-top: 16px;
-    font-size: 13px;
-    line-height: 1.65;
-    color: rgb(255 247 237 / 62%);
-    border-top: 1px solid rgb(255 255 255 / 8%);
-  }
-
-  .job-detail-panel {
-    position: absolute;
-    top: 132px;
-    right: 28px;
-    z-index: 11;
-    width: 390px;
-    padding: 22px;
-    background: linear-gradient(180deg, rgb(67 20 7 / 66%), rgb(15 23 42 / 68%)), rgb(2 6 23 / 62%);
-    backdrop-filter: blur(18px);
-    border: 1px solid rgb(251 146 60 / 30%);
-    border-radius: 24px;
-    box-shadow:
-      0 24px 80px rgb(0 0 0 / 34%),
-      0 0 38px rgb(251 146 60 / 18%);
-  }
-
-  .panel-close {
-    position: absolute;
-    top: 14px;
-    right: 16px;
-    width: 30px;
-    height: 30px;
-    color: rgb(255 247 237 / 72%);
-    cursor: pointer;
-    background: rgb(255 255 255 / 6%);
-    border: 1px solid rgb(255 255 255 / 12%);
-    border-radius: 50%;
-  }
-
-  .panel-close:hover {
-    color: #fff;
-    background: rgb(251 146 60 / 18%);
-    border-color: rgb(251 146 60 / 52%);
-  }
-
-  .detail-kicker {
-    font-size: 12px;
-    font-weight: 800;
-    color: #fdba74;
-    letter-spacing: 1px;
-  }
-
-  .detail-title {
-    max-width: 330px;
-    margin-top: 9px;
-    font-size: 24px;
-    font-weight: 900;
-    line-height: 1.28;
-    color: #fff;
-  }
-
-  .detail-company {
-    margin-top: 8px;
-    font-size: 14px;
-    color: rgb(255 247 237 / 68%);
-  }
-
-  .detail-meta-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-top: 18px;
-  }
-
-  .detail-meta-grid div {
-    padding: 12px;
-    background: rgb(255 255 255 / 6%);
-    border: 1px solid rgb(255 255 255 / 8%);
-    border-radius: 14px;
-  }
-
-  .detail-meta-grid span {
-    display: block;
-    font-size: 12px;
-    color: rgb(255 247 237 / 52%);
-  }
-
-  .detail-meta-grid strong {
-    display: block;
-    margin-top: 7px;
-    overflow: hidden;
-    font-size: 14px;
-    color: #fff;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .detail-section {
-    margin-top: 18px;
-  }
-
-  .section-title {
-    margin-bottom: 10px;
-    font-size: 13px;
-    font-weight: 800;
-    color: rgb(255 247 237 / 72%);
-  }
-
-  .skill-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .skill-tags span {
-    padding: 6px 10px;
-    font-size: 12px;
-    color: #ffedd5;
-    background: rgb(251 146 60 / 12%);
-    border: 1px solid rgb(251 146 60 / 24%);
-    border-radius: 999px;
-  }
-
-  .detail-desc {
-    font-size: 13px;
-    line-height: 1.8;
-    color: rgb(255 247 237 / 70%);
-  }
-
-  .job-panel-enter-active,
-  .job-panel-leave-active {
-    transition:
-      opacity 0.28s ease,
-      transform 0.28s ease;
-  }
-
-  .job-panel-enter-from,
-  .job-panel-leave-to {
-    opacity: 0;
-    transform: translateX(28px) scale(0.96);
-  }
-
-  .camera-card {
-    position: absolute;
-    right: 28px;
-    bottom: 28px;
-    z-index: 10;
-    width: 260px;
-    height: 188px;
-    overflow: hidden;
-    background: rgb(15 23 42 / 56%);
-    backdrop-filter: blur(14px);
-    border: 1px solid rgb(251 146 60 / 30%);
-    border-radius: 20px;
-    box-shadow: 0 18px 60px rgb(0 0 0 / 30%);
-  }
-
-  .camera-video,
-  .hand-canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transform: scaleX(-1);
-  }
-
-  .camera-video {
-    z-index: 1;
-    opacity: 0.78;
-  }
-
-  .hand-canvas {
-    z-index: 2;
-    pointer-events: none;
-  }
-
-  .camera-placeholder {
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    display: grid;
-    gap: 8px;
-    place-items: center;
-    align-content: center;
-    color: rgb(255 247 237 / 68%);
-    background: rgb(15 23 42 / 72%);
-  }
-
-  .camera-icon {
-    font-size: 28px;
-  }
-
-  .bottom-hint {
-    position: absolute;
-    bottom: 32px;
-    left: 50%;
-    z-index: 10;
-    padding: 10px 16px;
-    font-size: 13px;
-    color: rgb(255 247 237 / 68%);
-    background: rgb(15 23 42 / 48%);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgb(251 146 60 / 16%);
-    border-radius: 999px;
-    transform: translateX(-50%);
-  }
-
-  @media screen and (width <= 1180px) {
-    .job-detail-panel {
-      top: auto;
-      right: 18px;
-      bottom: 224px;
-      width: 350px;
-    }
-
-    .selection-line {
-      display: none;
-    }
-  }
-
-  @media screen and (width <= 980px) {
-    .top-panel {
-      top: 16px;
-      right: 16px;
-      left: 16px;
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .top-actions {
-      width: 100%;
-    }
-
-    .top-actions .el-button {
-      flex: 1;
-    }
-
-    .control-panel {
-      top: 150px;
-      right: 16px;
-      left: 16px;
-      width: auto;
-    }
-
-    .job-detail-panel {
-      inset: auto 16px 166px;
-      width: auto;
-    }
-
-    .camera-card {
-      right: 16px;
-      bottom: 16px;
-      width: 188px;
-      height: 138px;
-    }
-
-    .bottom-hint {
-      display: none;
-    }
-  }
-
-  @media screen and (width <= 640px) {
-    .page-title {
-      font-size: 20px;
-    }
-
-    .page-subtitle {
-      display: none;
-    }
-
-    .control-panel {
-      top: 142px;
-      max-height: 46vh;
-      overflow: auto;
-    }
-
-    .tips {
-      display: none;
-    }
-
-    .detail-meta-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .camera-card {
-      width: 150px;
-      height: 112px;
-    }
-  }
-
-  /* 与后台管理系统风格保持一致：弱化重渐变，统一卡片边框、圆角和按钮层级 */
-  .clean-mode-toolbar {
-    position: absolute;
-    top: 24px;
-    left: 50%;
-    z-index: 16;
-    display: none;
-    gap: 10px;
-    align-items: center;
-    padding: 10px 12px;
-    color: #e5e7eb;
-    background: rgb(15 23 42 / 72%);
-    backdrop-filter: blur(14px);
-    border: 1px solid rgb(148 163 184 / 24%);
-    border-radius: 12px;
-    box-shadow: 0 12px 32px rgb(0 0 0 / 24%);
-    transform: translateX(-50%);
-  }
-
-  .toolbar-title {
-    padding: 0 4px;
-    font-size: 13px;
-    font-weight: 600;
-    color: rgb(226 232 240 / 82%);
-  }
-
-  .toolbar-btn {
-    color: #e5e7eb;
-    background: rgb(255 255 255 / 6%);
-    border-color: rgb(148 163 184 / 26%);
-  }
-
-  .pause-badge,
-  .detail-status {
-    display: inline-flex;
-    align-items: center;
-    min-height: 28px;
-    padding: 0 10px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #fed7aa;
-    white-space: nowrap;
-    background: rgb(251 146 60 / 10%);
-    border: 1px solid rgb(251 146 60 / 22%);
-    border-radius: 999px;
-  }
-
-  .detail-status {
-    margin-top: 12px;
-    border-radius: 10px;
-  }
-
-  .detail-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 14px;
-  }
-
-  .gesture-star-page {
-    color: #e5e7eb;
-    background:
-      radial-gradient(circle at 50% 44%, rgb(249 115 22 / 18%), transparent 28%),
-      radial-gradient(circle at 18% 20%, rgb(59 130 246 / 10%), transparent 24%),
-      linear-gradient(180deg, #070b16 0%, #0b1020 52%, #070b16 100%);
-  }
-
-  .page-mask {
-    background:
-      linear-gradient(90deg, rgb(7 11 22 / 58%), transparent 45%, rgb(7 11 22 / 32%)),
-      radial-gradient(circle at 50% 50%, transparent 0%, rgb(7 11 22 / 22%) 76%);
-  }
-
-  .top-panel,
-  .control-panel,
-  .job-detail-panel,
-  .camera-card,
-  .bottom-hint {
-    background: rgb(15 23 42 / 66%);
-    border-color: rgb(148 163 184 / 20%);
-    border-radius: 14px;
-    box-shadow: 0 14px 38px rgb(0 0 0 / 24%);
-  }
-
-  .top-panel {
-    padding: 16px 18px;
-  }
-
-  .title-icon {
-    background: linear-gradient(135deg, #fb923c, #f97316);
-    border-radius: 12px;
-  }
-
-  .page-title {
-    font-size: 22px;
-    color: #f8fafc;
-  }
-
-  .page-subtitle,
-  .panel-header,
-  .gesture-desc,
-  .tips,
-  .detail-company,
-  .detail-desc,
-  .bottom-hint {
-    color: rgb(226 232 240 / 66%);
-  }
-
-  .plain-btn {
-    color: #e5e7eb;
-    background: rgb(255 255 255 / 6%);
-    border-color: rgb(148 163 184 / 24%);
-  }
-
-  .plain-btn:hover,
-  .toolbar-btn:hover {
-    color: #fff;
-    background: rgb(251 146 60 / 12%);
-    border-color: rgb(251 146 60 / 46%);
-  }
-
-  .start-btn {
-    color: #fff;
-    background: #2563eb;
-    background-image: none;
-    border: 1px solid rgb(96 165 250 / 42%);
-    box-shadow: 0 10px 24px rgb(37 99 235 / 20%);
-  }
-
-  .gesture-card,
-  .current-target,
-  .detail-meta-grid div,
-  .data-item {
-    background: rgb(255 255 255 / 5.5%);
-    border-color: rgb(148 163 184 / 14%);
-  }
-
-  .gesture-name,
-  .target-name,
-  .detail-title,
-  .detail-meta-grid strong {
-    color: #f8fafc;
-  }
-
-  .job-detail-panel {
-    background:
-      linear-gradient(180deg, rgb(15 23 42 / 78%), rgb(15 23 42 / 68%)), rgb(15 23 42 / 66%);
-  }
-
-  .job-label {
-    color: rgb(226 232 240 / 86%);
-    background: rgb(15 23 42 / 62%);
-    border-color: rgb(148 163 184 / 20%);
-  }
-
-  .gesture-star-page.rotation-paused .job-label.selected {
-    animation: selectedLabelBreath 1.8s ease-in-out infinite;
-  }
-
-  .gesture-star-page.post-load-spinning .page-mask {
-    animation: postLoadMaskPulse 1.15s ease-in-out infinite;
-  }
-
-  .gesture-star-page.post-load-spinning .three-container::after {
-    position: absolute;
-    inset: 9% 18%;
-    z-index: 4;
-    pointer-events: none;
-    content: '';
-    background: radial-gradient(circle, transparent 42%, rgb(59 130 246 / 8%) 58%, transparent 72%);
-    border: 1px solid rgb(34 211 238 / 18%);
-    border-radius: 50%;
-    box-shadow:
-      0 0 70px rgb(34 211 238 / 16%),
-      inset 0 0 36px rgb(124 58 237 / 12%);
-    animation: postLoadOrbitPulse 1.2s ease-in-out infinite;
-  }
-
-  .gesture-star-page.clean-mode .top-panel,
-  .gesture-star-page.clean-mode .control-panel,
-  .gesture-star-page.clean-mode .job-detail-panel,
-  .gesture-star-page.clean-mode .camera-card,
-  .gesture-star-page.clean-mode .bottom-hint,
-  .gesture-star-page.clean-mode .selection-line {
-    pointer-events: none;
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-
-  .gesture-star-page.clean-mode .clean-mode-toolbar {
-    display: flex;
-  }
-
-  .gesture-star-page.clean-mode .label-layer {
-    opacity: 0.7;
-  }
-
-  .gesture-star-page.is-fullscreen {
-    width: 100vw;
-    height: 100vh;
-  }
-
-  .top-panel,
-  .control-panel,
-  .job-detail-panel,
-  .camera-card,
-  .bottom-hint,
-  .selection-line {
-    transition:
-      opacity 0.24s ease,
-      transform 0.24s ease,
-      border-color 0.24s ease,
-      background 0.24s ease;
-  }
-
-  @keyframes selectedLabelBreath {
-    0%,
-    100% {
-      box-shadow: 0 0 24px rgb(251 146 60 / 28%);
-    }
-
-    50% {
-      box-shadow: 0 0 38px rgb(251 146 60 / 46%);
-    }
-  }
-
-  /* 星空蓝紫主题：去除黄色/橙色主色，统一为深空蓝、星云紫、极光青 */
-  .gesture-star-page {
-    color: #e0f2fe;
-    background:
-      radial-gradient(circle at 52% 42%, rgb(59 130 246 / 22%), transparent 30%),
-      radial-gradient(circle at 72% 28%, rgb(124 58 237 / 16%), transparent 28%),
-      radial-gradient(circle at 20% 72%, rgb(34 211 238 / 10%), transparent 26%),
-      linear-gradient(180deg, #020617 0%, #0b1020 50%, #030712 100%);
-  }
-
-  .page-mask {
-    background:
-      linear-gradient(90deg, rgb(2 6 23 / 64%), transparent 45%, rgb(15 23 42 / 36%)),
-      radial-gradient(circle at 50% 50%, transparent 0%, rgb(2 6 23 / 24%) 76%);
-  }
-
-  .top-panel,
-  .control-panel,
-  .job-detail-panel,
-  .camera-card,
-  .bottom-hint,
-  .clean-mode-toolbar {
-    background: rgb(15 23 42 / 68%);
-    border-color: rgb(125 211 252 / 20%);
-    box-shadow:
-      0 14px 38px rgb(0 0 0 / 28%),
-      0 0 30px rgb(59 130 246 / 8%);
-  }
-
-  .top-panel,
-  .control-panel,
-  .job-detail-panel,
-  .camera-card,
-  .clean-mode-toolbar {
-    z-index: 20;
-  }
-
-  .job-detail-panel {
-    z-index: 22;
-    background:
-      linear-gradient(180deg, rgb(15 23 42 / 86%), rgb(17 24 39 / 76%)), rgb(15 23 42 / 72%);
-  }
-
-  .clean-mode-toolbar {
-    z-index: 30;
-  }
-
-  .title-icon {
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
-    box-shadow: 0 14px 30px rgb(59 130 246 / 24%);
-  }
-
-  .page-title,
-  .gesture-name,
-  .target-name,
-  .detail-title,
-  .detail-meta-grid strong {
-    color: #f8fafc;
-  }
-
-  .page-subtitle,
-  .panel-header,
-  .gesture-desc,
-  .tips,
-  .detail-company,
-  .detail-desc,
-  .bottom-hint,
-  .data-item,
-  .detail-meta-grid span,
-  .gesture-label,
-  .target-label,
-  .section-title {
-    color: rgb(226 232 240 / 68%);
-  }
-
-  .status-dot.active {
-    background: #22d3ee;
-    box-shadow: 0 0 16px rgb(34 211 238 / 78%);
-  }
-
-  .plain-btn,
-  .toolbar-btn {
-    color: #e0f2fe;
-    background: rgb(15 23 42 / 58%);
-    border-color: rgb(125 211 252 / 24%);
-  }
-
-  .plain-btn:hover,
-  .toolbar-btn:hover,
-  .panel-close:hover {
-    color: #fff;
-    background: rgb(14 165 233 / 14%);
-    border-color: rgb(34 211 238 / 52%);
-  }
-
-  .start-btn {
-    color: #fff;
-    background: #2563eb;
-    background-image: none;
-    border: 1px solid rgb(96 165 250 / 42%);
-    box-shadow: 0 10px 24px rgb(37 99 235 / 22%);
-  }
-
-  .start-btn:hover,
-  .start-btn:focus,
-  .start-btn:active {
-    color: #fff;
-    background: #1d4ed8;
-    background-image: none;
-    border-color: rgb(34 211 238 / 58%);
-  }
-
-  .gesture-star-page :deep(.el-button) {
-    background-image: none !important;
-  }
-
-  .gesture-card,
-  .current-target,
-  .detail-meta-grid div,
-  .data-item {
-    background: rgb(15 23 42 / 46%);
-    border-color: rgb(125 211 252 / 14%);
-  }
-
-  .pause-badge,
-  .detail-status {
-    color: #bfdbfe;
-    background: rgb(37 99 235 / 12%);
-    border-color: rgb(96 165 250 / 26%);
-  }
-
-  .detail-kicker {
-    color: #93c5fd;
-  }
-
-  .skill-tags span {
-    color: #dbeafe;
-    background: rgb(37 99 235 / 14%);
-    border-color: rgb(96 165 250 / 28%);
-  }
-
-  .job-label {
-    color: rgb(226 232 240 / 88%);
-    background: rgb(15 23 42 / 62%);
-    border-color: rgb(125 211 252 / 18%);
-    box-shadow: 0 0 18px rgb(59 130 246 / 10%);
-  }
-
-  .job-label.hover {
-    color: #ecfeff;
-    background: rgb(8 47 73 / 64%);
-    border-color: rgb(34 211 238 / 70%);
-    box-shadow: 0 0 24px rgb(34 211 238 / 28%);
-  }
-
-  .job-label.selected {
-    background: linear-gradient(135deg, rgb(30 64 175 / 82%), rgb(124 58 237 / 52%));
-    border-color: rgb(191 219 254 / 76%);
-    box-shadow: 0 0 28px rgb(96 165 250 / 34%);
-  }
-
-  .gesture-cursor {
-    border-color: rgb(125 211 252 / 42%);
-    box-shadow: 0 0 20px rgb(59 130 246 / 22%);
-  }
-
-  .gesture-cursor span {
-    background: #e0f2fe;
-    box-shadow: 0 0 14px rgb(224 242 254 / 78%);
-  }
-
-  .gesture-cursor.active {
-    border-color: rgb(34 211 238 / 88%);
-    box-shadow: 0 0 28px rgb(34 211 238 / 34%);
-  }
-
-  .gesture-cursor.pinch {
-    border-color: rgb(191 219 254 / 92%);
-    box-shadow: 0 0 26px rgb(96 165 250 / 36%);
-  }
-
-  .selection-line {
-    background: linear-gradient(90deg, rgb(224 242 254 / 86%), rgb(96 165 250 / 30%), transparent);
-    box-shadow: 0 0 16px rgb(59 130 246 / 36%);
-  }
-
-  .panel-close {
-    color: rgb(226 232 240 / 72%);
-  }
-
-  @keyframes postLoadMaskPulse {
-    0%,
-    100% {
-      filter: saturate(1);
-      opacity: 1;
-    }
-
-    50% {
-      filter: saturate(1.35) brightness(1.08);
-      opacity: 0.86;
-    }
-  }
-
-  @keyframes postLoadOrbitPulse {
-    0% {
-      opacity: 0.25;
-      transform: scale(0.72) rotate(0deg);
-    }
-
-    55% {
-      opacity: 0.62;
-      transform: scale(1.04) rotate(155deg);
-    }
-
-    100% {
-      opacity: 0.12;
-      transform: scale(1.26) rotate(260deg);
-    }
-  }
-
-  @keyframes selectedLabelBreath {
-    0%,
-    100% {
-      box-shadow: 0 0 18px rgb(96 165 250 / 28%);
-    }
-
-    50% {
-      box-shadow: 0 0 30px rgb(34 211 238 / 40%);
-    }
-  }
-
-  /* 页面进入动画：星门加载、星球推进、面板浮入 */
-  .entry-stage {
-    position: absolute;
-    inset: 0;
-    z-index: 80;
-    overflow: hidden;
-    pointer-events: none;
-    background:
-      radial-gradient(circle at 50% 50%, rgb(14 165 233 / 18%), transparent 24%),
-      radial-gradient(circle at 50% 50%, rgb(124 58 237 / 22%), transparent 42%),
-      linear-gradient(180deg, rgb(2 6 23 / 96%), rgb(2 6 23 / 78%));
-    animation: entryStageIn 0.36s ease-out both;
-  }
-
-  .entry-stage.leaving {
-    animation: entryStageOut 0.72s ease-in forwards;
-  }
-
-  .entry-nebula {
-    position: absolute;
-    inset: -18%;
-    background:
-      conic-gradient(
-        from 90deg,
-        transparent,
-        rgb(34 211 238 / 20%),
-        transparent,
-        rgb(124 58 237 / 22%),
-        transparent
-      ),
-      radial-gradient(circle at 30% 42%, rgb(37 99 235 / 22%), transparent 28%),
-      radial-gradient(circle at 72% 58%, rgb(168 85 247 / 18%), transparent 26%);
-    filter: blur(22px);
-    opacity: 0.82;
-    animation: entryNebulaRotate 6.6s linear infinite;
-  }
-
-  .entry-grid {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgb(125 211 252 / 12%) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(125 211 252 / 10%) 1px, transparent 1px);
-    background-size: 64px 64px;
-    opacity: 0.34;
-    mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 70%);
-    animation: entryGridMove 2.6s linear infinite;
-  }
-
-  .entry-ring {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    border: 1px solid rgb(125 211 252 / 42%);
-    border-radius: 50%;
-    box-shadow:
-      0 0 30px rgb(34 211 238 / 16%),
-      inset 0 0 24px rgb(96 165 250 / 10%);
-    transform: translate(-50%, -50%);
-  }
-
-  .entry-ring-outer {
-    width: 68vmin;
-    height: 68vmin;
-    border-style: dashed;
-    animation:
-      entryRingExpand 2.2s ease-out infinite,
-      entryRingRotate 7s linear infinite;
-  }
-
-  .entry-ring-middle {
-    width: 48vmin;
-    height: 48vmin;
-    border-color: rgb(167 139 250 / 46%);
-    animation:
-      entryRingExpand 2.2s 0.22s ease-out infinite reverse,
-      entryRingRotate 5.6s linear infinite reverse;
-  }
-
-  .entry-ring-inner {
-    width: 28vmin;
-    height: 28vmin;
-    border-color: rgb(34 211 238 / 58%);
-    animation: entryInnerPulse 1.55s ease-in-out infinite;
-  }
-
-  .entry-core {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    display: grid;
-    justify-items: center;
-    width: min(440px, 72vw);
-    padding: 28px 30px;
-    color: #eff6ff;
-    background: rgb(15 23 42 / 46%);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgb(125 211 252 / 22%);
-    border-radius: 20px;
-    box-shadow:
-      0 0 80px rgb(37 99 235 / 24%),
-      inset 0 1px 0 rgb(255 255 255 / 10%);
-    transform: translate(-50%, -50%);
-    animation: entryCorePop 0.9s cubic-bezier(0.2, 1.08, 0.28, 1) both;
-  }
-
-  .entry-logo {
-    display: grid;
-    place-items: center;
-    width: 74px;
-    height: 74px;
-    font-size: 38px;
-    color: #ecfeff;
-    background: rgb(37 99 235 / 18%);
-    border: 1px solid rgb(34 211 238 / 40%);
-    border-radius: 24px;
-    box-shadow: 0 0 36px rgb(34 211 238 / 28%);
-    animation: entryLogoFlash 1.6s ease-in-out infinite;
-  }
-
-  .entry-title {
-    margin-top: 18px;
-    font-size: 28px;
-    font-weight: 900;
-    text-shadow: 0 0 26px rgb(34 211 238 / 36%);
-    letter-spacing: 2px;
-  }
-
-  .entry-subtitle {
-    margin-top: 8px;
-    font-size: 14px;
-    color: rgb(226 232 240 / 72%);
-  }
-
-  .entry-progress {
-    position: relative;
-    width: 100%;
-    height: 8px;
-    margin-top: 22px;
-    overflow: hidden;
-    background: rgb(15 23 42 / 72%);
-    border: 1px solid rgb(125 211 252 / 22%);
-    border-radius: 999px;
-  }
-
-  .entry-progress span {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: linear-gradient(90deg, #2563eb, #22d3ee, #a78bfa);
-    border-radius: inherit;
-    box-shadow: 0 0 18px rgb(34 211 238 / 48%);
-    transition: width 0.12s linear;
-  }
-
-  .entry-percent {
-    margin-top: 9px;
-    font-size: 12px;
-    font-weight: 800;
-    color: rgb(191 219 254 / 84%);
-    letter-spacing: 1px;
-  }
-
-  .entry-scan-line {
-    position: absolute;
-    top: 0;
-    left: -20%;
-    width: 26%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgb(125 211 252 / 18%), transparent);
-    transform: skewX(-18deg);
-    animation: entryScan 1.8s ease-in-out infinite;
-  }
-
-  .entry-spark {
-    position: absolute;
-    background: #e0f2fe;
-    border-radius: 50%;
-    box-shadow:
-      0 0 16px rgb(34 211 238 / 82%),
-      0 0 32px rgb(124 58 237 / 38%);
-    opacity: 0;
-    animation-name: entrySparkFly;
-    animation-timing-function: ease-out;
-    animation-iteration-count: infinite;
-  }
-
-  .gesture-star-page.page-entering .top-panel {
-    animation: entryPanelDrop 1s 1.7s cubic-bezier(0.2, 1, 0.2, 1) both;
-  }
-
-  .gesture-star-page.page-entering .control-panel {
-    animation: entryPanelLeft 1s 1.9s cubic-bezier(0.2, 1, 0.2, 1) both;
-  }
-
-  .gesture-star-page.page-entering .camera-card,
-  .gesture-star-page.page-entering .bottom-hint {
-    animation: entryPanelRise 0.9s 2.1s cubic-bezier(0.2, 1, 0.2, 1) both;
-  }
-
-  .gesture-star-page.page-entering .page-mask {
-    animation: entryMaskPulse 2.6s ease-out both;
-  }
-
-  @keyframes entryStageIn {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes entryStageOut {
-    to {
-      filter: blur(12px);
-      opacity: 0;
-      transform: scale(1.08);
-    }
-  }
-
-  @keyframes entryNebulaRotate {
-    to {
-      transform: rotate(360deg) scale(1.05);
-    }
-  }
-
-  @keyframes entryGridMove {
-    to {
-      background-position: 64px 64px;
-    }
-  }
-
-  @keyframes entryRingExpand {
-    0% {
-      opacity: 0;
-      transform: translate(-50%, -50%) scale(0.72) rotate(0deg);
-    }
-
-    45% {
-      opacity: 0.9;
-    }
-
-    100% {
-      opacity: 0;
-      transform: translate(-50%, -50%) scale(1.18) rotate(180deg);
-    }
-  }
-
-  @keyframes entryRingRotate {
-    to {
-      transform: translate(-50%, -50%) rotate(360deg);
-    }
-  }
-
-  @keyframes entryInnerPulse {
-    0%,
-    100% {
-      opacity: 0.38;
-      transform: translate(-50%, -50%) scale(0.94);
-    }
-
-    50% {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1.08);
-    }
-  }
-
-  @keyframes entryCorePop {
-    from {
-      filter: blur(10px);
-      opacity: 0;
-      transform: translate(-50%, -46%) scale(0.72);
-    }
-
-    to {
-      filter: blur(0);
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-  }
-
-  @keyframes entryLogoFlash {
-    0%,
-    100% {
-      box-shadow: 0 0 26px rgb(34 211 238 / 22%);
-      transform: rotate(0deg) scale(1);
-    }
-
-    50% {
-      box-shadow: 0 0 46px rgb(34 211 238 / 46%);
-      transform: rotate(12deg) scale(1.08);
-    }
-  }
-
-  @keyframes entryScan {
-    0% {
-      left: -30%;
-      opacity: 0;
-    }
-
-    35%,
-    70% {
-      opacity: 1;
-    }
-
-    100% {
-      left: 110%;
-      opacity: 0;
-    }
-  }
-
-  @keyframes entrySparkFly {
-    0% {
-      opacity: 0;
-      transform: translate(-50%, -50%) scale(0.4);
-    }
-
-    28% {
-      opacity: 1;
-    }
-
-    100% {
-      opacity: 0;
-      transform: translate(calc(-50% + 80px), calc(-50% - 120px)) scale(0.1);
-    }
-  }
-
-  @keyframes entryPanelDrop {
-    from {
-      filter: blur(8px);
-      opacity: 0;
-      transform: translateY(-34px) scale(0.98);
-    }
-
-    to {
-      filter: blur(0);
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  @keyframes entryPanelLeft {
-    from {
-      filter: blur(8px);
-      opacity: 0;
-      transform: translateX(-34px) scale(0.98);
-    }
-
-    to {
-      filter: blur(0);
-      opacity: 1;
-      transform: translateX(0) scale(1);
-    }
-  }
-
-  @keyframes entryPanelRise {
-    from {
-      filter: blur(8px);
-      opacity: 0;
-      transform: translateY(26px) scale(0.98);
-    }
-
-    to {
-      filter: blur(0);
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  @keyframes entryMaskPulse {
-    0% {
-      opacity: 0;
-    }
-
-    40% {
-      opacity: 0.85;
-    }
-
-    100% {
-      opacity: 1;
-    }
-  }
-</style>
+<style scoped lang="scss" src="./styles/index.scss"></style>

@@ -5,7 +5,7 @@
         <div class="loading-card">
           <span class="loading-orbit"></span>
           <div>
-            <div class="loading-title">创业就业数字化平台</div>
+            <div class="loading-title">职创星图数字化平台</div>
             <div class="loading-text">正在整理首页内容...</div>
           </div>
         </div>
@@ -16,7 +16,7 @@
         <div class="brand-area">
           <div class="brand-mark">AI</div>
           <div class="brand-text">
-            <div class="brand-name">创业就业数字化平台</div>
+            <div class="brand-name">职创星图数字化平台</div>
             <div class="brand-sub">AI + Web 智能应用平台</div>
           </div>
         </div>
@@ -28,10 +28,10 @@
         </nav>
 
         <div class="top-actions">
-          <el-button type="primary" text class="ghost-btn" @click="goLogin">登录</el-button>
+          <el-button type="primary" class="solid-btn" @click="goLogin">登录</el-button>
           <!-- <el-button type="primary" text class="ghost-btn" @click="goPage('/exhibition')">数字展厅</el-button> -->
           <!-- <el-button type="primary" text class="ghost-btn" @click="goPage('/aichat')">AI就业</el-button> -->
-          <el-button type="primary" class="solid-btn" @click="goPage('/aichat')">
+          <el-button type="primary" text class="ghost-btn" @click="goPage('/aichat')">
             立即体验
           </el-button>
         </div>
@@ -42,7 +42,7 @@
           <div class="hero-kicker">智能引擎 · 网启新生</div>
           <h1 class="hero-title">
             构建面向创业、就业与项目实践的
-            <span>AI 智能应用平台</span>
+            <span>AI 智能数字化平台</span>
           </h1>
           <p class="hero-desc">
             本项目是一个融合大模型技术、数据挖掘、多模态识别与Web工程的综合智能平台，旨在为用户提供从创业辅助到职业规划到的一站式智能服务。

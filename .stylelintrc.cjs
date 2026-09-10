@@ -25,6 +25,7 @@ module.exports = {
     'custom-property-pattern': null, // 自定义属性命名规则
     'keyframes-name-pattern': null, // 动画帧节点样式命名规则
     'no-descending-specificity': null, // 允许无降序特异性
+    'no-duplicate-selectors': null,
     'no-empty-source': null, // 允许空样式
     'property-no-vendor-prefix': null, // 允许属性前缀
     // 允许 global 、export 、deep伪类

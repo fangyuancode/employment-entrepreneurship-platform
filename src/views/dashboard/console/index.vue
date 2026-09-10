@@ -10,7 +10,7 @@
           </p>
 
           <div class="banner-tags">
-            <span v-for="tag in bannerTags" :key="tag" @click="backHome(tag)">{{ tag }}</span>
+            <span v-for="tag in bannerTags" :key="tag" @click="backHome()">{{ tag }}</span>
           </div>
         </div>
 
